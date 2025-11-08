@@ -1,0 +1,10 @@
+This directory should contain:
+- icon.png (1024x1024)
+- splash.png (1242x2436)
+- adaptive-icon.png (1024x1024)
+- notification-icon.png (96x96)
+- favicon.png (48x48)
+- notification.wav (optional sound file)
+
+For now, use default Expo assets or generate placeholder images.
+

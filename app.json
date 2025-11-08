@@ -1,0 +1,34 @@
+{
+  "expo": {
+    "name": "PillBox Dispenser",
+    "slug": "pillbox-dispenser",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "main": "index.js",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.pillbox.dispenser",
+      "infoPlist": {
+        "UIBackgroundModes": ["fetch"]
+      }
+    },
+    "android": {
+      "permissions": [
+        "android.permission.RECEIVE_BOOT_COMPLETED",
+        "android.permission.SCHEDULE_EXACT_ALARM",
+        "android.permission.POST_NOTIFICATIONS"
+      ],
+      "package": "com.pillbox.dispenser"
+    },
+    "plugins": [
+      [
+        "expo-notifications",
+        {
+          "color": "#ffffff"
+        }
+      ]
+    ]
+  }
+}
+
