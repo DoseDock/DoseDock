@@ -43,7 +43,7 @@ export const ScheduleScreen: React.FC = () => {
     return marked;
   };
 
-  // Get schedules for selected date
+  // Get schedules for the selected date
   const getSchedulesForDate = (date: string) => {
     return schedules
       .filter((s) => s.date === date)
