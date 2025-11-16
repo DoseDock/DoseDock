@@ -1,0 +1,19 @@
+{
+  "pills": [],
+  "hardwareProfiles": [
+    {
+      "pillId": "sample-metformin",
+      "serialNumber": "SER-001-MET",
+      "manufacturer": "PillBox Labs",
+      "formFactor": "round",
+      "siloSlot": 0,
+      "trapdoorOpenMs": 1200,
+      "trapdoorHoldMs": 800,
+      "diameterMm": 9,
+      "lengthMm": 12,
+      "widthMm": 4,
+      "heightMm": 3,
+      "weightMg": 500
+    }
+  ]
+}

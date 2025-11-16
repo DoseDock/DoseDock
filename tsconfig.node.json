@@ -1,0 +1,10 @@
+{
+  "extends": "./tsconfig",
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "module": "commonjs",
+    "types": ["node"]
+  },
+  "exclude": ["src/**/*.native.tsx", "src/**/*.native.ts"]
+}
+
