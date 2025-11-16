@@ -40,6 +40,12 @@
       ],
       "@i18n/*": [
         "src/i18n/*"
+      ],
+      "@theme/*": [
+        "src/theme/*"
+      ],
+      "@services/*": [
+        "src/services/*"
       ]
     }
   },
@@ -51,3 +57,5 @@
     "node_modules"
   ]
 }
+
+

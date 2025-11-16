@@ -4,6 +4,9 @@ import { RRule } from 'rrule';
 import { pillRepository } from './repositories/PillRepository';
 import { scheduleRepository } from './repositories/ScheduleRepository';
 import { getDatabase } from './database';
+import { pillHardwareRepository } from './repositories/PillHardwareRepository';
+import { eventLogRepository } from './repositories/EventLogRepository';
+import { EventStatus } from '../types';
 
 const SEED_PILLS = [
   {
@@ -108,6 +111,7 @@ async function seed() {
     console.log('Clearing existing data...');
     const db = await getDatabase();
     await db.execAsync('DELETE FROM event_log');
+    await db.execAsync('DELETE FROM pill_hardware_profile');
     await db.execAsync('DELETE FROM schedule_item');
     await db.execAsync('DELETE FROM schedule');
     await db.execAsync('DELETE FROM pill');
@@ -119,6 +123,26 @@ async function seed() {
       const pill = await pillRepository.create(pillData);
       pills.push(pill);
       console.log(`  ✓ Created pill: ${pill.name}`);
+    }
+
+    // Seed hardware profiles
+    console.log('Linking hardware metadata...');
+    for (const pill of pills) {
+      await pillHardwareRepository.upsert({
+        pillId: pill.id,
+        serialNumber: `SER-${pill.cartridgeIndex}-${pill.id.slice(-4)}`,
+        manufacturer: 'PillBox Labs',
+        formFactor: pill.shape,
+        diameterMm: 8 + pill.cartridgeIndex * 0.5,
+        lengthMm: pill.shape === 'capsule' ? 15 : 10,
+        widthMm: pill.shape === 'oblong' ? 5 : null,
+        heightMm: 4,
+        weightMg: 250,
+        density: 1.2,
+        siloSlot: pill.cartridgeIndex,
+        trapdoorOpenMs: 1100 + pill.cartridgeIndex * 10,
+        trapdoorHoldMs: 700,
+      });
     }
 
     // Seed schedules
@@ -171,9 +195,49 @@ async function seed() {
     });
     console.log(`  ✓ Created schedule: ${schedule2.title}`);
 
+    console.log('Generating upcoming events...');
+    const pillLookup = new Map(pills.map((pill) => [pill.id, pill]));
+    const scheduleRecords = [schedule1, schedule2];
+    const windowStart = DateTime.now().startOf('day');
+    const windowEnd = windowStart.plus({ days: 7 }).endOf('day');
+
+    for (const schedule of scheduleRecords) {
+      const rrule = RRule.fromString(schedule.rrule);
+      const occurrences = rrule.between(windowStart.toJSDate(), windowEnd.toJSDate(), true);
+      const label =
+        schedule.title ||
+        schedule.items
+          .map((item) => pillLookup.get(item.pillId)?.name ?? 'Dose')
+          .join(', ');
+
+      for (const occurrence of occurrences) {
+        for (const time of schedule.times) {
+          const [hour, minute] = time.split(':').map(Number);
+          const dueAtISO = DateTime.fromJSDate(occurrence)
+            .set({ hour, minute, second: 0, millisecond: 0 })
+            .toISO()!;
+
+          await eventLogRepository.create({
+            dueAtISO,
+            groupLabel: label,
+            status: EventStatus.PENDING,
+            detailsJSON: JSON.stringify({
+              scheduleId: schedule.id,
+              items: schedule.items,
+              providerNotes:
+                schedule.title === 'Morning Medication'
+                  ? 'Take with breakfast'
+                  : 'Take with water before bed',
+            }),
+          });
+        }
+      }
+    }
+
     console.log('✅ Seeding complete!');
     console.log(`   ${pills.length} pills created`);
     console.log('   2 schedules created');
+    console.log('   Upcoming events generated');
   } catch (error) {
     console.error('❌ Seeding failed:', error);
     process.exit(1);
@@ -186,4 +250,6 @@ if (require.main === module) {
 }
 
 export { seed };
+
+
 

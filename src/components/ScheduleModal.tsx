@@ -1,64 +1,70 @@
-import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  Modal,
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
-  ScrollView,
-  Platform,
-} from 'react-native';
+import React, { useEffect, useMemo, useState } from 'react';
+import { View, Text, Modal, TextInput, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
+import { colors } from '@theme/colors';
+
+type PillOption = {
+  id: string;
+  name: string;
+};
 
 interface ScheduleModalProps {
   visible: boolean;
+  selectedDate: string;
+  pillOptions: PillOption[];
   onClose: () => void;
   onSave: (schedule: {
-    title: string;
-    date: string;
+    pillId: string;
     time: string;
-    notes: string;
+    providerNotes: string;
+    personalNotes: string;
   }) => void;
 }
 
 export const ScheduleModal: React.FC<ScheduleModalProps> = ({
   visible,
   onClose,
+  selectedDate,
+  pillOptions,
   onSave,
 }) => {
-  const [title, setTitle] = useState('');
-  const [date, setDate] = useState('');
+  const [search, setSearch] = useState('');
+  const [pillId, setPillId] = useState('');
   const [time, setTime] = useState('');
-  const [notes, setNotes] = useState('');
+  const [providerNotes, setProviderNotes] = useState('');
+  const [personalNotes, setPersonalNotes] = useState('');
+
+  useEffect(() => {
+    if (visible) {
+      setSearch('');
+      setPillId('');
+      setTime('');
+      setProviderNotes('');
+      setPersonalNotes('');
+    }
+  }, [visible]);
+
+  const filteredOptions = useMemo(() => {
+    const query = search.toLowerCase();
+    return pillOptions.filter((pill) => pill.name.toLowerCase().includes(query));
+  }, [pillOptions, search]);
 
   const handleSave = () => {
-    if (!title || !date || !time) {
-      alert('Please fill in all required fields');
+    if (!pillId || !time) {
+      alert('Select a medication and specify a time');
       return;
     }
 
-    onSave({ title, date, time, notes });
-    
-    // Reset form
-    setTitle('');
-    setDate('');
-    setTime('');
-    setNotes('');
+    onSave({ pillId, time, providerNotes, personalNotes });
     onClose();
   };
 
   const handleCancel = () => {
-    setTitle('');
-    setDate('');
     setTime('');
-    setNotes('');
+    setSearch('');
+    setPillId('');
+    setProviderNotes('');
+    setPersonalNotes('');
     onClose();
-  };
-
-  // Get today's date in YYYY-MM-DD format
-  const getTodayString = () => {
-    const today = new Date();
-    return today.toISOString().split('T')[0];
   };
 
   return (
@@ -79,26 +85,49 @@ export const ScheduleModal: React.FC<ScheduleModalProps> = ({
 
           <ScrollView style={styles.content}>
             <View style={styles.field}>
-              <Text style={styles.label}>Medication Name *</Text>
-              <TextInput
-                style={styles.input}
-                value={title}
-                onChangeText={setTitle}
-                placeholder="e.g., Aspirin, Vitamin D"
-                placeholderTextColor="#9ca3af"
-              />
+              <Text style={styles.label}>Scheduled Date</Text>
+              <Text style={styles.dateValue}>
+                {new Date(selectedDate).toLocaleDateString('en-US', {
+                  weekday: 'long',
+                  month: 'long',
+                  day: 'numeric',
+                })}
+              </Text>
             </View>
 
             <View style={styles.field}>
-              <Text style={styles.label}>Date *</Text>
+              <Text style={styles.label}>Medication *</Text>
               <TextInput
                 style={styles.input}
-                value={date}
-                onChangeText={setDate}
-                placeholder={`YYYY-MM-DD (e.g., ${getTodayString()})`}
+                value={search}
+                onChangeText={setSearch}
+                placeholder="Search medications..."
                 placeholderTextColor="#9ca3af"
               />
-              <Text style={styles.hint}>Format: YYYY-MM-DD</Text>
+              <View style={styles.optionList}>
+                {filteredOptions.map((pill) => (
+                  <TouchableOpacity
+                    key={pill.id}
+                    style={[
+                      styles.optionButton,
+                      pillId === pill.id && styles.optionButtonActive,
+                    ]}
+                    onPress={() => setPillId(pill.id)}
+                  >
+                    <Text
+                      style={[
+                        styles.optionText,
+                        pillId === pill.id && styles.optionTextActive,
+                      ]}
+                    >
+                      {pill.name}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+                {filteredOptions.length === 0 && (
+                  <Text style={styles.emptyText}>No mapped medications found.</Text>
+                )}
+              </View>
             </View>
 
             <View style={styles.field}>
@@ -114,12 +143,25 @@ export const ScheduleModal: React.FC<ScheduleModalProps> = ({
             </View>
 
             <View style={styles.field}>
-              <Text style={styles.label}>Notes (Optional)</Text>
+              <Text style={styles.label}>Provider Notes</Text>
               <TextInput
                 style={[styles.input, styles.textArea]}
-                value={notes}
-                onChangeText={setNotes}
-                placeholder="Take with food, etc."
+                value={providerNotes}
+                onChangeText={setProviderNotes}
+                placeholder="Clinical instructions"
+                placeholderTextColor="#9ca3af"
+                multiline
+                numberOfLines={3}
+              />
+            </View>
+
+            <View style={styles.field}>
+              <Text style={styles.label}>Personal Notes</Text>
+              <TextInput
+                style={[styles.input, styles.textArea]}
+                value={personalNotes}
+                onChangeText={setPersonalNotes}
+                placeholder="Reminders for yourself"
                 placeholderTextColor="#9ca3af"
                 multiline
                 numberOfLines={3}
@@ -156,7 +198,7 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   modalContainer: {
-    backgroundColor: 'white',
+    backgroundColor: colors.surface,
     borderRadius: 16,
     width: '100%',
     maxWidth: 500,
@@ -173,24 +215,24 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 20,
     borderBottomWidth: 1,
-    borderBottomColor: '#e5e7eb',
+    borderBottomColor: colors.border,
   },
   headerTitle: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#1f2937',
+    color: colors.textPrimary,
   },
   closeButton: {
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: '#f3f4f6',
+    backgroundColor: colors.surfaceAlt,
     justifyContent: 'center',
     alignItems: 'center',
   },
   closeButtonText: {
     fontSize: 20,
-    color: '#6b7280',
+    color: colors.textSecondary,
   },
   content: {
     padding: 20,
@@ -201,32 +243,66 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#374151',
+    color: colors.textSecondary,
     marginBottom: 8,
+  },
+  dateValue: {
+    fontSize: 16,
+    color: colors.textPrimary,
   },
   input: {
     borderWidth: 1,
-    borderColor: '#d1d5db',
+    borderColor: colors.border,
     borderRadius: 8,
     padding: 12,
     fontSize: 16,
-    color: '#1f2937',
-    backgroundColor: '#f9fafb',
+    color: colors.textPrimary,
+    backgroundColor: colors.surfaceAlt,
   },
   textArea: {
     height: 80,
     textAlignVertical: 'top',
   },
+  optionList: {
+    marginTop: 12,
+    gap: 8,
+  },
+  optionButton: {
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surfaceAlt,
+  },
+  optionButtonActive: {
+    borderColor: colors.accent,
+    backgroundColor: colors.surface,
+  },
+  optionText: {
+    color: colors.textSecondary,
+    fontSize: 15,
+  },
+  optionTextActive: {
+    color: colors.textPrimary,
+    fontWeight: '600',
+  },
+  emptyText: {
+    color: colors.textSecondary,
+    fontSize: 14,
+    textAlign: 'center',
+    paddingVertical: 12,
+  },
   hint: {
     fontSize: 12,
-    color: '#6b7280',
+    color: colors.textSecondary,
     marginTop: 4,
   },
   footer: {
     flexDirection: 'row',
     padding: 20,
     borderTopWidth: 1,
-    borderTopColor: '#e5e7eb',
+    borderTopColor: colors.border,
     gap: 12,
   },
   button: {
@@ -237,15 +313,15 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   cancelButton: {
-    backgroundColor: '#f3f4f6',
+    backgroundColor: colors.surfaceAlt,
   },
   cancelButtonText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#6b7280',
+    color: colors.textSecondary,
   },
   saveButton: {
-    backgroundColor: '#3b82f6',
+    backgroundColor: colors.accent,
   },
   saveButtonText: {
     fontSize: 16,
@@ -253,4 +329,6 @@ const styles = StyleSheet.create({
     color: 'white',
   },
 });
+
+
 

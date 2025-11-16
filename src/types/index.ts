@@ -63,6 +63,8 @@ export type EventDetails = {
   reason?: string;
   errorCode?: string;
   snoozeCount?: number;
+  providerNotes?: string;
+  additionalNotes?: string;
 };
 
 export type Conflict = {
@@ -108,4 +110,30 @@ export type Settings = {
   pinEnabled: boolean;
   pinCode?: string;
 };
+
+export type PillHardwareProfile = {
+  pillId: string;
+  serialNumber: string;
+  manufacturer?: string;
+  formFactor?: string;
+  diameterMm?: number | null;
+  lengthMm?: number | null;
+  widthMm?: number | null;
+  heightMm?: number | null;
+  weightMg?: number | null;
+  density?: number | null;
+  siloSlot?: number | null;
+  trapdoorOpenMs?: number;
+  trapdoorHoldMs?: number;
+};
+
+export type HardwareCommand = {
+  serialNumber: string;
+  siloSlot: number;
+  trapdoorOpenMs: number;
+  trapdoorHoldMs: number;
+  payload: Record<string, unknown>;
+};
+
+
 

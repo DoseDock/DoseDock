@@ -1,7 +1,14 @@
 module.exports = function (api) {
   api.cache(true);
   return {
-    presets: ['babel-preset-expo'],
+    presets: [
+      [
+        'babel-preset-expo',
+        {
+          unstable_transformImportMeta: true,
+        },
+      ],
+    ],
     plugins: [
       [
         'module-resolver',
@@ -19,6 +26,8 @@ module.exports = function (api) {
             '@notifications': './src/notifications',
             '@device': './src/device',
             '@i18n': './src/i18n',
+            '@theme': './src/theme',
+            '@services': './src/services',
           },
         },
       ],

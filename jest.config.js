@@ -16,6 +16,8 @@ module.exports = {
     '^@notifications/(.*)$': '<rootDir>/src/notifications/$1',
     '^@device/(.*)$': '<rootDir>/src/device/$1',
     '^@i18n/(.*)$': '<rootDir>/src/i18n/$1',
+    '^@theme/(.*)$': '<rootDir>/src/theme/$1',
+    '^@services/(.*)$': '<rootDir>/src/services/$1',
   },
   collectCoverageFrom: [
     'src/**/*.{ts,tsx}',
@@ -24,4 +26,6 @@ module.exports = {
     '!src/types/**',
   ],
 };
+
+
 

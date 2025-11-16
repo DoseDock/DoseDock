@@ -1,5 +1,5 @@
 // Database schema definitions
-export const SCHEMA_VERSION = 1;
+export const SCHEMA_VERSION = 2;
 
 export const CREATE_TABLES_SQL = `
 -- Pill table
@@ -55,7 +55,31 @@ CREATE INDEX IF NOT EXISTS idx_event_log_due_at ON event_log(due_at_iso);
 CREATE INDEX IF NOT EXISTS idx_event_log_status ON event_log(status);
 `;
 
+const CREATE_HARDWARE_TABLE_SQL = `
+CREATE TABLE IF NOT EXISTS pill_hardware_profile (
+  pill_id TEXT PRIMARY KEY,
+  serial_number TEXT NOT NULL,
+  manufacturer TEXT,
+  form_factor TEXT,
+  diameter_mm REAL,
+  length_mm REAL,
+  width_mm REAL,
+  height_mm REAL,
+  weight_mg REAL,
+  density_g_cm3 REAL,
+  silo_slot INTEGER,
+  trapdoor_open_ms INTEGER,
+  trapdoor_hold_ms INTEGER,
+  FOREIGN KEY (pill_id) REFERENCES pill(id) ON DELETE CASCADE
+);
+CREATE INDEX IF NOT EXISTS idx_hardware_serial ON pill_hardware_profile(serial_number);
+CREATE INDEX IF NOT EXISTS idx_hardware_silo ON pill_hardware_profile(silo_slot);
+`;
+
 export const MIGRATIONS: Record<number, string> = {
   1: CREATE_TABLES_SQL,
+  2: CREATE_HARDWARE_TABLE_SQL,
 };
+
+
 

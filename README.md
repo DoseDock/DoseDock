@@ -354,3 +354,5 @@ For issues or questions, please open a GitHub issue or contact support.
 
 **Note**: This app uses a mock device API. Replace `mockDevice.ts` with real BLE communication for production use.
 
+
+

@@ -1,6 +1,8 @@
 import { create } from 'zustand';
 import type { Pill } from '@types';
 import { pillRepository } from '@data/repositories/PillRepository';
+import { api } from '../api/client';
+import { SAMPLE_PILLS } from '@data/sampleData';
 
 interface PillStore {
   pills: Map<string, Pill>;
@@ -25,12 +27,30 @@ export const usePillStore = create<PillStore>((set, get) => ({
   loadPills: async () => {
     set({ isLoading: true, error: null });
     try {
+      try {
+        const pills = await api.get<Pill[]>('/pills');
+        const pillMap = new Map(pills.map((pill) => [pill.id, pill]));
+        set({ pills: pillMap, isLoading: false });
+        return;
+      } catch (networkError) {
+        console.warn('Pill store API unavailable, falling back to SQLite/sample data.', networkError);
+      }
+
       const pills = await pillRepository.getAll();
-      const pillMap = new Map(pills.map((pill) => [pill.id, pill]));
+      const source = pills.length > 0 ? pills : SAMPLE_PILLS;
+      const pillMap = new Map(source.map((pill) => [pill.id, pill]));
+      if (pills.length === 0) {
+        console.warn('Pill store: no records found, falling back to sample data.');
+      }
       set({ pills: pillMap, isLoading: false });
     } catch (error) {
       console.error('Failed to load pills:', error);
-      set({ error: 'Failed to load pills', isLoading: false });
+      const pillMap = new Map(SAMPLE_PILLS.map((pill) => [pill.id, pill]));
+      set({
+        pills: pillMap,
+        isLoading: false,
+        error: 'Unable to reach database, using sample data.',
+      });
     }
   },
 
@@ -41,7 +61,12 @@ export const usePillStore = create<PillStore>((set, get) => ({
   addPill: async (pillData) => {
     set({ isLoading: true, error: null });
     try {
-      const pill = await pillRepository.create(pillData);
+      let pill;
+      try {
+        pill = await api.post<Pill>('/pills', pillData);
+      } catch {
+        pill = await pillRepository.create(pillData);
+      }
       set((state) => {
         const newPills = new Map(state.pills);
         newPills.set(pill.id, pill);
@@ -58,7 +83,11 @@ export const usePillStore = create<PillStore>((set, get) => ({
   updatePill: async (id, updates) => {
     set({ isLoading: true, error: null });
     try {
-      await pillRepository.update(id, updates);
+      try {
+        await api.put(`/pills/${id}`, updates);
+      } catch {
+        await pillRepository.update(id, updates);
+      }
       set((state) => {
         const newPills = new Map(state.pills);
         const existing = newPills.get(id);
@@ -77,7 +106,11 @@ export const usePillStore = create<PillStore>((set, get) => ({
   deletePill: async (id) => {
     set({ isLoading: true, error: null });
     try {
-      await pillRepository.delete(id);
+      try {
+        await api.delete(`/pills/${id}`);
+      } catch {
+        await pillRepository.delete(id);
+      }
       set((state) => {
         const newPills = new Map(state.pills);
         newPills.delete(id);
@@ -92,7 +125,11 @@ export const usePillStore = create<PillStore>((set, get) => ({
 
   decrementStock: async (id, amount) => {
     try {
-      await pillRepository.decrementStock(id, amount);
+      try {
+        await api.put(`/pills/${id}`, { stockCount: Math.max(0, (get().pills.get(id)?.stockCount || 0) - amount) });
+      } catch {
+        await pillRepository.decrementStock(id, amount);
+      }
       set((state) => {
         const newPills = new Map(state.pills);
         const existing = newPills.get(id);
@@ -114,4 +151,6 @@ export const usePillStore = create<PillStore>((set, get) => ({
     await get().loadPills();
   },
 }));
+
+
 

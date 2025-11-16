@@ -46,3 +46,5 @@ export type ScheduleFormData = z.infer<typeof scheduleSchema>;
 export type PillFormData = z.infer<typeof pillSchema>;
 export type SettingsFormData = z.infer<typeof settingsSchema>;
 
+
+
