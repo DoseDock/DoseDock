@@ -4,14 +4,14 @@ A comprehensive React Native mobile app for an automatic pill dispenser, built w
 
 ## Features
 
-- 📅 **Schedule Management**: Create recurring medication schedules with flexible recurrence patterns
-- 💊 **Pill Library**: Manage up to 10 pills with stock tracking and low-stock alerts
-- 🔔 **Smart Notifications**: Local push notifications with snooze functionality
-- 🔒 **Lockout Windows**: Prevent accidental double-dosing with configurable lockout periods
-- 📊 **Adherence Tracking**: View medication history and adherence statistics
-- 🎨 **Modern UI**: Beautiful interface built with NativeWind (Tailwind for React Native)
-- ♿ **Accessible**: Full VoiceOver/TalkBack support with proper labels
-- 🔐 **Security**: Optional PIN protection for schedule editing
+- **Schedule Management**: Create recurring medication schedules with flexible recurrence patterns
+- **Pill Library**: Manage up to 10 pills with stock tracking and low-stock alerts
+- **Smart Notifications**: Local push notifications with snooze functionality
+- **Lockout Windows**: Prevent accidental double-dosing with configurable lockout periods
+- **Adherence Tracking**: View medication history and adherence statistics
+- **Modern UI**: Beautiful interface built with NativeWind (Tailwind for React Native)
+- **Accessible**: Full VoiceOver/TalkBack support with proper labels
+- **Security**: Optional PIN protection for schedule editing
 
 ## Tech Stack
 
@@ -31,7 +31,7 @@ A comprehensive React Native mobile app for an automatic pill dispenser, built w
 
 The repository now includes a lightweight Go service that exposes the local data model through a GraphQL API. It is built with `gqlgen`, uses `sqlc` for type-safe data access, and persists data to `./db/backend.db`.
 
-✨ **Want to try everything in Playground quickly?** See `docs/graphql-sandbox.md` for ready-to-paste queries and mutations that cover every resolver.
+**Want to try everything in Playground quickly?** See `docs/graphql-sandbox.md` for ready-to-paste queries and mutations that cover every resolver.
 
 ### Tooling
 
