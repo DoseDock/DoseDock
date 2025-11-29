@@ -154,21 +154,24 @@ pillbox-dispenser/
 │   │   ├── FormField.tsx
 │   │   └── TimeChip.tsx
 │   ├── screens/           # Main app screens
-│   │   ├── TodayScreen.tsx
-│   │   ├── ScheduleScreen.tsx
-│   │   ├── ScheduleWizardScreen.tsx
-│   │   ├── PillLibraryScreen.tsx
-│   │   ├── HistoryScreen.tsx
-│   │   ├── SettingsScreen.tsx
+│   │   ├── SignupScreen.tsx      # Login/Signup authentication
+│   │   ├── TodayScreen.tsx       # Daily overview and adherence
+│   │   ├── ScheduleScreen.tsx    # Week planner for schedules
+│   │   ├── ScheduleWizardScreen.tsx  # Modal for creating schedules
+│   │   ├── HistoryScreen.tsx     # Historical dispense events
+│   │   ├── HardwareMappingScreen.tsx  # Hardware device configuration
+│   │   ├── SettingsScreen.tsx     # App settings and logout
 │   │   └── DispenseAlertScreen.tsx
 │   ├── navigation/        # Navigation configuration
 │   │   └── AppNavigator.tsx
 │   ├── store/             # Zustand state stores
-│   │   ├── pillStore.ts
-│   │   ├── scheduleStore.ts
-│   │   ├── todayStore.ts
-│   │   └── settingsStore.ts
-│   ├── data/              # Database layer
+│   │   ├── sessionStore.ts    # User and patient session
+│   │   ├── pillStore.ts       # Medications (syncs with GraphQL)
+│   │   ├── scheduleStore.ts   # Schedules
+│   │   ├── todayStore.ts      # Today's events
+│   │   ├── hardwareStore.ts   # Hardware profiles
+│   │   └── settingsStore.ts  # App settings
+│   ├── data/              # Database layer (local SQLite)
 │   │   ├── database.ts
 │   │   ├── schema.ts
 │   │   ├── migrate.ts
@@ -176,7 +179,12 @@ pillbox-dispenser/
 │   │   └── repositories/
 │   │       ├── PillRepository.ts
 │   │       ├── ScheduleRepository.ts
-│   │       └── EventLogRepository.ts
+│   │       ├── EventLogRepository.ts
+│   │       └── PillHardwareRepository.ts
+│   ├── api/               # GraphQL API client
+│   │   ├── graphqlClient.ts
+│   │   ├── auth.ts         # Authentication mutations/queries
+│   │   └── medications.ts  # Medication mutations/queries
 │   ├── engine/            # Business logic
 │   │   └── scheduler.ts   # Pure scheduling functions
 │   ├── notifications/     # Notification service
@@ -191,52 +199,252 @@ pillbox-dispenser/
 │   └── i18n/              # Internationalization
 │       └── en.ts
 ├── App.tsx                # Root component
+├── server.go              # Go GraphQL server
+├── graph/                 # GraphQL schema and resolvers
+│   ├── schema.graphqls    # GraphQL schema definition
+│   ├── schema.resolvers.go
+│   └── model/
+├── db/                    # Backend database
+│   ├── backend.db         # SQLite database file
+│   ├── migrations/        # Goose migration files
+│   └── queries/          # SQLC query definitions
+├── internal/db/          # Generated SQLC code
 ├── package.json
+├── go.mod                 # Go dependencies
 ├── tsconfig.json
 ├── tailwind.config.js
 ├── babel.config.js
+├── Makefile              # Backend build commands
 └── README.md
 ```
 
 ## Data Model
 
-### Tables
+### Backend Database Schema (SQLite)
 
-**pill**
-- `id` (TEXT) - Primary key
-- `name` (TEXT) - Pill name
-- `color` (TEXT) - Hex color code
-- `shape` (TEXT) - Pill shape (round, oval, oblong, capsule)
-- `cartridge_index` (INTEGER) - Physical cartridge position (0-9)
-- `max_daily_dose` (INTEGER) - Maximum pills per day
-- `stock_count` (INTEGER) - Current stock level
-- `low_stock_threshold` (INTEGER) - Alert threshold
-- `created_at` (INTEGER) - Creation timestamp
+The backend uses SQLite with the following tables:
 
-**schedule**
-- `id` (TEXT) - Primary key
-- `title` (TEXT) - Optional schedule name
-- `lockout_minutes` (INTEGER) - Minimum time between doses
-- `snooze_interval_minutes` (INTEGER) - Snooze duration
-- `snooze_max` (INTEGER) - Maximum snooze count
-- `start_date_iso` (TEXT) - Schedule start date
-- `end_date_iso` (TEXT) - Optional end date
-- `rrule` (TEXT) - RFC5545 recurrence rule
-- `times_json` (TEXT) - JSON array of "HH:mm" times
+#### **users**
+Stores caregiver/user accounts for authentication and multi-user support.
 
-**schedule_item**
-- `id` (TEXT) - Primary key
-- `schedule_id` (TEXT) - Foreign key to schedule
-- `pill_id` (TEXT) - Foreign key to pill
-- `qty` (INTEGER) - Quantity per dose
+| Column | Type | Constraints | Description |
+|--------|------|-------------|-------------|
+| `id` | TEXT | PRIMARY KEY | Unique user identifier |
+| `email` | TEXT | NOT NULL UNIQUE | User email address |
+| `full_name` | TEXT | NOT NULL | User's full name |
+| `phone` | TEXT | NULL | Optional phone number |
+| `timezone` | TEXT | NOT NULL DEFAULT 'UTC' | User's timezone |
+| `password_hash` | TEXT | NULL | Hashed password (added in migration 0004) |
+| `created_at` | TEXT | NOT NULL DEFAULT (datetime('now')) | Creation timestamp |
+| `updated_at` | TEXT | NOT NULL DEFAULT (datetime('now')) | Last update timestamp |
 
-**event_log**
-- `id` (TEXT) - Primary key
-- `due_at_iso` (TEXT) - Scheduled time
-- `group_label` (TEXT) - Human-readable dose description
-- `status` (TEXT) - PENDING, TAKEN, SKIPPED, SNOOZED, FAILED, MISSED
-- `acted_at_iso` (TEXT) - Actual action time
-- `details_json` (TEXT) - Additional metadata
+#### **patients**
+Stores patient information. One user can have multiple patients.
+
+| Column | Type | Constraints | Description |
+|--------|------|-------------|-------------|
+| `id` | TEXT | PRIMARY KEY | Unique patient identifier |
+| `user_id` | TEXT | NULL, FK → users.id | Associated caregiver (ON DELETE SET NULL) |
+| `first_name` | TEXT | NOT NULL | Patient's first name |
+| `last_name` | TEXT | NOT NULL | Patient's last name |
+| `date_of_birth` | TEXT | NULL | Date of birth (ISO format) |
+| `gender` | TEXT | NULL | Gender |
+| `timezone` | TEXT | NOT NULL DEFAULT 'UTC' | Patient's timezone |
+| `preferred_language` | TEXT | NULL | Preferred language |
+| `caregiver_name` | TEXT | NULL | Caregiver name |
+| `caregiver_email` | TEXT | NULL | Caregiver email |
+| `caregiver_phone` | TEXT | NULL | Caregiver phone |
+| `notes` | TEXT | NULL | Additional notes |
+| `metadata` | TEXT | NOT NULL DEFAULT '{}' | JSON metadata |
+| `created_at` | TEXT | NOT NULL DEFAULT (datetime('now')) | Creation timestamp |
+| `updated_at` | TEXT | NOT NULL DEFAULT (datetime('now')) | Last update timestamp |
+
+**Indexes:** `idx_patients_user_id` on `user_id`
+
+#### **medications**
+Stores medication information for each patient.
+
+| Column | Type | Constraints | Description |
+|--------|------|-------------|-------------|
+| `id` | TEXT | PRIMARY KEY | Unique medication identifier |
+| `patient_id` | TEXT | NOT NULL, FK → patients.id | Associated patient (ON DELETE CASCADE) |
+| `name` | TEXT | NOT NULL | Medication name |
+| `nickname` | TEXT | NULL | Optional nickname |
+| `color` | TEXT | NULL | Hex color code for UI |
+| `shape` | TEXT | NULL | Pill shape (round, oval, oblong, capsule) |
+| `dosage_form` | TEXT | NULL | Form (tablet, capsule, etc.) |
+| `strength` | TEXT | NULL | Strength description |
+| `dosage_mg` | INTEGER | NULL | Dosage in milligrams |
+| `instructions` | TEXT | NULL | Usage instructions |
+| `stock_count` | INTEGER | NOT NULL DEFAULT 0 | Current stock level |
+| `low_stock_threshold` | INTEGER | NOT NULL DEFAULT 0 | Alert threshold |
+| `cartridge_index` | INTEGER | NULL | Physical cartridge position (0-9) |
+| `manufacturer` | TEXT | NULL | Manufacturer name |
+| `external_id` | TEXT | NULL | External system ID (e.g., NDC) |
+| `max_daily_dose` | INTEGER | NOT NULL DEFAULT 1 | Maximum pills per day (added in migration 0003) |
+| `metadata` | TEXT | NOT NULL DEFAULT '{}' | JSON metadata (includes hardwareProfile) |
+| `created_at` | TEXT | NOT NULL DEFAULT (datetime('now')) | Creation timestamp |
+| `updated_at` | TEXT | NOT NULL DEFAULT (datetime('now')) | Last update timestamp |
+
+**Indexes:** `idx_medications_patient` on `patient_id`
+
+#### **schedules**
+Stores medication schedules with recurrence rules.
+
+| Column | Type | Constraints | Description |
+|--------|------|-------------|-------------|
+| `id` | TEXT | PRIMARY KEY | Unique schedule identifier |
+| `patient_id` | TEXT | NOT NULL, FK → patients.id | Associated patient (ON DELETE CASCADE) |
+| `title` | TEXT | NOT NULL | Schedule title/name |
+| `timezone` | TEXT | NOT NULL DEFAULT 'UTC' | Schedule timezone |
+| `rrule` | TEXT | NOT NULL | RFC5545 recurrence rule |
+| `start_date_iso` | TEXT | NOT NULL | Schedule start date (ISO format) |
+| `end_date_iso` | TEXT | NULL | Optional end date (ISO format) |
+| `lockout_minutes` | INTEGER | NOT NULL DEFAULT 60 | Minimum time between doses |
+| `snooze_interval_minutes` | INTEGER | NOT NULL DEFAULT 10 | Snooze duration |
+| `snooze_max` | INTEGER | NOT NULL DEFAULT 3 | Maximum snooze count |
+| `status` | TEXT | NOT NULL DEFAULT 'ACTIVE' | ACTIVE, PAUSED, or ARCHIVED |
+| `notes` | TEXT | NULL | Additional notes |
+| `metadata` | TEXT | NOT NULL DEFAULT '{}' | JSON metadata |
+| `created_at` | TEXT | NOT NULL DEFAULT (datetime('now')) | Creation timestamp |
+| `updated_at` | TEXT | NOT NULL DEFAULT (datetime('now')) | Last update timestamp |
+
+**Indexes:** `idx_schedules_patient` on `patient_id`
+
+#### **schedule_items**
+Junction table linking medications to schedules with quantities.
+
+| Column | Type | Constraints | Description |
+|--------|------|-------------|-------------|
+| `id` | TEXT | PRIMARY KEY | Unique schedule item identifier |
+| `schedule_id` | TEXT | NOT NULL, FK → schedules.id | Associated schedule (ON DELETE CASCADE) |
+| `medication_id` | TEXT | NOT NULL, FK → medications.id | Associated medication (ON DELETE CASCADE) |
+| `qty` | INTEGER | NOT NULL DEFAULT 1 | Quantity per dose |
+| `instructions` | TEXT | NULL | Item-specific instructions |
+
+**Indexes:** 
+- `idx_schedule_items_schedule` on `schedule_id`
+- `idx_schedule_items_medication` on `medication_id`
+
+#### **dispense_events**
+Tracks all medication dispense events and adherence.
+
+| Column | Type | Constraints | Description |
+|--------|------|-------------|-------------|
+| `id` | TEXT | PRIMARY KEY | Unique event identifier |
+| `patient_id` | TEXT | NOT NULL, FK → patients.id | Associated patient (ON DELETE CASCADE) |
+| `schedule_id` | TEXT | NOT NULL, FK → schedules.id | Associated schedule (ON DELETE CASCADE) |
+| `schedule_item_id` | TEXT | NULL, FK → schedule_items.id | Specific schedule item (ON DELETE SET NULL) |
+| `due_at_iso` | TEXT | NOT NULL | Scheduled time (ISO format) |
+| `acted_at_iso` | TEXT | NULL | Actual action time (ISO format) |
+| `status` | TEXT | NOT NULL | PENDING, TAKEN, SKIPPED, SNOOZED, FAILED, MISSED |
+| `action_source` | TEXT | NULL | Source of action (e.g., "app", "device") |
+| `notes` | TEXT | NULL | Additional notes |
+| `metadata` | TEXT | NOT NULL DEFAULT '{}' | JSON metadata |
+| `created_at` | TEXT | NOT NULL DEFAULT (datetime('now')) | Creation timestamp |
+
+**Indexes:**
+- `idx_dispense_events_patient` on `patient_id`
+- `idx_dispense_events_schedule` on `schedule_id`
+
+#### **patient_tags** (Optional)
+Stores tags/labels for organizing patients.
+
+| Column | Type | Constraints | Description |
+|--------|------|-------------|-------------|
+| `id` | TEXT | PRIMARY KEY | Unique tag identifier |
+| `patient_id` | TEXT | NOT NULL, FK → patients.id | Associated patient (ON DELETE CASCADE) |
+| `label` | TEXT | NOT NULL | Tag label |
+| `color` | TEXT | NOT NULL DEFAULT '#6366f1' | Tag color (hex) |
+| `created_at` | TEXT | NOT NULL DEFAULT (datetime('now')) | Creation timestamp |
+
+### GraphQL Schema
+
+The GraphQL API exposes the following types and operations:
+
+#### Types
+
+- **User**: `id`, `email`, `fullName`, `phone`, `timezone`, `createdAt`, `updatedAt`, `patients[]`
+- **Patient**: `id`, `userId`, `firstName`, `lastName`, `dateOfBirth`, `gender`, `timezone`, `preferredLanguage`, `caregiverName`, `caregiverEmail`, `caregiverPhone`, `notes`, `metadata`, `createdAt`, `updatedAt`, `medications[]`, `schedules[]`, `upcomingDispenseEvents[]`
+- **Medication**: `id`, `patientId`, `name`, `nickname`, `color`, `shape`, `dosageForm`, `strength`, `dosageMg`, `instructions`, `stockCount`, `lowStockThreshold`, `cartridgeIndex`, `manufacturer`, `externalId`, `maxDailyDose`, `metadata`, `createdAt`, `updatedAt`
+- **Schedule**: `id`, `patientId`, `title`, `timezone`, `rrule`, `startDateISO`, `endDateISO`, `lockoutMinutes`, `snoozeIntervalMinutes`, `snoozeMax`, `status` (ACTIVE/PAUSED/ARCHIVED), `notes`, `metadata`, `items[]`, `createdAt`, `updatedAt`
+- **ScheduleItem**: `id`, `scheduleId`, `medication`, `qty`, `instructions`
+- **DispenseEvent**: `id`, `patientId`, `scheduleId`, `scheduleItemId`, `dueAtISO`, `actedAtISO`, `status` (PENDING/TAKEN/SKIPPED/SNOOZED/FAILED/MISSED), `actionSource`, `notes`, `metadata`, `createdAt`
+
+#### Enums
+
+- **ScheduleStatus**: `ACTIVE`, `PAUSED`, `ARCHIVED`
+- **DispenseStatus**: `PENDING`, `TAKEN`, `SKIPPED`, `SNOOZED`, `FAILED`, `MISSED`
+
+#### Queries
+
+- `ping`: Health check
+- `users`: List all users
+- `user(id: ID!)`: Get user by ID
+- `userByEmail(email: String!)`: Get user by email
+- `patient(id: ID!)`: Get patient by ID
+- `patients(userId: ID)`: List patients (optionally filtered by userId)
+- `medications(patientId: ID!)`: List medications for a patient
+- `medication(id: ID!)`: Get medication by ID
+- `schedules(patientId: ID!)`: List schedules for a patient
+- `schedule(id: ID!)`: Get schedule by ID
+- `dispenseEvents(patientId: ID!, range: DateRangeInput)`: List dispense events for a patient within a date range
+
+#### Mutations
+
+- `upsertUser(input: UserInput!)`: Create or update a user
+- `login(input: LoginInput!)`: Authenticate user with email/password
+- `createPatient(input: PatientInput!)`: Create a new patient
+- `updatePatient(id: ID!, input: PatientInput!)`: Update an existing patient
+- `upsertMedication(input: MedicationInput!)`: Create or update a medication
+- `deleteMedication(id: ID!)`: Delete a medication
+- `createSchedule(input: ScheduleInput!)`: Create a new schedule
+- `updateSchedule(id: ID!, input: ScheduleInput!)`: Update an existing schedule
+- `archiveSchedule(id: ID!)`: Archive a schedule (sets status to ARCHIVED)
+- `recordDispenseAction(input: DispenseActionInput!)`: Record a dispense event
+
+### Frontend TypeScript Types
+
+The frontend uses the following main types (defined in `src/types/index.ts`):
+
+- **Pill**: Medication representation with `id`, `patientId`, `name`, `color`, `shape`, `cartridgeIndex`, `maxDailyDose`, `stockCount`, `lowStockThreshold`, `metadata`, etc.
+- **Schedule**: Schedule with `id`, `title`, `times[]`, `rrule`, `startDateISO`, `endDateISO`, `lockoutMinutes`, `snooze`, `items[]`
+- **ScheduleItem**: Links schedule to pills with `id`, `scheduleId`, `pillId`, `qty`
+- **EventLog**: Local event log with `id`, `dueAtISO`, `groupLabel`, `status`, `actedAtISO`, `detailsJSON`
+- **EventStatus**: Enum (PENDING, TAKEN, SKIPPED, SNOOZED, FAILED, MISSED)
+- **PillHardwareProfile**: Hardware mapping with `pillId`, `serialNumber`, `manufacturer`, `formFactor`, dimensions, `siloSlot`, `trapdoorOpenMs`, `trapdoorHoldMs`
+
+### Local SQLite Schema (Frontend)
+
+The frontend also maintains a local SQLite database for offline event logging:
+
+- **pill**: Local pill cache (legacy, now synced with GraphQL)
+- **schedule**: Local schedule cache (legacy, now synced with GraphQL)
+- **schedule_item**: Local schedule item cache
+- **event_log**: Local event log for offline tracking
+- **pill_hardware_profile**: Hardware profile mappings
+
+Note: When `EXPO_PUBLIC_GRAPHQL_URL` is set, the app primarily uses the GraphQL backend, with local SQLite used for offline event logging and caching.
+
+### Database Relationships
+
+```
+users (1) ──< (many) patients
+patients (1) ──< (many) medications
+patients (1) ──< (many) schedules
+patients (1) ──< (many) dispense_events
+schedules (1) ──< (many) schedule_items
+medications (1) ──< (many) schedule_items
+schedules (1) ──< (many) dispense_events
+schedule_items (1) ──< (many) dispense_events (optional)
+```
+
+**Key Relationships:**
+- One **User** can have multiple **Patients** (caregiver managing multiple patients)
+- One **Patient** can have multiple **Medications**
+- One **Patient** can have multiple **Schedules**
+- One **Schedule** contains multiple **ScheduleItems** (each linking to a Medication with a quantity)
+- **DispenseEvents** track all medication dispense actions, linked to Patient, Schedule, and optionally a specific ScheduleItem
 
 ## Setup
 
@@ -253,21 +461,37 @@ pillbox-dispenser/
    npm install
    ```
 
-2. **Run database migrations:**
+2. **Set up backend database (optional but recommended):**
+   ```bash
+   # Install Go tools (one-time setup)
+   go install github.com/pressly/goose/v3/cmd/goose@latest
+   go install github.com/sqlc-dev/sqlc/cmd/sqlc@latest
+   go install github.com/99designs/gqlgen@latest
+   
+   # Run migrations to create backend database
+   make migrate-up
+   
+   # Start GraphQL server
+   make serve
+   ```
+
+3. **Run frontend database migrations (local SQLite):**
    ```bash
    npm run migrate
    ```
 
-3. **Seed sample data:**
+4. **Seed sample data (local SQLite only):**
    ```bash
    npm run seed
    ```
 
-   This creates:
+   This creates (in local SQLite):
    - 10 pills: Metformin, Atorvastatin, Lisinopril, Levothyroxine, Amlodipine, Omeprazole, Hydrochlorothiazide, Losartan, Ibuprofen, Vitamin D
    - 2 schedules:
      - Daily 08:00: 2× Metformin + 1× Atorvastatin
      - Weekdays 22:00: 1× Atorvastatin
+
+   **Note:** When using GraphQL backend, create data through the API or SignupScreen instead.
 
 ### Running the App
 
@@ -406,12 +630,33 @@ occurrences.slice(0, 5).forEach((dt) => {
 
 ## Environment Configuration
 
-No environment variables are required for basic operation. The app uses local SQLite and mock device communication.
+### Frontend (Expo)
 
-For production:
+| Variable | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `EXPO_PUBLIC_GRAPHQL_URL` | No | - | GraphQL API endpoint (e.g., `http://localhost:8081/query`) |
+| `EXPO_PUBLIC_GRAPHQL_PATIENT_ID` | No | - | Patient ID to use when bypassing login (for kiosk/demo mode) |
+
+**Usage:**
+- If both variables are set: App uses GraphQL backend, bypasses login
+- If only `EXPO_PUBLIC_GRAPHQL_URL` is set: App shows login screen, uses GraphQL after authentication
+- If neither is set: App uses local SQLite only (offline mode)
+
+### Backend (Go Server)
+
+| Variable | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `PORT` | No | `8081` | HTTP port for GraphQL service |
+| `DB_PATH` | No | `./db/backend.db` | Path to SQLite database file |
+
+### Production Setup
+
+For production deployment:
 - Configure push notification credentials in `app.json`
 - Set up BLE device pairing
 - Configure caregiver notification endpoints
+- Use environment-specific GraphQL URLs
+- Set up proper authentication and authorization
 
 ## Accessibility
 
