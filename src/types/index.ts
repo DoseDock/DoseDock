@@ -22,6 +22,7 @@ export type Schedule = {
 
 export type Pill = {
   id: string;
+  patientId?: string;
   name: string;
   color: string;
   shape: string;
@@ -30,6 +31,13 @@ export type Pill = {
   stockCount: number;
   lowStockThreshold: number;
   createdAt: number;
+  updatedAt?: number;
+  nickname?: string;
+  dosageMg?: number | null;
+  instructions?: string | null;
+  manufacturer?: string | null;
+  externalId?: string | null;
+  metadata?: Record<string, unknown>;
 };
 
 export type ScheduleItem = {

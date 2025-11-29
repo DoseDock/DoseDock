@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   Alert,
   ActivityIndicator,
+  Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useWindowDimensions } from 'react-native';
@@ -17,9 +18,20 @@ import { hardwareDispatcher } from '@device/hardwareDispatcher';
 import { colors, shadows } from '@theme/colors';
 import { fetchDimensionsByNdc, DailyMedDimensions } from '@services/dailymed';
 import { seed } from '@data/seed';
+import { isGraphQLAvailable } from '@/config/env';
+
+const DEFAULT_NEW_MEDICATION = {
+  name: '',
+  color: '#6b7280',
+  shape: 'round',
+  cartridgeIndex: '0',
+  stockCount: '30',
+  lowStockThreshold: '5',
+  maxDailyDose: '1',
+};
 
 export const HardwareMappingScreen: React.FC = () => {
-  const { pills, loadPills } = usePillStore();
+  const { pills, loadPills, addPill } = usePillStore();
   const { profiles, loadProfiles, saveProfile } = useHardwareStore();
   const [selectedPillId, setSelectedPillId] = useState<string | null>(null);
   const [form, setForm] = useState({
@@ -42,6 +54,10 @@ export const HardwareMappingScreen: React.FC = () => {
   const selectedPill = selectedPillId ? pills.get(selectedPillId) : null;
   const selectedProfile = selectedPillId ? profiles[selectedPillId] : null;
   const [isSeeding, setIsSeeding] = useState(false);
+  const [isAddModalVisible, setIsAddModalVisible] = useState(false);
+  const [isSavingMedication, setIsSavingMedication] = useState(false);
+  const [newMedicationForm, setNewMedicationForm] = useState({ ...DEFAULT_NEW_MEDICATION });
+  const isGraphQLEnabled = isGraphQLAvailable;
 
   useEffect(() => {
     const bootstrap = async () => {
@@ -56,18 +72,6 @@ export const HardwareMappingScreen: React.FC = () => {
       if (first?.id) {
         setSelectedPillId(first.id);
       }
-  const handleSeed = async () => {
-    try {
-      setIsSeeding(true);
-      await seed();
-      await Promise.all([loadPills(), loadProfiles()]);
-      Alert.alert('Seeded', 'Sample medications and mappings have been installed.');
-    } catch (error: any) {
-      Alert.alert('Seed failed', error?.message || 'Unable to seed database');
-    } finally {
-      setIsSeeding(false);
-    }
-  };
     }
   }, [pills, selectedPillId]);
 
@@ -113,6 +117,23 @@ export const HardwareMappingScreen: React.FC = () => {
 
   const handleInputChange = (key: keyof typeof form, value: string) => {
     setForm((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const handleSeed = async () => {
+    if (isGraphQLEnabled) {
+      Alert.alert('Seed unavailable', 'Seeding sample data is only available in local/offline mode.');
+      return;
+    }
+    try {
+      setIsSeeding(true);
+      await seed();
+      await Promise.all([loadPills(), loadProfiles()]);
+      Alert.alert('Seeded', 'Sample medications and mappings have been installed.');
+    } catch (error: any) {
+      Alert.alert('Seed failed', error?.message || 'Unable to seed database');
+    } finally {
+      setIsSeeding(false);
+    }
   };
 
   const handleSave = async () => {
@@ -174,38 +195,71 @@ export const HardwareMappingScreen: React.FC = () => {
     }
   };
 
-  const handleSeed = async () => {
-    try {
-      setIsSeeding(true);
-      await seed();
-      await Promise.all([loadPills(), loadProfiles()]);
-      Alert.alert('Seeded', 'Sample medications and mappings have been installed.');
-    } catch (error: any) {
-      Alert.alert('Seed failed', error?.message || 'Unable to seed database');
-    } finally {
-      setIsSeeding(false);
+  const handleCreateMedication = async () => {
+    if (!newMedicationForm.name.trim()) {
+      Alert.alert('Missing name', 'Medication name is required.');
+      return;
     }
+    try {
+      setIsSavingMedication(true);
+      const payload = {
+        name: newMedicationForm.name.trim(),
+        color: newMedicationForm.color.trim() || '#6b7280',
+        shape: newMedicationForm.shape.trim() || 'round',
+        cartridgeIndex: Number(newMedicationForm.cartridgeIndex) || 0,
+        stockCount: Number(newMedicationForm.stockCount) || 0,
+        lowStockThreshold: Number(newMedicationForm.lowStockThreshold) || 0,
+        maxDailyDose: Number(newMedicationForm.maxDailyDose) || 1,
+        metadata: {},
+      };
+      const created = await addPill(payload);
+      setNewMedicationForm({ ...DEFAULT_NEW_MEDICATION });
+      setIsAddModalVisible(false);
+      await Promise.all([loadPills(), loadProfiles()]);
+      setSelectedPillId(created.id);
+      Alert.alert('Medication added', `${created.name} has been added to the library.`);
+    } catch (error: any) {
+      Alert.alert('Create medication failed', error?.message || 'Unable to add medication');
+    } finally {
+      setIsSavingMedication(false);
+    }
+  };
+
+  const handleNewMedicationChange = (key: keyof typeof newMedicationForm, value: string) => {
+    setNewMedicationForm((prev) => ({ ...prev, [key]: value }));
   };
 
   const layout = (
     <View style={[styles.content, isCompact && styles.contentStack]}>
         <View style={[styles.sidebar, isCompact && styles.sidebarCompact]}>
           <Text style={styles.sidebarTitle}>Pill Library</Text>
+          <TouchableOpacity style={styles.newMedButton} onPress={() => setIsAddModalVisible(true)}>
+            <Text style={styles.newMedButtonText}>Add Medication</Text>
+          </TouchableOpacity>
+          {isGraphQLEnabled && (
+            <Text style={styles.graphqlBanner}>Connected to backend GraphQL.</Text>
+          )}
           <ScrollView>
             {Array.from(pills.values()).length === 0 ? (
               <View style={styles.emptyLibrary}>
                 <Text style={styles.emptyLibraryText}>
-                  No pills found. Seed the database or add medications first.
+                  {isGraphQLEnabled
+                    ? 'No medications yet. Use “Add Medication” to create one in the backend.'
+                    : 'No pills found. Seed the database or add medications first.'}
                 </Text>
-                <TouchableOpacity
-                  style={styles.seedButton}
-                  onPress={handleSeed}
-                  disabled={isSeeding}
-                >
-                  <Text style={styles.seedButtonText}>
-                    {isSeeding ? 'Seeding…' : 'Seed Sample Data'}
-                  </Text>
-                </TouchableOpacity>
+                {isGraphQLEnabled ? (
+                  <Text style={styles.graphqlBannerSmall}>Changes are saved directly to GraphQL.</Text>
+                ) : (
+                  <TouchableOpacity
+                    style={styles.seedButton}
+                    onPress={handleSeed}
+                    disabled={isSeeding}
+                  >
+                    <Text style={styles.seedButtonText}>
+                      {isSeeding ? 'Seeding…' : 'Seed Sample Data'}
+                    </Text>
+                  </TouchableOpacity>
+                )}
               </View>
             ) : (
               Array.from(pills.values()).map((pill) => {
@@ -435,6 +489,109 @@ export const HardwareMappingScreen: React.FC = () => {
       ) : (
         layout
       )}
+      <Modal
+        visible={isAddModalVisible}
+        animationType="fade"
+        transparent
+        onRequestClose={() => setIsAddModalVisible(false)}
+      >
+        <View style={styles.modalBackdrop}>
+          <View style={styles.modalCard}>
+            <Text style={styles.modalTitle}>Add Medication</Text>
+            <ScrollView>
+              <View style={styles.field}>
+                <Text style={styles.label}>Name *</Text>
+                <TextInput
+                  style={styles.input}
+                  value={newMedicationForm.name}
+                  onChangeText={(value) => handleNewMedicationChange('name', value)}
+                  placeholder="Metformin"
+                />
+              </View>
+              <View style={styles.fieldRow}>
+                <View style={styles.fieldHalf}>
+                  <Text style={styles.label}>Color</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={newMedicationForm.color}
+                    onChangeText={(value) => handleNewMedicationChange('color', value)}
+                    placeholder="#6b7280"
+                  />
+                </View>
+                <View style={styles.fieldHalf}>
+                  <Text style={styles.label}>Shape</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={newMedicationForm.shape}
+                    onChangeText={(value) => handleNewMedicationChange('shape', value)}
+                    placeholder="round / capsule"
+                  />
+                </View>
+              </View>
+              <View style={styles.fieldRow}>
+                <View style={styles.fieldHalf}>
+                  <Text style={styles.label}>Cartridge Index</Text>
+                  <TextInput
+                    style={styles.input}
+                    keyboardType="numeric"
+                    value={newMedicationForm.cartridgeIndex}
+                    onChangeText={(value) => handleNewMedicationChange('cartridgeIndex', value)}
+                  />
+                </View>
+                <View style={styles.fieldHalf}>
+                  <Text style={styles.label}>Max Daily Dose</Text>
+                  <TextInput
+                    style={styles.input}
+                    keyboardType="numeric"
+                    value={newMedicationForm.maxDailyDose}
+                    onChangeText={(value) => handleNewMedicationChange('maxDailyDose', value)}
+                  />
+                </View>
+              </View>
+              <View style={styles.fieldRow}>
+                <View style={styles.fieldHalf}>
+                  <Text style={styles.label}>Stock Count</Text>
+                  <TextInput
+                    style={styles.input}
+                    keyboardType="numeric"
+                    value={newMedicationForm.stockCount}
+                    onChangeText={(value) => handleNewMedicationChange('stockCount', value)}
+                  />
+                </View>
+                <View style={styles.fieldHalf}>
+                  <Text style={styles.label}>Low Stock Threshold</Text>
+                  <TextInput
+                    style={styles.input}
+                    keyboardType="numeric"
+                    value={newMedicationForm.lowStockThreshold}
+                    onChangeText={(value) => handleNewMedicationChange('lowStockThreshold', value)}
+                  />
+                </View>
+              </View>
+            </ScrollView>
+            <View style={styles.modalActions}>
+              <TouchableOpacity
+                style={styles.secondaryButton}
+                onPress={() => {
+                  setIsAddModalVisible(false);
+                  setNewMedicationForm({ ...DEFAULT_NEW_MEDICATION });
+                }}
+              >
+                <Text style={styles.secondaryButtonText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.primaryButton, isSavingMedication && styles.disabledButton]}
+                onPress={handleCreateMedication}
+                disabled={isSavingMedication}
+              >
+                <Text style={styles.primaryButtonText}>
+                  {isSavingMedication ? 'Saving…' : 'Create'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -490,6 +647,28 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginBottom: 12,
     color: colors.textPrimary,
+  },
+  newMedButton: {
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+    backgroundColor: colors.accent,
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  newMedButtonText: {
+    color: '#fff',
+    fontWeight: '600',
+  },
+  graphqlBanner: {
+    color: colors.textSecondary,
+    fontSize: 12,
+    marginBottom: 12,
+  },
+  graphqlBannerSmall: {
+    color: colors.textSecondary,
+    fontSize: 12,
+    textAlign: 'center',
   },
   pillButton: {
     padding: 12,
@@ -638,6 +817,34 @@ const styles = StyleSheet.create({
   seedButtonText: {
     color: '#fff',
     fontWeight: '600',
+  },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  modalCard: {
+    width: '100%',
+    maxWidth: 420,
+    backgroundColor: colors.surface,
+    borderRadius: 20,
+    padding: 20,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: colors.textPrimary,
+    marginBottom: 12,
+  },
+  modalActions: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 16,
+  },
+  disabledButton: {
+    opacity: 0.7,
   },
   metaCard: {
     backgroundColor: colors.surfaceAlt,

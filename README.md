@@ -25,6 +25,119 @@ A comprehensive React Native mobile app for an automatic pill dispenser, built w
 - **Styling**: NativeWind (Tailwind CSS for React Native)
 - **Testing**: Jest + React Native Testing Library
 - **Linting**: ESLint + Prettier
+- **Backend (new)**: Go 1.25 + gqlgen + sqlc + SQLite (goose migrations)
+
+## Backend GraphQL API
+
+The repository now includes a lightweight Go service that exposes the local data model through a GraphQL API. It is built with `gqlgen`, uses `sqlc` for type-safe data access, and persists data to `./db/backend.db`.
+
+✨ **Want to try everything in Playground quickly?** See `docs/graphql-sandbox.md` for ready-to-paste queries and mutations that cover every resolver.
+
+### Tooling
+
+All backend commands are defined in the root `Makefile`:
+
+```bash
+make migrate-up        # Apply goose migrations to db/backend.db
+make migrate-down      # Rollback the last migration
+make migrate-create    # Create a new SQL migration (pass name=add_table)
+make sql               # Regenerate sqlc query layer
+make graphql           # Regenerate gqlgen types/resolvers
+make serve             # Run the GraphQL server (go run server.go)
+make test              # go test ./graph/... -v
+make test-coverage     # go test ./graph/... -cover
+```
+
+Before running the server, install the CLI tools once:
+
+```bash
+go install github.com/pressly/goose/v3/cmd/goose@latest
+go install github.com/sqlc-dev/sqlc/cmd/sqlc@latest
+go install github.com/99designs/gqlgen@latest
+```
+
+### Running the API
+
+```bash
+make migrate-up   # create ./db/backend.db with baseline data model
+make serve        # starts GraphQL on http://localhost:8081/query
+```
+
+Environment variables:
+
+| Variable | Default | Description |
+| --- | --- | --- |
+| `PORT` | `8081` | HTTP port for the GraphQL service |
+| `DB_PATH` | `./db/backend.db` | Path to the SQLite database file |
+
+### Connecting the Expo App to GraphQL
+
+1. Start the backend: `make migrate-up && make serve`.
+2. Point Expo at the GraphQL endpoint by exporting:
+   ```bash
+   export EXPO_PUBLIC_GRAPHQL_URL="http://localhost:8081/query"
+   export EXPO_PUBLIC_GRAPHQL_PATIENT_ID="patient_demo_001"
+   ```
+   (replace the patient ID with any record returned by `patients` query).
+3. Launch the web app via `npm run web` or `expo start --web`.
+
+When both environment variables are set the Pill Library, Hardware Mapping modal, and profile sync all use GraphQL mutations (`upsertMedication`, `deleteMedication`) rather than the local JSON/SQLite fallbacks. Hardware metadata is persisted in `Medication.metadata.hardwareProfile`, so the web UI and backend stay in sync.
+
+### Built-in Login (optional)
+
+If you omit `EXPO_PUBLIC_GRAPHQL_PATIENT_ID`, the Expo app now opens with a lightweight login screen:
+
+1. Enter the caregiver email. If it already exists in the backend, we fetch it through `userByEmail`. Otherwise we call `upsertUser` to create it.
+2. Pick one of the user’s patients (queried via `patients(userId: ...)`) or create a new patient inline. The selected patient ID is stored in local session state and reused on reload.
+
+Once logged in, all pill/hardware mutations target the selected `userId`/`patientId` automatically. You can still bypass the login for kiosk or demo setups by exporting the patient ID env var.
+
+### Sample GraphQL Operations
+
+Query a patient with nested medications/schedules:
+
+```graphql
+query PatientOverview($id: ID!) {
+  patient(id: $id) {
+    firstName
+    lastName
+    timezone
+    medications {
+      name
+      stockCount
+    }
+    schedules {
+      title
+      rrule
+      items {
+        qty
+        medication {
+          name
+        }
+      }
+    }
+  }
+}
+```
+
+Create a schedule that dispenses two medications:
+
+```graphql
+mutation CreateSchedule($input: ScheduleInput!) {
+  createSchedule(input: $input) {
+    id
+    status
+    items {
+      qty
+      medication {
+        name
+      }
+    }
+  }
+}
+```
+
+`ScheduleInput` matches the on-device schema, so you can reuse the same payloads when syncing.
 
 ## Project Structure
 

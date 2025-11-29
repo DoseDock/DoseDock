@@ -1,5 +1,39 @@
 {
-  "pills": [],
+  "pills": [
+    {
+      "id": "pill-1764366035041",
+      "name": "Atorvastatin",
+      "color": "#6b7281",
+      "shape": "oval",
+      "cartridgeIndex": 1,
+      "maxDailyDose": 2,
+      "stockCount": 25,
+      "lowStockThreshold": 4,
+      "createdAt": 1764366035041
+    },
+    {
+      "id": "pill-1764366045604",
+      "name": "metformin",
+      "color": "#6b7280",
+      "shape": "round",
+      "cartridgeIndex": 0,
+      "maxDailyDose": 1,
+      "stockCount": 30,
+      "lowStockThreshold": 5,
+      "createdAt": 1764366045604
+    },
+    {
+      "id": "pill-1764366066561",
+      "name": "advil",
+      "color": "#6b7280",
+      "shape": "round",
+      "cartridgeIndex": 0,
+      "maxDailyDose": 1,
+      "stockCount": 30,
+      "lowStockThreshold": 5,
+      "createdAt": 1764366066561
+    }
+  ],
   "hardwareProfiles": [
     {
       "pillId": "sample-metformin",

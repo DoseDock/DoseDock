@@ -1,0 +1,230 @@
+scalar DateTime
+scalar JSONObject
+
+enum ScheduleStatus {
+  ACTIVE
+  PAUSED
+  ARCHIVED
+}
+
+enum DispenseStatus {
+  PENDING
+  TAKEN
+  SKIPPED
+  SNOOZED
+  FAILED
+  MISSED
+}
+
+type User {
+  id: ID!
+  email: String!
+  fullName: String!
+  phone: String
+  timezone: String!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  patients: [Patient!]!
+}
+
+type Patient {
+  id: ID!
+  userId: ID
+  firstName: String!
+  lastName: String!
+  dateOfBirth: DateTime
+  gender: String
+  timezone: String!
+  preferredLanguage: String
+  caregiverName: String
+  caregiverEmail: String
+  caregiverPhone: String
+  notes: String
+  metadata: JSONObject!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  medications: [Medication!]!
+  schedules: [Schedule!]!
+  upcomingDispenseEvents: [DispenseEvent!]!
+}
+
+type Medication {
+  id: ID!
+  patientId: ID!
+  name: String!
+  nickname: String
+  color: String
+  shape: String
+  dosageForm: String
+  strength: String
+  dosageMg: Int
+  instructions: String
+  stockCount: Int!
+  lowStockThreshold: Int!
+  cartridgeIndex: Int
+  manufacturer: String
+  externalId: String
+  maxDailyDose: Int!
+  metadata: JSONObject!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type Schedule {
+  id: ID!
+  patientId: ID!
+  title: String!
+  timezone: String!
+  rrule: String!
+  startDateISO: DateTime!
+  endDateISO: DateTime
+  lockoutMinutes: Int!
+  snoozeIntervalMinutes: Int!
+  snoozeMax: Int!
+  status: ScheduleStatus!
+  notes: String
+  metadata: JSONObject!
+  items: [ScheduleItem!]!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type ScheduleItem {
+  id: ID!
+  scheduleId: ID!
+  medication: Medication!
+  qty: Int!
+  instructions: String
+}
+
+type DispenseEvent {
+  id: ID!
+  patientId: ID!
+  scheduleId: ID!
+  scheduleItemId: ID
+  dueAtISO: DateTime!
+  actedAtISO: DateTime
+  status: DispenseStatus!
+  actionSource: String
+  notes: String
+  metadata: JSONObject!
+  createdAt: DateTime!
+}
+
+input UserInput {
+  id: ID
+  email: String!
+  fullName: String!
+  phone: String
+  timezone: String!
+  password: String
+}
+
+input LoginInput {
+  email: String!
+  password: String!
+}
+
+input PatientInput {
+  userId: ID
+  firstName: String!
+  lastName: String!
+  dateOfBirth: DateTime
+  gender: String
+  timezone: String!
+  preferredLanguage: String
+  caregiverName: String
+  caregiverEmail: String
+  caregiverPhone: String
+  notes: String
+  metadata: JSONObject
+}
+
+input MedicationInput {
+  id: ID
+  patientId: ID!
+  name: String!
+  nickname: String
+  color: String
+  shape: String
+  dosageForm: String
+  strength: String
+  dosageMg: Int
+  instructions: String
+  stockCount: Int
+  lowStockThreshold: Int
+  cartridgeIndex: Int
+  manufacturer: String
+  externalId: String
+  maxDailyDose: Int
+  metadata: JSONObject
+}
+
+input ScheduleItemInput {
+  medicationId: ID!
+  qty: Int!
+  instructions: String
+}
+
+input ScheduleInput {
+  id: ID
+  patientId: ID!
+  title: String!
+  timezone: String!
+  rrule: String!
+  startDateISO: DateTime!
+  endDateISO: DateTime
+  lockoutMinutes: Int!
+  snoozeIntervalMinutes: Int!
+  snoozeMax: Int!
+  status: ScheduleStatus = ACTIVE
+  notes: String
+  metadata: JSONObject
+  items: [ScheduleItemInput!]!
+}
+
+input DispenseActionInput {
+  eventId: ID
+  patientId: ID!
+  scheduleId: ID!
+  scheduleItemId: ID
+  dueAtISO: DateTime!
+  actedAtISO: DateTime
+  status: DispenseStatus!
+  actionSource: String
+  notes: String
+  metadata: JSONObject
+}
+
+input DateRangeInput {
+  start: DateTime!
+  end: DateTime!
+}
+
+type Query {
+  ping: String!
+  users: [User!]!
+  user(id: ID!): User
+  userByEmail(email: String!): User
+  patient(id: ID!): Patient
+  patients(userId: ID): [Patient!]!
+  medications(patientId: ID!): [Medication!]!
+  medication(id: ID!): Medication
+  schedules(patientId: ID!): [Schedule!]!
+  schedule(id: ID!): Schedule
+  dispenseEvents(patientId: ID!, range: DateRangeInput): [DispenseEvent!]!
+}
+
+type Mutation {
+  upsertUser(input: UserInput!): User!
+  login(input: LoginInput!): User!
+  createPatient(input: PatientInput!): Patient!
+  updatePatient(id: ID!, input: PatientInput!): Patient!
+  upsertMedication(input: MedicationInput!): Medication!
+  deleteMedication(id: ID!): Boolean!
+  createSchedule(input: ScheduleInput!): Schedule!
+  updateSchedule(id: ID!, input: ScheduleInput!): Schedule!
+  archiveSchedule(id: ID!): Schedule!
+  recordDispenseAction(input: DispenseActionInput!): DispenseEvent!
+}
+
