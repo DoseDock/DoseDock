@@ -585,11 +585,14 @@ func (r *queryResolver) DispenseEvents(ctx context.Context, patientID string, ra
 	return events, nil
 }
 
+// These are interfaces that get generated when you define mutations and queries in schema.graphqls
 // Mutation returns MutationResolver implementation.
 func (r *Resolver) Mutation() MutationResolver { return &mutationResolver{r} }
 
 // Query returns QueryResolver implementation.
 func (r *Resolver) Query() QueryResolver { return &queryResolver{r} }
 
+// gqlen actually needs concrete structs that implement those interfaces
+// these are structs that embed the main resolver so that they get access to our databases and services.
 type mutationResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }
