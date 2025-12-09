@@ -33,6 +33,8 @@ The repository now includes a lightweight Go service that exposes the local data
 
 **Want to try everything in Playground quickly?** See `docs/graphql-sandbox.md` for ready-to-paste queries and mutations that cover every resolver.
 
+**Connecting to Raspberry Pi hardware?** See `docs/hardware-integration.md` for a complete guide on how the software connects to the hardware dispensing system.
+
 ### Tooling
 
 All backend commands are defined in the root `Makefile`:
