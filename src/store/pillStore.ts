@@ -3,7 +3,6 @@ import { Platform } from 'react-native';
 import type { Pill } from '@types';
 import { pillRepository } from '@data/repositories/PillRepository';
 import { api } from '../api/client';
-import { SAMPLE_PILLS } from '@data/sampleData';
 import { graphQLConfig, isGraphQLAvailable } from '@/config/env';
 import { deleteMedication, fetchMedications, mapMedicationToPill, upsertMedication } from '@/api/medications';
 import { useSessionStore } from './sessionStore';
@@ -75,22 +74,17 @@ export const usePillStore = create<PillStore>((set, get) => ({
       }
 
       const pills = await pillRepository.getAll();
-      const source = pills.length > 0 ? pills : SAMPLE_PILLS;
-      const pillMap = new Map(source.map((pill) => [pill.id, pill]));
-      if (pills.length === 0) {
-        console.warn('Pill store: no records found, falling back to sample data.');
-      }
+      const pillMap = new Map(pills.map((pill) => [pill.id, pill]));
       set({ pills: pillMap, isLoading: false });
     } catch (error) {
       console.error('Failed to load pills:', error);
-      const pillMap = new Map(SAMPLE_PILLS.map((pill) => [pill.id, pill]));
       set({
-        pills: pillMap,
+        pills: new Map(),
         isLoading: false,
         error:
           error instanceof Error && error.message === WEB_FALLBACK_ERROR
             ? WEB_FALLBACK_ERROR
-            : 'Unable to reach database, using sample data.',
+            : 'Unable to load medications.',
       });
     }
   },

@@ -32,6 +32,17 @@
       "stockCount": 30,
       "lowStockThreshold": 5,
       "createdAt": 1764366066561
+    },
+    {
+      "id": "pill-1766717890214",
+      "name": "advil",
+      "color": "#6b7281",
+      "shape": "rectangular",
+      "cartridgeIndex": 2,
+      "maxDailyDose": 3,
+      "stockCount": 30,
+      "lowStockThreshold": 5,
+      "createdAt": 1766717890214
     }
   ],
   "hardwareProfiles": [

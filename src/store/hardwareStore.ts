@@ -3,7 +3,6 @@ import { Platform } from 'react-native';
 import type { PillHardwareProfile } from '@types';
 import { pillHardwareRepository } from '@data/repositories/PillHardwareRepository';
 import { api } from '../api/client';
-import { SAMPLE_HARDWARE_PROFILES } from '@data/sampleData';
 import { graphQLConfig, isGraphQLAvailable } from '@/config/env';
 import { extractHardwareProfile, mapMedicationToPill, upsertMedication } from '@/api/medications';
 import { usePillStore } from './pillStore';
@@ -83,31 +82,20 @@ export const useHardwareStore = create<HardwareStore>((set, get) => ({
       }
 
       const profiles = await pillHardwareRepository.getAll();
-      const source = profiles.length > 0 ? profiles : SAMPLE_HARDWARE_PROFILES;
-      if (profiles.length === 0) {
-        console.warn('Hardware store: no mappings found, using sample data.');
-      }
-      const profileMap = source.reduce<Record<string, PillHardwareProfile>>((acc, profile) => {
+      const profileMap = profiles.reduce<Record<string, PillHardwareProfile>>((acc, profile) => {
         acc[profile.pillId] = profile;
         return acc;
       }, {});
       set({ profiles: profileMap, isLoading: false });
     } catch (error) {
       console.error('Failed to load hardware profiles', error);
-      const profileMap = SAMPLE_HARDWARE_PROFILES.reduce<Record<string, PillHardwareProfile>>(
-        (acc, profile) => {
-          acc[profile.pillId] = profile;
-          return acc;
-        },
-        {}
-      );
       set({
-        profiles: profileMap,
+        profiles: {},
         isLoading: false,
         error:
           error instanceof Error && error.message === WEB_FALLBACK_ERROR
             ? WEB_FALLBACK_ERROR
-            : 'Unable to load hardware mappings, using sample data.',
+            : 'Unable to load hardware mappings.',
       });
     }
   },
