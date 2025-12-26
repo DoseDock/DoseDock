@@ -1,8 +1,7 @@
 import type { Schedule, EventLog } from '@types';
-import { SAMPLE_SCHEDULES, SAMPLE_EVENTS } from './sampleData';
 
-const schedules: Schedule[] = [...SAMPLE_SCHEDULES];
-const events: EventLog[] = [...SAMPLE_EVENTS];
+const schedules: Schedule[] = [];
+const events: EventLog[] = [];
 
 export const memoryStore = {
   schedules,

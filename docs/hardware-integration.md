@@ -381,3 +381,8 @@ The connection is straightforward: **Raspberry Pi queries the GraphQL API, contr
 
 
 
+
+
+
+
+

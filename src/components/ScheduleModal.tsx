@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { View, Text, Modal, TextInput, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, Modal, TextInput, TouchableOpacity, StyleSheet, ScrollView, useWindowDimensions } from 'react-native';
 import { colors } from '@theme/colors';
 
 type PillOption = {
@@ -27,6 +27,9 @@ export const ScheduleModal: React.FC<ScheduleModalProps> = ({
   pillOptions,
   onSave,
 }) => {
+  const { width, height } = useWindowDimensions();
+  const isMobile = width < 500;
+  const isSmallMobile = width < 380;
   const [search, setSearch] = useState('');
   const [pillId, setPillId] = useState('');
   const [time, setTime] = useState('');
@@ -43,14 +46,57 @@ export const ScheduleModal: React.FC<ScheduleModalProps> = ({
     }
   }, [visible]);
 
+  // Update search field when pillId changes (to show selected medication name)
+  useEffect(() => {
+    if (pillId) {
+      const selectedPill = pillOptions.find((p) => p.id === pillId);
+      if (selectedPill) {
+        setSearch(selectedPill.name);
+      }
+    }
+  }, [pillId, pillOptions]);
+
   const filteredOptions = useMemo(() => {
-    const query = search.toLowerCase();
+    const query = search.toLowerCase().trim();
     return pillOptions.filter((pill) => pill.name.toLowerCase().includes(query));
   }, [pillOptions, search]);
 
+  // Auto-select medication when search exactly matches a medication name (case-insensitive)
+  useEffect(() => {
+    const trimmedSearch = search.trim();
+    if (trimmedSearch && !pillId) {
+      const exactMatch = pillOptions.find(
+        (pill) => pill.name.toLowerCase().trim() === trimmedSearch.toLowerCase()
+      );
+      if (exactMatch) {
+        setPillId(exactMatch.id);
+      }
+    } else if (!trimmedSearch && pillId) {
+      // Clear selection if search is cleared
+      setPillId('');
+    }
+  }, [search, pillOptions, pillId]);
+
   const handleSave = () => {
-    if (!pillId || !time) {
-      alert('Select a medication and specify a time');
+    if (!pillId) {
+      if (search.trim()) {
+        alert(
+          `"${search}" is not available for scheduling. Only medications with hardware mappings can be scheduled. Please select a medication from the list below or map this medication to a hardware slot first.`
+        );
+      } else {
+        alert('Please select a medication from the list. Only medications with hardware mappings can be scheduled.');
+      }
+      return;
+    }
+    if (!time) {
+      alert('Please specify a time in 24-hour format (HH:MM)');
+      return;
+    }
+
+    // Validate time format (HH:MM)
+    const timeRegex = /^([0-1][0-9]|2[0-3]):[0-5][0-9]$/;
+    if (!timeRegex.test(time)) {
+      alert('Please enter time in 24-hour format (HH:MM), e.g., 09:00 or 14:30');
       return;
     }
 
@@ -74,33 +120,42 @@ export const ScheduleModal: React.FC<ScheduleModalProps> = ({
       transparent={true}
       onRequestClose={onClose}
     >
-      <View style={styles.overlay}>
-        <View style={styles.modalContainer}>
-          <View style={styles.header}>
-            <Text style={styles.headerTitle}>Schedule Medication</Text>
-            <TouchableOpacity onPress={handleCancel} style={styles.closeButton}>
-              <Text style={styles.closeButtonText}>✕</Text>
+      <View style={[styles.overlay, isMobile && styles.overlayMobile]}>
+        <View style={[styles.modalContainer, isMobile && styles.modalContainerMobile, { maxHeight: height * 0.9 }]}>
+          <View style={[styles.header, isMobile && styles.headerMobile]}>
+            <Text style={[styles.headerTitle, isSmallMobile && styles.headerTitleSmall]}>Schedule Medication</Text>
+            <TouchableOpacity onPress={handleCancel} style={[styles.closeButton, isSmallMobile && styles.closeButtonSmall]}>
+              <Text style={[styles.closeButtonText, isSmallMobile && styles.closeButtonTextSmall]}>✕</Text>
             </TouchableOpacity>
           </View>
 
-          <ScrollView style={styles.content}>
+          <ScrollView style={[styles.content, isMobile && styles.contentMobile]}>
             <View style={styles.field}>
-              <Text style={styles.label}>Scheduled Date</Text>
-              <Text style={styles.dateValue}>
+              <Text style={[styles.label, isSmallMobile && styles.labelSmall]}>Scheduled Date</Text>
+              <Text style={[styles.dateValue, isSmallMobile && styles.dateValueSmall]}>
                 {new Date(selectedDate).toLocaleDateString('en-US', {
-                  weekday: 'long',
-                  month: 'long',
+                  weekday: isSmallMobile ? 'short' : 'long',
+                  month: isSmallMobile ? 'short' : 'long',
                   day: 'numeric',
                 })}
               </Text>
             </View>
 
             <View style={styles.field}>
-              <Text style={styles.label}>Medication *</Text>
+              <Text style={[styles.label, isSmallMobile && styles.labelSmall]}>Medication *</Text>
               <TextInput
-                style={styles.input}
+                style={[styles.input, isSmallMobile && styles.inputSmall]}
                 value={search}
-                onChangeText={setSearch}
+                onChangeText={(text) => {
+                  setSearch(text);
+                  // Clear selection if user is typing and the selected pill is no longer in filtered results
+                  if (pillId) {
+                    const selectedPill = pillOptions.find((p) => p.id === pillId);
+                    if (!selectedPill || !selectedPill.name.toLowerCase().includes(text.toLowerCase())) {
+                      setPillId('');
+                    }
+                  }
+                }}
                 placeholder="Search medications..."
                 placeholderTextColor="#9ca3af"
               />
@@ -112,7 +167,10 @@ export const ScheduleModal: React.FC<ScheduleModalProps> = ({
                       styles.optionButton,
                       pillId === pill.id && styles.optionButtonActive,
                     ]}
-                    onPress={() => setPillId(pill.id)}
+                    onPress={() => {
+                      setPillId(pill.id);
+                      setSearch(pill.name);
+                    }}
                   >
                     <Text
                       style={[
@@ -125,62 +183,68 @@ export const ScheduleModal: React.FC<ScheduleModalProps> = ({
                   </TouchableOpacity>
                 ))}
                 {filteredOptions.length === 0 && (
-                  <Text style={styles.emptyText}>No mapped medications found.</Text>
+                  <Text style={styles.emptyText}>
+                    {search.trim()
+                      ? `"${search}" not found. Only medications with hardware mappings can be scheduled.${pillOptions.length > 0 ? ` Available: ${pillOptions.map(p => p.name).join(', ')}` : ''}`
+                      : pillOptions.length === 0
+                      ? 'No medications with hardware mappings found. Please map medications to hardware slots first in the Hardware Mapping screen.'
+                      : 'No medications match your search.'}
+                  </Text>
                 )}
               </View>
             </View>
 
             <View style={styles.field}>
-              <Text style={styles.label}>Time *</Text>
+              <Text style={[styles.label, isSmallMobile && styles.labelSmall]}>Time *</Text>
               <TextInput
-                style={styles.input}
+                style={[styles.input, isSmallMobile && styles.inputSmall]}
                 value={time}
                 onChangeText={setTime}
                 placeholder="HH:MM (e.g., 09:00, 14:30)"
                 placeholderTextColor="#9ca3af"
               />
-              <Text style={styles.hint}>24-hour format: HH:MM</Text>
+              <Text style={[styles.hint, isSmallMobile && styles.hintSmall]}>24-hour format: HH:MM</Text>
             </View>
 
             <View style={styles.field}>
-              <Text style={styles.label}>Provider Notes</Text>
+              <Text style={[styles.label, isSmallMobile && styles.labelSmall]}>Provider Notes</Text>
               <TextInput
-                style={[styles.input, styles.textArea]}
+                style={[styles.input, styles.textArea, isSmallMobile && styles.textAreaSmall]}
                 value={providerNotes}
                 onChangeText={setProviderNotes}
                 placeholder="Clinical instructions"
                 placeholderTextColor="#9ca3af"
                 multiline
-                numberOfLines={3}
+                numberOfLines={isSmallMobile ? 2 : 3}
               />
             </View>
 
             <View style={styles.field}>
-              <Text style={styles.label}>Personal Notes</Text>
+              <Text style={[styles.label, isSmallMobile && styles.labelSmall]}>Personal Notes</Text>
               <TextInput
-                style={[styles.input, styles.textArea]}
+                style={[styles.input, styles.textArea, isSmallMobile && styles.textAreaSmall]}
                 value={personalNotes}
                 onChangeText={setPersonalNotes}
                 placeholder="Reminders for yourself"
                 placeholderTextColor="#9ca3af"
                 multiline
-                numberOfLines={3}
+                numberOfLines={isSmallMobile ? 2 : 3}
               />
             </View>
           </ScrollView>
 
-          <View style={styles.footer}>
+          <View style={[styles.footer, isMobile && styles.footerMobile]}>
             <TouchableOpacity
-              style={[styles.button, styles.cancelButton]}
+              style={[styles.button, styles.cancelButton, isSmallMobile && styles.buttonSmall]}
               onPress={handleCancel}
             >
-              <Text style={styles.cancelButtonText}>Cancel</Text>
+              <Text style={[styles.cancelButtonText, isSmallMobile && styles.buttonTextSmall]}>Cancel</Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={[styles.button, styles.saveButton]}
+              style={[styles.button, styles.saveButton, isSmallMobile && styles.buttonSmall]}
               onPress={handleSave}
             >
-              <Text style={styles.saveButtonText}>Save Schedule</Text>
+              <Text style={[styles.saveButtonText, isSmallMobile && styles.buttonTextSmall]}>Save</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -197,6 +261,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 20,
   },
+  overlayMobile: {
+    padding: 12,
+  },
   modalContainer: {
     backgroundColor: colors.surface,
     borderRadius: 16,
@@ -209,6 +276,10 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 8,
   },
+  modalContainerMobile: {
+    borderRadius: 12,
+    maxWidth: '100%',
+  },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -217,10 +288,16 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
   },
+  headerMobile: {
+    padding: 16,
+  },
   headerTitle: {
     fontSize: 24,
     fontWeight: 'bold',
     color: colors.textPrimary,
+  },
+  headerTitleSmall: {
+    fontSize: 20,
   },
   closeButton: {
     width: 32,
@@ -230,12 +307,23 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  closeButtonSmall: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+  },
   closeButtonText: {
     fontSize: 20,
     color: colors.textSecondary,
   },
+  closeButtonTextSmall: {
+    fontSize: 16,
+  },
   content: {
     padding: 20,
+  },
+  contentMobile: {
+    padding: 16,
   },
   field: {
     marginBottom: 20,
@@ -246,9 +334,16 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     marginBottom: 8,
   },
+  labelSmall: {
+    fontSize: 14,
+    marginBottom: 6,
+  },
   dateValue: {
     fontSize: 16,
     color: colors.textPrimary,
+  },
+  dateValueSmall: {
+    fontSize: 14,
   },
   input: {
     borderWidth: 1,
@@ -259,9 +354,17 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
     backgroundColor: colors.surfaceAlt,
   },
+  inputSmall: {
+    padding: 10,
+    fontSize: 14,
+    borderRadius: 6,
+  },
   textArea: {
     height: 80,
     textAlignVertical: 'top',
+  },
+  textAreaSmall: {
+    height: 60,
   },
   optionList: {
     marginTop: 12,
@@ -298,6 +401,10 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     marginTop: 4,
   },
+  hintSmall: {
+    fontSize: 11,
+    marginTop: 3,
+  },
   footer: {
     flexDirection: 'row',
     padding: 20,
@@ -305,12 +412,23 @@ const styles = StyleSheet.create({
     borderTopColor: colors.border,
     gap: 12,
   },
+  footerMobile: {
+    padding: 16,
+    gap: 10,
+  },
   button: {
     flex: 1,
     paddingVertical: 14,
     borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  buttonSmall: {
+    paddingVertical: 12,
+    borderRadius: 6,
+  },
+  buttonTextSmall: {
+    fontSize: 14,
   },
   cancelButton: {
     backgroundColor: colors.surfaceAlt,

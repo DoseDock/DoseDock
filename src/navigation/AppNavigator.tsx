@@ -2,7 +2,7 @@ import React from 'react';
 import { NavigationContainer, DarkTheme } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { Text, View } from 'react-native';
+import { Text, View, useWindowDimensions } from 'react-native';
 import type { SvgProps } from 'react-native-svg';
 
 import HomeIcon from '../../assets/icons/Home.svg';
@@ -34,36 +34,40 @@ const tabIconMap: Record<string, React.FC<SvgProps>> = {
   Settings: SettingsIcon,
 };
 
-const TabIcon: React.FC<{ label: string; focused: boolean }> = ({ label, focused }) => {
+const TabIcon: React.FC<{ label: string; focused: boolean; isSmall?: boolean }> = ({ label, focused, isSmall }) => {
   const IconComponent = tabIconMap[label];
+  const size = isSmall ? 22 : 26;
   return (
     <View style={{ alignItems: 'center', opacity: focused ? 1 : 0.5 }}>
       {IconComponent ? (
-        <IconComponent width={26} height={26} />
+        <IconComponent width={size} height={size} />
       ) : (
-        <Text style={{ fontSize: 24 }}>•</Text>
+        <Text style={{ fontSize: isSmall ? 20 : 24 }}>•</Text>
       )}
     </View>
   );
 };
 
 function TabNavigator() {
+  const { width } = useWindowDimensions();
+  const isSmallScreen = width < 380;
+
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
-        tabBarIcon: ({ focused }) => <TabIcon label={route.name} focused={focused} />,
+        tabBarIcon: ({ focused }) => <TabIcon label={route.name} focused={focused} isSmall={isSmallScreen} />,
         tabBarActiveTintColor: colors.accent,
         tabBarInactiveTintColor: colors.textSecondary,
         headerShown: false,
         tabBarStyle: {
-          paddingBottom: 6,
-          paddingTop: 6,
-          height: 68,
+          paddingBottom: isSmallScreen ? 4 : 6,
+          paddingTop: isSmallScreen ? 4 : 6,
+          height: isSmallScreen ? 58 : 68,
           backgroundColor: colors.surface,
           borderTopColor: colors.border,
         },
         tabBarLabelStyle: {
-          fontSize: 12,
+          fontSize: isSmallScreen ? 10 : 12,
           fontWeight: '500',
         },
       })}

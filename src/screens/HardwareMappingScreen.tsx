@@ -51,6 +51,8 @@ export const HardwareMappingScreen: React.FC = () => {
   const [autoFillData, setAutoFillData] = useState<DailyMedDimensions | null>(null);
   const { width: screenWidth } = useWindowDimensions();
   const isCompact = screenWidth < 900;
+  const isMobile = screenWidth < 600;
+  const isSmallMobile = screenWidth < 400;
   const selectedPill = selectedPillId ? pills.get(selectedPillId) : null;
   const selectedProfile = selectedPillId ? profiles[selectedPillId] : null;
   const [isSeeding, setIsSeeding] = useState(false);
@@ -231,8 +233,8 @@ export const HardwareMappingScreen: React.FC = () => {
 
   const layout = (
     <View style={[styles.content, isCompact && styles.contentStack]}>
-        <View style={[styles.sidebar, isCompact && styles.sidebarCompact]}>
-          <Text style={styles.sidebarTitle}>Pill Library</Text>
+        <View style={[styles.sidebar, isCompact && styles.sidebarCompact, isMobile && styles.sidebarMobile]}>
+          <Text style={[styles.sidebarTitle, isSmallMobile && styles.sidebarTitleSmall]}>Pill Library</Text>
           <TouchableOpacity style={styles.newMedButton} onPress={() => setIsAddModalVisible(true)}>
             <Text style={styles.newMedButtonText}>Add Medication</Text>
           </TouchableOpacity>
@@ -283,10 +285,10 @@ export const HardwareMappingScreen: React.FC = () => {
           </ScrollView>
         </View>
 
-        <View style={[styles.formArea, isCompact && styles.formAreaCompact]}>
+        <View style={[styles.formArea, isCompact && styles.formAreaCompact, isMobile && styles.formAreaMobile]}>
           {selectedPillId ? (
             <>
-              <Text style={styles.formTitle}>
+              <Text style={[styles.formTitle, isSmallMobile && styles.formTitleSmall]}>
                 Configure {pills.get(selectedPillId)?.name || 'Medication'}
               </Text>
               {selectedPill && (
@@ -306,7 +308,7 @@ export const HardwareMappingScreen: React.FC = () => {
 
               <ScrollView>
                 <View style={styles.field}>
-                  <Text style={styles.label}>Serial Number *</Text>
+                  <Text style={styles.label}>Drug Identification Number*</Text>
                   <TextInput
                     style={styles.input}
                     value={form.serialNumber}
@@ -315,20 +317,20 @@ export const HardwareMappingScreen: React.FC = () => {
                   />
                 </View>
 
-                <View style={styles.fieldRow}>
-                  <View style={styles.fieldHalf}>
+                <View style={[styles.fieldRow, isMobile && styles.fieldRowMobile]}>
+                  <View style={[styles.fieldHalf, isMobile && styles.fieldHalfMobile]}>
                     <Text style={styles.label}>Manufacturer</Text>
                     <TextInput
-                      style={styles.input}
+                      style={[styles.input, isSmallMobile && styles.inputSmall]}
                       value={form.manufacturer}
                       onChangeText={(value) => handleInputChange('manufacturer', value)}
                       placeholder="Pfizer"
                     />
                   </View>
-                  <View style={styles.fieldHalf}>
+                  <View style={[styles.fieldHalf, isMobile && styles.fieldHalfMobile]}>
                     <Text style={styles.label}>Form Factor</Text>
                     <TextInput
-                      style={styles.input}
+                      style={[styles.input, isSmallMobile && styles.inputSmall]}
                       value={form.formFactor}
                       onChangeText={(value) => handleInputChange('formFactor', value)}
                       placeholder="tablet / capsule"
@@ -347,40 +349,40 @@ export const HardwareMappingScreen: React.FC = () => {
                   />
                 </View>
 
-                <View style={styles.fieldRow}>
-                  <View style={styles.fieldHalf}>
+                <View style={[styles.fieldRow, isMobile && styles.fieldRowMobile]}>
+                  <View style={[styles.fieldHalf, isMobile && styles.fieldHalfMobile]}>
                     <Text style={styles.label}>Trapdoor Open (ms)</Text>
                     <TextInput
-                      style={styles.input}
+                      style={[styles.input, isSmallMobile && styles.inputSmall]}
                       value={form.trapdoorOpenMs}
                       onChangeText={(value) => handleInputChange('trapdoorOpenMs', value)}
                       keyboardType="numeric"
                     />
                   </View>
-                  <View style={styles.fieldHalf}>
+                  <View style={[styles.fieldHalf, isMobile && styles.fieldHalfMobile]}>
                     <Text style={styles.label}>Hold Duration (ms)</Text>
                     <TextInput
-                      style={styles.input}
+                      style={[styles.input, isSmallMobile && styles.inputSmall]}
                       value={form.trapdoorHoldMs}
                       onChangeText={(value) => handleInputChange('trapdoorHoldMs', value)}
                       keyboardType="numeric"
                     />
                   </View>
                 </View>
-                <View style={styles.fieldRow}>
-                  <View style={styles.fieldHalf}>
+                <View style={[styles.fieldRow, isMobile && styles.fieldRowMobile]}>
+                  <View style={[styles.fieldHalf, isMobile && styles.fieldHalfMobile]}>
                     <Text style={styles.label}>Diameter (mm)</Text>
                     <TextInput
-                      style={styles.input}
+                      style={[styles.input, isSmallMobile && styles.inputSmall]}
                       value={form.diameterMm}
                       onChangeText={(value) => handleInputChange('diameterMm', value)}
                       keyboardType="numeric"
                     />
                   </View>
-                  <View style={styles.fieldHalf}>
+                  <View style={[styles.fieldHalf, isMobile && styles.fieldHalfMobile]}>
                     <Text style={styles.label}>Length (mm)</Text>
                     <TextInput
-                      style={styles.input}
+                      style={[styles.input, isSmallMobile && styles.inputSmall]}
                       value={form.lengthMm}
                       onChangeText={(value) => handleInputChange('lengthMm', value)}
                       keyboardType="numeric"
@@ -388,20 +390,20 @@ export const HardwareMappingScreen: React.FC = () => {
                   </View>
                 </View>
 
-                <View style={styles.fieldRow}>
-                  <View style={styles.fieldHalf}>
+                <View style={[styles.fieldRow, isMobile && styles.fieldRowMobile]}>
+                  <View style={[styles.fieldHalf, isMobile && styles.fieldHalfMobile]}>
                     <Text style={styles.label}>Width (mm)</Text>
                     <TextInput
-                      style={styles.input}
+                      style={[styles.input, isSmallMobile && styles.inputSmall]}
                       value={form.widthMm}
                       onChangeText={(value) => handleInputChange('widthMm', value)}
                       keyboardType="numeric"
                     />
                   </View>
-                  <View style={styles.fieldHalf}>
+                  <View style={[styles.fieldHalf, isMobile && styles.fieldHalfMobile]}>
                     <Text style={styles.label}>Height (mm)</Text>
                     <TextInput
-                      style={styles.input}
+                      style={[styles.input, isSmallMobile && styles.inputSmall]}
                       value={form.heightMm}
                       onChangeText={(value) => handleInputChange('heightMm', value)}
                       keyboardType="numeric"
@@ -456,12 +458,12 @@ export const HardwareMappingScreen: React.FC = () => {
                 )}
               </ScrollView>
 
-              <View style={styles.formFooter}>
-                <TouchableOpacity style={styles.secondaryButton} onPress={handleSimulate}>
-                  <Text style={styles.secondaryButtonText}>Simulate</Text>
+              <View style={[styles.formFooter, isMobile && styles.formFooterMobile]}>
+                <TouchableOpacity style={[styles.secondaryButton, isSmallMobile && styles.buttonSmall]} onPress={handleSimulate}>
+                  <Text style={[styles.secondaryButtonText, isSmallMobile && styles.buttonTextSmall]}>Simulate</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.primaryButton} onPress={handleSave}>
-                  <Text style={styles.primaryButtonText}>Save Mapping</Text>
+                <TouchableOpacity style={[styles.primaryButton, isSmallMobile && styles.buttonSmall]} onPress={handleSave}>
+                  <Text style={[styles.primaryButtonText, isSmallMobile && styles.buttonTextSmall]}>Save Mapping</Text>
                 </TouchableOpacity>
               </View>
             </>
@@ -479,9 +481,9 @@ export const HardwareMappingScreen: React.FC = () => {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Hardware Mapping</Text>
-        <Text style={styles.subtitle}>Link medications to silo trapdoors</Text>
+      <View style={[styles.header, isMobile && styles.headerMobile]}>
+        <Text style={[styles.title, isSmallMobile && styles.titleSmall]}>Hardware Mapping</Text>
+        <Text style={[styles.subtitle, isSmallMobile && styles.subtitleSmall]}>Link medications to silo trapdoors</Text>
       </View>
 
       {isCompact ? (
@@ -608,15 +610,26 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
   },
+  headerMobile: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
   title: {
     fontSize: 26,
     fontWeight: 'bold',
     color: colors.textPrimary,
   },
+  titleSmall: {
+    fontSize: 22,
+  },
   subtitle: {
     fontSize: 15,
     color: colors.textSecondary,
     marginTop: 4,
+  },
+  subtitleSmall: {
+    fontSize: 13,
+    marginTop: 2,
   },
   content: {
     flex: 1,
@@ -639,6 +652,10 @@ const styles = StyleSheet.create({
     borderBottomColor: colors.border,
     marginBottom: 12,
   },
+  sidebarMobile: {
+    padding: 12,
+    marginBottom: 8,
+  },
   compactScroll: {
     paddingBottom: 32,
   },
@@ -647,6 +664,10 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginBottom: 12,
     color: colors.textPrimary,
+  },
+  sidebarTitleSmall: {
+    fontSize: 14,
+    marginBottom: 10,
   },
   newMedButton: {
     paddingVertical: 10,
@@ -712,11 +733,18 @@ const styles = StyleSheet.create({
   formAreaCompact: {
     width: '100%',
   },
+  formAreaMobile: {
+    padding: 16,
+  },
   formTitle: {
     fontSize: 20,
     fontWeight: '700',
     marginBottom: 16,
     color: colors.textPrimary,
+  },
+  formTitleSmall: {
+    fontSize: 18,
+    marginBottom: 12,
   },
   field: {
     marginBottom: 16,
@@ -727,8 +755,16 @@ const styles = StyleSheet.create({
     gap: 12,
     marginBottom: 12,
   },
+  fieldRowMobile: {
+    flexDirection: 'column',
+    gap: 0,
+  },
   fieldHalf: {
     flex: 1,
+  },
+  fieldHalfMobile: {
+    flex: undefined,
+    marginBottom: 12,
   },
   label: {
     fontSize: 14,
@@ -745,10 +781,24 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surfaceAlt,
     color: colors.textPrimary,
   },
+  inputSmall: {
+    padding: 10,
+    fontSize: 14,
+  },
   formFooter: {
     flexDirection: 'row',
     gap: 12,
     marginTop: 16,
+  },
+  formFooterMobile: {
+    gap: 8,
+    marginTop: 12,
+  },
+  buttonSmall: {
+    paddingVertical: 12,
+  },
+  buttonTextSmall: {
+    fontSize: 14,
   },
   secondaryButton: {
     flex: 1,

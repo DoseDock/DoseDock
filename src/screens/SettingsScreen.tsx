@@ -1,11 +1,14 @@
 import React, { useState } from 'react';
-import { View, ScrollView, Text, StyleSheet, TouchableOpacity, Modal, Alert } from 'react-native';
+import { View, ScrollView, Text, StyleSheet, TouchableOpacity, Modal, Alert, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { colors } from '@theme/colors';
 import { useSessionStore } from '@store/sessionStore';
 
 export const SettingsScreen: React.FC = () => {
+  const { width } = useWindowDimensions();
+  const isMobile = width < 600;
+  const isSmallMobile = width < 400;
   const navigation = useNavigation<any>();
   const [logoutModalVisible, setLogoutModalVisible] = useState(false);
   const user = useSessionStore((state) => state.user);
@@ -24,44 +27,44 @@ export const SettingsScreen: React.FC = () => {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Settings</Text>
+      <View style={[styles.header, isMobile && styles.headerMobile]}>
+        <Text style={[styles.title, isSmallMobile && styles.titleSmall]}>Settings</Text>
       </View>
-      <ScrollView style={styles.content}>
+      <ScrollView style={[styles.content, isMobile && styles.contentMobile]}>
         {user && (
-          <View style={styles.card}>
-            <Text style={styles.cardTitle}>Account</Text>
-            <Text style={styles.cardText}>Signed in as: {user.fullName}</Text>
-            <Text style={styles.cardText}>Email: {user.email}</Text>
+          <View style={[styles.card, isMobile && styles.cardMobile]}>
+            <Text style={[styles.cardTitle, isSmallMobile && styles.cardTitleSmall]}>Account</Text>
+            <Text style={[styles.cardText, isSmallMobile && styles.cardTextSmall]}>Signed in as: {user.fullName}</Text>
+            <Text style={[styles.cardText, isSmallMobile && styles.cardTextSmall]}>Email: {user.email}</Text>
             {patient && (
-              <Text style={styles.cardText}>
+              <Text style={[styles.cardText, isSmallMobile && styles.cardTextSmall]}>
                 Patient: {patient.firstName} {patient.lastName}
               </Text>
             )}
           </View>
         )}
 
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>App Settings</Text>
-          <Text style={styles.cardText}>
+        <View style={[styles.card, isMobile && styles.cardMobile]}>
+          <Text style={[styles.cardTitle, isSmallMobile && styles.cardTitleSmall]}>App Settings</Text>
+          <Text style={[styles.cardText, isSmallMobile && styles.cardTextSmall]}>
             Configure notifications, quiet hours, and security settings.
           </Text>
         </View>
 
         <TouchableOpacity
-          style={styles.card}
+          style={[styles.card, isMobile && styles.cardMobile]}
           onPress={() => navigation.navigate('HardwareMapping')}
           accessibilityLabel="Hardware integration"
         >
-          <Text style={styles.cardTitle}>Hardware Integration</Text>
-          <Text style={styles.cardText}>
+          <Text style={[styles.cardTitle, isSmallMobile && styles.cardTitleSmall]}>Hardware Integration</Text>
+          <Text style={[styles.cardText, isSmallMobile && styles.cardTextSmall]}>
             Map pill serial numbers to silo slots and configure trapdoor timings.
           </Text>
-          <Text style={styles.linkText}>Open Hardware Mapping →</Text>
+          <Text style={[styles.linkText, isSmallMobile && styles.linkTextSmall]}>Open Hardware Mapping →</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.logoutButton} onPress={showLogoutModal}>
-          <Text style={styles.logoutButtonText}>Log Out</Text>
+        <TouchableOpacity style={[styles.logoutButton, isMobile && styles.logoutButtonMobile]} onPress={showLogoutModal}>
+          <Text style={[styles.logoutButtonText, isSmallMobile && styles.logoutButtonTextSmall]}>Log Out</Text>
         </TouchableOpacity>
       </ScrollView>
 
@@ -111,15 +114,26 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
   },
+  headerMobile: {
+    paddingHorizontal: 14,
+    paddingVertical: 16,
+  },
   title: {
     fontSize: 28,
     fontWeight: 'bold',
     color: colors.textPrimary,
   },
+  titleSmall: {
+    fontSize: 24,
+  },
   content: {
     flex: 1,
     paddingHorizontal: 16,
     paddingTop: 16,
+  },
+  contentMobile: {
+    paddingHorizontal: 12,
+    paddingTop: 12,
   },
   card: {
     backgroundColor: colors.card,
@@ -127,22 +141,39 @@ const styles = StyleSheet.create({
     padding: 20,
     marginBottom: 16,
   },
+  cardMobile: {
+    padding: 16,
+    borderRadius: 10,
+    marginBottom: 12,
+  },
   cardTitle: {
     fontSize: 20,
     fontWeight: '600',
     color: colors.textPrimary,
     marginBottom: 8,
   },
+  cardTitleSmall: {
+    fontSize: 18,
+    marginBottom: 6,
+  },
   cardText: {
     fontSize: 16,
     color: colors.textSecondary,
     marginBottom: 4,
+  },
+  cardTextSmall: {
+    fontSize: 14,
+    marginBottom: 3,
   },
   linkText: {
     marginTop: 12,
     fontSize: 14,
     fontWeight: '600',
     color: colors.accent,
+  },
+  linkTextSmall: {
+    marginTop: 10,
+    fontSize: 13,
   },
   logoutButton: {
     backgroundColor: colors.danger,
@@ -153,10 +184,18 @@ const styles = StyleSheet.create({
     marginTop: 8,
     marginBottom: 32,
   },
+  logoutButtonMobile: {
+    paddingVertical: 14,
+    borderRadius: 10,
+    marginBottom: 24,
+  },
   logoutButtonText: {
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',
+  },
+  logoutButtonTextSmall: {
+    fontSize: 15,
   },
   modalBackdrop: {
     flex: 1,
