@@ -51,18 +51,6 @@ export const SettingsScreen: React.FC = () => {
           </Text>
         </View>
 
-        <TouchableOpacity
-          style={[styles.card, isMobile && styles.cardMobile]}
-          onPress={() => navigation.navigate('HardwareMapping')}
-          accessibilityLabel="Hardware integration"
-        >
-          <Text style={[styles.cardTitle, isSmallMobile && styles.cardTitleSmall]}>Hardware Integration</Text>
-          <Text style={[styles.cardText, isSmallMobile && styles.cardTextSmall]}>
-            Map pill serial numbers to silo slots and configure trapdoor timings.
-          </Text>
-          <Text style={[styles.linkText, isSmallMobile && styles.linkTextSmall]}>Open Hardware Mapping →</Text>
-        </TouchableOpacity>
-
         <TouchableOpacity style={[styles.logoutButton, isMobile && styles.logoutButtonMobile]} onPress={showLogoutModal}>
           <Text style={[styles.logoutButtonText, isSmallMobile && styles.logoutButtonTextSmall]}>Log Out</Text>
         </TouchableOpacity>
