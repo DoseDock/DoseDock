@@ -36,13 +36,13 @@ const tabIconMap: Record<string, React.FC<SvgProps>> = {
 
 const TabIcon: React.FC<{ label: string; focused: boolean; isSmall?: boolean }> = ({ label, focused, isSmall }) => {
   const IconComponent = tabIconMap[label];
-  const size = isSmall ? 22 : 26;
+  const size = isSmall ? 18 : 20;
   return (
     <View style={{ alignItems: 'center', opacity: focused ? 1 : 0.5 }}>
       {IconComponent ? (
         <IconComponent width={size} height={size} />
       ) : (
-        <Text style={{ fontSize: isSmall ? 20 : 24 }}>•</Text>
+        <Text style={{ fontSize: isSmall ? 16 : 18 }}>•</Text>
       )}
     </View>
   );
@@ -50,7 +50,7 @@ const TabIcon: React.FC<{ label: string; focused: boolean; isSmall?: boolean }> 
 
 function TabNavigator() {
   const { width } = useWindowDimensions();
-  const isSmallScreen = width < 380;
+  const isSmallScreen = width < 480;
 
   return (
     <Tab.Navigator
@@ -60,23 +60,29 @@ function TabNavigator() {
         tabBarInactiveTintColor: colors.textSecondary,
         headerShown: false,
         tabBarStyle: {
-          paddingBottom: isSmallScreen ? 4 : 6,
-          paddingTop: isSmallScreen ? 4 : 6,
-          height: isSmallScreen ? 58 : 68,
+          paddingBottom: isSmallScreen ? 2 : 4,
+          paddingTop: isSmallScreen ? 2 : 4,
+          paddingHorizontal: 16,
+          height: isSmallScreen ? 48 : 52,
           backgroundColor: colors.surface,
           borderTopColor: colors.border,
         },
+        tabBarItemStyle: {
+          paddingHorizontal: 0,
+          marginHorizontal: -2,
+        },
         tabBarLabelStyle: {
-          fontSize: isSmallScreen ? 10 : 12,
+          fontSize: isSmallScreen ? 8 : 9,
           fontWeight: '500',
+          marginTop: -3,
         },
       })}
     >
-      <Tab.Screen name="Today" component={TodayScreen} />
-      <Tab.Screen name="Schedule" component={ScheduleScreen} />
-      <Tab.Screen name="History" component={HistoryScreen} />
-      <Tab.Screen name="Hardware" component={HardwareMappingScreen} />
-      <Tab.Screen name="Settings" component={SettingsScreen} />
+      <Tab.Screen name="Today" component={TodayScreen} options={{ tabBarLabel: 'Today' }} />
+      <Tab.Screen name="Schedule" component={ScheduleScreen} options={{ tabBarLabel: 'Schedule' }} />
+      <Tab.Screen name="History" component={HistoryScreen} options={{ tabBarLabel: 'History' }} />
+      <Tab.Screen name="Hardware" component={HardwareMappingScreen} options={{ tabBarLabel: 'Device' }} />
+      <Tab.Screen name="Settings" component={SettingsScreen} options={{ tabBarLabel: 'Settings' }} />
     </Tab.Navigator>
   );
 }

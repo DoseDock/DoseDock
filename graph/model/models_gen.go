@@ -42,6 +42,19 @@ type DispenseEvent struct {
 	CreatedAt      time.Time      `json:"createdAt"`
 }
 
+type DueMedication struct {
+	Medication      *Medication    `json:"medication"`
+	Qty             int            `json:"qty"`
+	SiloSlot        *int           `json:"siloSlot,omitempty"`
+	HardwareProfile map[string]any `json:"hardwareProfile,omitempty"`
+}
+
+type DueSchedule struct {
+	Schedule    *Schedule        `json:"schedule"`
+	DueAtIso    time.Time        `json:"dueAtISO"`
+	Medications []*DueMedication `json:"medications"`
+}
+
 type LoginInput struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`
