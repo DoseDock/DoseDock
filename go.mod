@@ -9,6 +9,7 @@ require (
 	github.com/pressly/goose/v3 v3.26.0
 	github.com/rs/cors v1.11.1
 	github.com/sqlc-dev/sqlc v1.30.0
+	github.com/teambition/rrule-go v1.8.2
 	github.com/vektah/gqlparser/v2 v2.5.31
 	golang.org/x/crypto v0.44.0
 )

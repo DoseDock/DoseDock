@@ -62,6 +62,19 @@ type ComplexityRoot struct {
 		Status         func(childComplexity int) int
 	}
 
+	DueMedication struct {
+		HardwareProfile func(childComplexity int) int
+		Medication      func(childComplexity int) int
+		Qty             func(childComplexity int) int
+		SiloSlot        func(childComplexity int) int
+	}
+
+	DueSchedule struct {
+		DueAtIso    func(childComplexity int) int
+		Medications func(childComplexity int) int
+		Schedule    func(childComplexity int) int
+	}
+
 	Medication struct {
 		CartridgeIndex    func(childComplexity int) int
 		Color             func(childComplexity int) int
@@ -120,6 +133,7 @@ type ComplexityRoot struct {
 
 	Query struct {
 		DispenseEvents func(childComplexity int, patientID string, rangeArg *model.DateRangeInput) int
+		DueNow         func(childComplexity int, patientID string, windowMinutes *int) int
 		Medication     func(childComplexity int, id string) int
 		Medications    func(childComplexity int, patientID string) int
 		Patient        func(childComplexity int, id string) int
@@ -195,6 +209,7 @@ type QueryResolver interface {
 	Schedules(ctx context.Context, patientID string) ([]*model.Schedule, error)
 	Schedule(ctx context.Context, id string) (*model.Schedule, error)
 	DispenseEvents(ctx context.Context, patientID string, rangeArg *model.DateRangeInput) ([]*model.DispenseEvent, error)
+	DueNow(ctx context.Context, patientID string, windowMinutes *int) ([]*model.DueSchedule, error)
 }
 
 type executableSchema struct {
@@ -282,6 +297,50 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.DispenseEvent.Status(childComplexity), true
+
+	case "DueMedication.hardwareProfile":
+		if e.complexity.DueMedication.HardwareProfile == nil {
+			break
+		}
+
+		return e.complexity.DueMedication.HardwareProfile(childComplexity), true
+	case "DueMedication.medication":
+		if e.complexity.DueMedication.Medication == nil {
+			break
+		}
+
+		return e.complexity.DueMedication.Medication(childComplexity), true
+	case "DueMedication.qty":
+		if e.complexity.DueMedication.Qty == nil {
+			break
+		}
+
+		return e.complexity.DueMedication.Qty(childComplexity), true
+	case "DueMedication.siloSlot":
+		if e.complexity.DueMedication.SiloSlot == nil {
+			break
+		}
+
+		return e.complexity.DueMedication.SiloSlot(childComplexity), true
+
+	case "DueSchedule.dueAtISO":
+		if e.complexity.DueSchedule.DueAtIso == nil {
+			break
+		}
+
+		return e.complexity.DueSchedule.DueAtIso(childComplexity), true
+	case "DueSchedule.medications":
+		if e.complexity.DueSchedule.Medications == nil {
+			break
+		}
+
+		return e.complexity.DueSchedule.Medications(childComplexity), true
+	case "DueSchedule.schedule":
+		if e.complexity.DueSchedule.Schedule == nil {
+			break
+		}
+
+		return e.complexity.DueSchedule.Schedule(childComplexity), true
 
 	case "Medication.cartridgeIndex":
 		if e.complexity.Medication.CartridgeIndex == nil {
@@ -629,6 +688,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Query.DispenseEvents(childComplexity, args["patientId"].(string), args["range"].(*model.DateRangeInput)), true
+	case "Query.dueNow":
+		if e.complexity.Query.DueNow == nil {
+			break
+		}
+
+		args, err := ec.field_Query_dueNow_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.DueNow(childComplexity, args["patientId"].(string), args["windowMinutes"].(*int)), true
 	case "Query.medication":
 		if e.complexity.Query.Medication == nil {
 			break
@@ -1186,6 +1256,22 @@ func (ec *executionContext) field_Query_dispenseEvents_args(ctx context.Context,
 	return args, nil
 }
 
+func (ec *executionContext) field_Query_dueNow_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "patientId", ec.unmarshalNID2string)
+	if err != nil {
+		return nil, err
+	}
+	args["patientId"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "windowMinutes", ec.unmarshalOInt2ᚖint)
+	if err != nil {
+		return nil, err
+	}
+	args["windowMinutes"] = arg1
+	return args, nil
+}
+
 func (ec *executionContext) field_Query_medication_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
@@ -1640,6 +1726,293 @@ func (ec *executionContext) fieldContext_DispenseEvent_createdAt(_ context.Conte
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type DateTime does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _DueMedication_medication(ctx context.Context, field graphql.CollectedField, obj *model.DueMedication) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_DueMedication_medication,
+		func(ctx context.Context) (any, error) {
+			return obj.Medication, nil
+		},
+		nil,
+		ec.marshalNMedication2ᚖpillboxᚋgraphᚋmodelᚐMedication,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_DueMedication_medication(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "DueMedication",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Medication_id(ctx, field)
+			case "patientId":
+				return ec.fieldContext_Medication_patientId(ctx, field)
+			case "name":
+				return ec.fieldContext_Medication_name(ctx, field)
+			case "nickname":
+				return ec.fieldContext_Medication_nickname(ctx, field)
+			case "color":
+				return ec.fieldContext_Medication_color(ctx, field)
+			case "shape":
+				return ec.fieldContext_Medication_shape(ctx, field)
+			case "dosageForm":
+				return ec.fieldContext_Medication_dosageForm(ctx, field)
+			case "strength":
+				return ec.fieldContext_Medication_strength(ctx, field)
+			case "dosageMg":
+				return ec.fieldContext_Medication_dosageMg(ctx, field)
+			case "instructions":
+				return ec.fieldContext_Medication_instructions(ctx, field)
+			case "stockCount":
+				return ec.fieldContext_Medication_stockCount(ctx, field)
+			case "lowStockThreshold":
+				return ec.fieldContext_Medication_lowStockThreshold(ctx, field)
+			case "cartridgeIndex":
+				return ec.fieldContext_Medication_cartridgeIndex(ctx, field)
+			case "manufacturer":
+				return ec.fieldContext_Medication_manufacturer(ctx, field)
+			case "externalId":
+				return ec.fieldContext_Medication_externalId(ctx, field)
+			case "maxDailyDose":
+				return ec.fieldContext_Medication_maxDailyDose(ctx, field)
+			case "metadata":
+				return ec.fieldContext_Medication_metadata(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_Medication_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_Medication_updatedAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Medication", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _DueMedication_qty(ctx context.Context, field graphql.CollectedField, obj *model.DueMedication) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_DueMedication_qty,
+		func(ctx context.Context) (any, error) {
+			return obj.Qty, nil
+		},
+		nil,
+		ec.marshalNInt2int,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_DueMedication_qty(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "DueMedication",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _DueMedication_siloSlot(ctx context.Context, field graphql.CollectedField, obj *model.DueMedication) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_DueMedication_siloSlot,
+		func(ctx context.Context) (any, error) {
+			return obj.SiloSlot, nil
+		},
+		nil,
+		ec.marshalOInt2ᚖint,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_DueMedication_siloSlot(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "DueMedication",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _DueMedication_hardwareProfile(ctx context.Context, field graphql.CollectedField, obj *model.DueMedication) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_DueMedication_hardwareProfile,
+		func(ctx context.Context) (any, error) {
+			return obj.HardwareProfile, nil
+		},
+		nil,
+		ec.marshalOJSONObject2map,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_DueMedication_hardwareProfile(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "DueMedication",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type JSONObject does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _DueSchedule_schedule(ctx context.Context, field graphql.CollectedField, obj *model.DueSchedule) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_DueSchedule_schedule,
+		func(ctx context.Context) (any, error) {
+			return obj.Schedule, nil
+		},
+		nil,
+		ec.marshalNSchedule2ᚖpillboxᚋgraphᚋmodelᚐSchedule,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_DueSchedule_schedule(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "DueSchedule",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Schedule_id(ctx, field)
+			case "patientId":
+				return ec.fieldContext_Schedule_patientId(ctx, field)
+			case "title":
+				return ec.fieldContext_Schedule_title(ctx, field)
+			case "timezone":
+				return ec.fieldContext_Schedule_timezone(ctx, field)
+			case "rrule":
+				return ec.fieldContext_Schedule_rrule(ctx, field)
+			case "startDateISO":
+				return ec.fieldContext_Schedule_startDateISO(ctx, field)
+			case "endDateISO":
+				return ec.fieldContext_Schedule_endDateISO(ctx, field)
+			case "lockoutMinutes":
+				return ec.fieldContext_Schedule_lockoutMinutes(ctx, field)
+			case "snoozeIntervalMinutes":
+				return ec.fieldContext_Schedule_snoozeIntervalMinutes(ctx, field)
+			case "snoozeMax":
+				return ec.fieldContext_Schedule_snoozeMax(ctx, field)
+			case "status":
+				return ec.fieldContext_Schedule_status(ctx, field)
+			case "notes":
+				return ec.fieldContext_Schedule_notes(ctx, field)
+			case "metadata":
+				return ec.fieldContext_Schedule_metadata(ctx, field)
+			case "items":
+				return ec.fieldContext_Schedule_items(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_Schedule_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_Schedule_updatedAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Schedule", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _DueSchedule_dueAtISO(ctx context.Context, field graphql.CollectedField, obj *model.DueSchedule) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_DueSchedule_dueAtISO,
+		func(ctx context.Context) (any, error) {
+			return obj.DueAtIso, nil
+		},
+		nil,
+		ec.marshalNDateTime2timeᚐTime,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_DueSchedule_dueAtISO(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "DueSchedule",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type DateTime does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _DueSchedule_medications(ctx context.Context, field graphql.CollectedField, obj *model.DueSchedule) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_DueSchedule_medications,
+		func(ctx context.Context) (any, error) {
+			return obj.Medications, nil
+		},
+		nil,
+		ec.marshalNDueMedication2ᚕᚖpillboxᚋgraphᚋmodelᚐDueMedicationᚄ,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_DueSchedule_medications(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "DueSchedule",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "medication":
+				return ec.fieldContext_DueMedication_medication(ctx, field)
+			case "qty":
+				return ec.fieldContext_DueMedication_qty(ctx, field)
+			case "siloSlot":
+				return ec.fieldContext_DueMedication_siloSlot(ctx, field)
+			case "hardwareProfile":
+				return ec.fieldContext_DueMedication_hardwareProfile(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type DueMedication", field.Name)
 		},
 	}
 	return fc, nil
@@ -4227,6 +4600,55 @@ func (ec *executionContext) fieldContext_Query_dispenseEvents(ctx context.Contex
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Query_dispenseEvents_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_dueNow(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Query_dueNow,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.resolvers.Query().DueNow(ctx, fc.Args["patientId"].(string), fc.Args["windowMinutes"].(*int))
+		},
+		nil,
+		ec.marshalNDueSchedule2ᚕᚖpillboxᚋgraphᚋmodelᚐDueScheduleᚄ,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Query_dueNow(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "schedule":
+				return ec.fieldContext_DueSchedule_schedule(ctx, field)
+			case "dueAtISO":
+				return ec.fieldContext_DueSchedule_dueAtISO(ctx, field)
+			case "medications":
+				return ec.fieldContext_DueSchedule_medications(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type DueSchedule", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_dueNow_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -7429,6 +7851,103 @@ func (ec *executionContext) _DispenseEvent(ctx context.Context, sel ast.Selectio
 	return out
 }
 
+var dueMedicationImplementors = []string{"DueMedication"}
+
+func (ec *executionContext) _DueMedication(ctx context.Context, sel ast.SelectionSet, obj *model.DueMedication) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, dueMedicationImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("DueMedication")
+		case "medication":
+			out.Values[i] = ec._DueMedication_medication(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "qty":
+			out.Values[i] = ec._DueMedication_qty(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "siloSlot":
+			out.Values[i] = ec._DueMedication_siloSlot(ctx, field, obj)
+		case "hardwareProfile":
+			out.Values[i] = ec._DueMedication_hardwareProfile(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var dueScheduleImplementors = []string{"DueSchedule"}
+
+func (ec *executionContext) _DueSchedule(ctx context.Context, sel ast.SelectionSet, obj *model.DueSchedule) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, dueScheduleImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("DueSchedule")
+		case "schedule":
+			out.Values[i] = ec._DueSchedule_schedule(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "dueAtISO":
+			out.Values[i] = ec._DueSchedule_dueAtISO(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "medications":
+			out.Values[i] = ec._DueSchedule_medications(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var medicationImplementors = []string{"Medication"}
 
 func (ec *executionContext) _Medication(ctx context.Context, sel ast.SelectionSet, obj *model.Medication) graphql.Marshaler {
@@ -7974,6 +8493,28 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_dispenseEvents(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "dueNow":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_dueNow(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
@@ -8683,6 +9224,114 @@ func (ec *executionContext) unmarshalNDispenseStatus2pillboxᚋgraphᚋmodelᚐD
 
 func (ec *executionContext) marshalNDispenseStatus2pillboxᚋgraphᚋmodelᚐDispenseStatus(ctx context.Context, sel ast.SelectionSet, v model.DispenseStatus) graphql.Marshaler {
 	return v
+}
+
+func (ec *executionContext) marshalNDueMedication2ᚕᚖpillboxᚋgraphᚋmodelᚐDueMedicationᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.DueMedication) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNDueMedication2ᚖpillboxᚋgraphᚋmodelᚐDueMedication(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNDueMedication2ᚖpillboxᚋgraphᚋmodelᚐDueMedication(ctx context.Context, sel ast.SelectionSet, v *model.DueMedication) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._DueMedication(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNDueSchedule2ᚕᚖpillboxᚋgraphᚋmodelᚐDueScheduleᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.DueSchedule) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNDueSchedule2ᚖpillboxᚋgraphᚋmodelᚐDueSchedule(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNDueSchedule2ᚖpillboxᚋgraphᚋmodelᚐDueSchedule(ctx context.Context, sel ast.SelectionSet, v *model.DueSchedule) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._DueSchedule(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNID2string(ctx context.Context, v any) (string, error) {

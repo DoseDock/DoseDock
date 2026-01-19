@@ -421,18 +421,6 @@ export const HardwareMappingScreen: React.FC = () => {
                   />
                 </View>
 
-                <TouchableOpacity
-                  style={styles.autoFillButton}
-                  onPress={handleAutoFill}
-                  disabled={isAutoFilling}
-                >
-                  {isAutoFilling ? (
-                    <ActivityIndicator color={colors.textPrimary} />
-                  ) : (
-                    <Text style={styles.autoFillText}>Auto-fill via DailyMed</Text>
-                  )}
-                </TouchableOpacity>
-
                 {autoFillData && (
                   <View style={styles.autoFillPreview}>
                     <Text style={styles.autoFillTitle}>Last lookup</Text>

@@ -585,14 +585,108 @@ func (r *queryResolver) DispenseEvents(ctx context.Context, patientID string, ra
 	return events, nil
 }
 
-// These are interfaces that get generated when you define mutations and queries in schema.graphqls
+// DueNow is the resolver for the dueNow field.
+// Returns schedules that are due within the specified time window (default ±1 minute).
+// This endpoint is designed for firmware to poll every minute.
+func (r *queryResolver) DueNow(ctx context.Context, patientID string, windowMinutes *int) ([]*model.DueSchedule, error) {
+	// Default to 1 minute window
+	window := 1
+	if windowMinutes != nil && *windowMinutes > 0 {
+		window = *windowMinutes
+	}
+
+	// Get all active schedules for this patient
+	scheduleRows, err := r.Queries.ListSchedulesByPatient(ctx, patientID)
+	if err != nil {
+		return nil, fmt.Errorf("list schedules: %w", err)
+	}
+
+	result := make([]*model.DueSchedule, 0)
+
+	for _, scheduleRow := range scheduleRows {
+		// Only check ACTIVE schedules
+		if scheduleRow.Status != string(model.ScheduleStatusActive) {
+			continue
+		}
+
+		// Parse start date
+		startDate, err := parseDBTime(scheduleRow.StartDateIso)
+		if err != nil {
+			continue // Skip invalid schedules
+		}
+
+		// Parse optional end date
+		var endDate *time.Time
+		if scheduleRow.EndDateIso.Valid {
+			parsed, err := parseDBTime(scheduleRow.EndDateIso.String)
+			if err == nil {
+				endDate = &parsed
+			}
+		}
+
+		// Check if this schedule is due now
+		dueTime, err := IsScheduleDueNow(scheduleRow.Rrule, startDate, endDate, window)
+		if err != nil {
+			// Log but continue - don't fail the whole query for one bad RRULE
+			continue
+		}
+
+		if dueTime == nil {
+			// Not due right now
+			continue
+		}
+
+		// Build the full schedule model
+		schedule, err := r.buildScheduleModel(ctx, scheduleRow)
+		if err != nil {
+			return nil, err
+		}
+
+		// Build DueMedication list from schedule items
+		dueMeds := make([]*model.DueMedication, 0, len(schedule.Items))
+		for _, item := range schedule.Items {
+			// Extract hardware profile from medication metadata
+			var hardwareProfile map[string]interface{}
+			var siloSlot *int
+
+			if item.Medication.Metadata != nil {
+				if hp, ok := item.Medication.Metadata["hardwareProfile"].(map[string]interface{}); ok {
+					hardwareProfile = hp
+					if slot, ok := hp["siloSlot"].(float64); ok {
+						slotInt := int(slot)
+						siloSlot = &slotInt
+					}
+				}
+			}
+
+			// Fall back to cartridgeIndex if no siloSlot in hardwareProfile
+			if siloSlot == nil && item.Medication.CartridgeIndex != nil {
+				siloSlot = item.Medication.CartridgeIndex
+			}
+
+			dueMeds = append(dueMeds, &model.DueMedication{
+				Medication:      item.Medication,
+				Qty:             item.Qty,
+				SiloSlot:        siloSlot,
+				HardwareProfile: hardwareProfile,
+			})
+		}
+
+		result = append(result, &model.DueSchedule{
+			Schedule:    schedule,
+			DueAtIso:    *dueTime,
+			Medications: dueMeds,
+		})
+	}
+
+	return result, nil
+}
+
 // Mutation returns MutationResolver implementation.
 func (r *Resolver) Mutation() MutationResolver { return &mutationResolver{r} }
 
 // Query returns QueryResolver implementation.
 func (r *Resolver) Query() QueryResolver { return &queryResolver{r} }
 
-// gqlen actually needs concrete structs that implement those interfaces
-// these are structs that embed the main resolver so that they get access to our databases and services.
 type mutationResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }

@@ -111,6 +111,20 @@ type DispenseEvent {
   createdAt: DateTime!
 }
 
+# Firmware-specific types for dueNow query
+type DueMedication {
+  medication: Medication!
+  qty: Int!
+  siloSlot: Int
+  hardwareProfile: JSONObject
+}
+
+type DueSchedule {
+  schedule: Schedule!
+  dueAtISO: DateTime!
+  medications: [DueMedication!]!
+}
+
 input UserInput {
   id: ID
   email: String!
@@ -213,6 +227,8 @@ type Query {
   schedules(patientId: ID!): [Schedule!]!
   schedule(id: ID!): Schedule
   dispenseEvents(patientId: ID!, range: DateRangeInput): [DispenseEvent!]!
+  # Firmware endpoint: returns schedules due within windowMinutes of now (default ±1 minute)
+  dueNow(patientId: ID!, windowMinutes: Int): [DueSchedule!]!
 }
 
 type Mutation {
