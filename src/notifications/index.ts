@@ -3,7 +3,7 @@ import * as TaskManager from 'expo-task-manager';
 import * as BackgroundFetch from 'expo-background-fetch';
 import { DateTime } from 'luxon';
 import { Platform } from 'react-native';
-import type { Schedule, DosePill } from '@types';
+import type { Schedule, ScheduleItem } from '@types';
 import { expandOccurrences } from '@engine/scheduler';
 
 const BACKGROUND_NOTIFICATION_TASK = 'BACKGROUND_NOTIFICATION_TASK';
@@ -14,13 +14,15 @@ Notifications.setNotificationHandler({
     shouldShowAlert: true,
     shouldPlaySound: true,
     shouldSetBadge: true,
+    shouldShowBanner: true,
+    shouldShowList: true,
   }),
 });
 
 export type NotificationData = {
   scheduleId: string;
   occurrenceISO: string;
-  items: DosePill[];
+  items: ScheduleItem[];
   groupLabel: string;
 };
 
@@ -73,8 +75,6 @@ export async function scheduleNotificationsForSchedule(
   for (const occurrence of occurrences) {
     // Only schedule future occurrences
     if (occurrence > now) {
-      const trigger = occurrence.toJSDate();
-
       const notificationId = await Notifications.scheduleNotificationAsync({
         content: {
           title: 'Time for Your Medication',
@@ -89,7 +89,7 @@ export async function scheduleNotificationsForSchedule(
           priority: Notifications.AndroidNotificationPriority.MAX,
           categoryIdentifier: 'medication',
         },
-        trigger,
+        trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: occurrence.toJSDate() },
       });
 
       notificationIds.push(notificationId);
@@ -114,34 +114,6 @@ export async function cancelNotificationsForSchedule(scheduleId: string): Promis
   }
 
   console.log(`Cancelled notifications for schedule ${scheduleId}`);
-}
-
-/**
- * Schedule a snooze notification
- */
-export async function scheduleSnoozeNotification(
-  data: NotificationData,
-  snoozeMinutes: number
-): Promise<string> {
-  const trigger = DateTime.now().plus({ minutes: snoozeMinutes }).toJSDate();
-
-  const notificationId = await Notifications.scheduleNotificationAsync({
-    content: {
-      title: 'Medication Reminder (Snoozed)',
-      body: data.groupLabel,
-      data: {
-        ...data,
-        occurrenceISO: DateTime.now().toISO(),
-      },
-      sound: 'default',
-      priority: Notifications.AndroidNotificationPriority.MAX,
-      categoryIdentifier: 'medication',
-    },
-    trigger,
-  });
-
-  console.log(`Scheduled snooze notification for ${snoozeMinutes} minutes`);
-  return notificationId;
 }
 
 /**
@@ -185,8 +157,6 @@ export function setupBackgroundTask() {
   TaskManager.defineTask(BACKGROUND_NOTIFICATION_TASK, async () => {
     try {
       console.log('Background task: Refreshing notifications');
-      // In a real app, we'd load schedules and refresh here
-      // For now, this is a placeholder
       return BackgroundFetch.BackgroundFetchResult.NewData;
     } catch (error) {
       console.error('Background task error:', error);
@@ -205,13 +175,6 @@ export async function setupNotificationCategories(): Promise<void> {
       buttonTitle: 'Dispense Now',
       options: {
         opensAppToForeground: true,
-      },
-    },
-    {
-      identifier: 'snooze',
-      buttonTitle: 'Snooze 10m',
-      options: {
-        opensAppToForeground: false,
       },
     },
     {
@@ -241,4 +204,3 @@ export function addNotificationResponseReceivedListener(
 ) {
   return Notifications.addNotificationResponseReceivedListener(listener);
 }
-

@@ -23,7 +23,7 @@ export const PillCard: React.FC<PillCardProps> = ({ pill, onPress }) => {
             <View
               className="w-8 h-8 rounded-full mr-3"
               style={{ backgroundColor: pill.color }}
-              accessibilityLabel={`${pill.color} ${pill.shape} pill`}
+              accessibilityLabel={`${pill.color} pill`}
             />
             <View className="flex-1">
               <Text className="text-lg font-semibold">{pill.name}</Text>

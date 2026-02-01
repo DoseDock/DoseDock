@@ -1,14 +1,11 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { View, ScrollView, Text, StyleSheet, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors, shadows } from '@theme/colors';
 import { useTodayStore } from '@store/todayStore';
 import { usePillStore } from '@store/pillStore';
-import { eventLogRepository } from '@data/repositories/EventLogRepository';
 import { DateTime } from 'luxon';
-import { EventStatus } from '@types';
-
-type WeeklyPoint = { day: string; ratio: number; taken: number; total: number };
+import type { EventStatus } from '@types';
 
 export const TodayScreen: React.FC = () => {
   const { width } = useWindowDimensions();
@@ -16,52 +13,19 @@ export const TodayScreen: React.FC = () => {
   const isMobile = width < 768;
   const { events, loadTodayEvents } = useTodayStore();
   const { pills, loadPills } = usePillStore();
-  const [weeklyTrend, setWeeklyTrend] = useState<WeeklyPoint[]>([]);
-
-  const loadWeeklyTrend = useCallback(async () => {
-    const end = DateTime.now().endOf('day');
-    const start = end.minus({ days: 6 }).startOf('day');
-    const logs = await eventLogRepository.getByDateRange(start.toISO()!, end.toISO()!);
-    const buckets: Record<string, WeeklyPoint> = {};
-    for (let i = 0; i < 7; i++) {
-      const day = start.plus({ days: i });
-      buckets[day.toISODate()!] = {
-        day: day.toFormat('ccc'),
-        ratio: 0,
-        taken: 0,
-        total: 0,
-      };
-    }
-    logs.forEach((log) => {
-      const dayKey = DateTime.fromISO(log.dueAtISO).toISODate();
-      if (!dayKey || !buckets[dayKey]) return;
-      buckets[dayKey].total += 1;
-      if (log.status === EventStatus.TAKEN) {
-        buckets[dayKey].taken += 1;
-      }
-    });
-    setWeeklyTrend(
-      Object.values(buckets).map((bucket) => ({
-        ...bucket,
-        ratio: bucket.total > 0 ? bucket.taken / bucket.total : 0,
-      }))
-    );
-  }, []);
 
   useEffect(() => {
     loadPills();
     loadTodayEvents();
-    loadWeeklyTrend();
-  }, [loadPills, loadTodayEvents, loadWeeklyTrend]);
+  }, [loadPills, loadTodayEvents]);
 
   const stats = useMemo(() => {
     const total = events.length;
-    const taken = events.filter((e) => e.status === EventStatus.TAKEN).length;
-    const missed = events.filter((e) => e.status === EventStatus.MISSED || e.status === EventStatus.FAILED)
-      .length;
-    const upcoming = events.filter(
-      (e) => e.status === EventStatus.PENDING || e.status === EventStatus.SNOOZED
+    const taken = events.filter((e) => e.status === ('TAKEN' as EventStatus)).length;
+    const missed = events.filter(
+      (e) => e.status === ('MISSED' as EventStatus) || e.status === ('FAILED' as EventStatus)
     ).length;
+    const upcoming = events.filter((e) => e.status === ('PENDING' as EventStatus)).length;
     return {
       adherence: total ? Math.round((taken / total) * 100) : 0,
       missed,
@@ -73,17 +37,9 @@ export const TodayScreen: React.FC = () => {
     return [...events]
       .sort((a, b) => a.dueAtISO.localeCompare(b.dueAtISO))
       .map((event) => {
-        let label = event.groupLabel;
-        try {
-          const details = JSON.parse(event.detailsJSON);
-          if (details.items?.length) {
-            label = details.items
-              .map((item: any) => pills.get(item.pillId)?.name || 'Dose')
-              .join(', ');
-          }
-        } catch {
-          // ignore parse errors
-        }
+        const label = event.scheduleId
+          ? `Schedule ${event.scheduleId}`
+          : 'Dose';
         return {
           id: event.id,
           time: DateTime.fromISO(event.dueAtISO).toFormat('h:mm a'),
@@ -91,7 +47,7 @@ export const TodayScreen: React.FC = () => {
           status: event.status,
         };
       });
-  }, [events, pills]);
+  }, [events]);
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -119,27 +75,6 @@ export const TodayScreen: React.FC = () => {
           </View>
         </View>
 
-        <View style={[styles.card, styles.graphCard, isMobile && styles.graphCardMobile]}>
-          <Text style={styles.sectionTitle}>Weekly Intake</Text>
-          <View style={styles.weekBars}>
-            {weeklyTrend.map((point) => (
-              <View key={point.day} style={[styles.weekBar, isCompact && styles.weekBarCompact]}>
-                <View
-                  style={[
-                    styles.barFill,
-                    isCompact && styles.barFillCompact,
-                    {
-                      height: (isCompact ? 60 : 80) * point.ratio,
-                      backgroundColor: colors.accent,
-                    },
-                  ]}
-                />
-                <Text style={[styles.barLabel, isCompact && styles.barLabelCompact]}>{point.day}</Text>
-              </View>
-            ))}
-          </View>
-        </View>
-
         <View style={[styles.card, styles.timelineCard, isMobile && styles.timelineCardMobile]}>
           <Text style={styles.sectionTitle}>Today's Schedule</Text>
           {timeline.length === 0 ? (
@@ -156,10 +91,10 @@ export const TodayScreen: React.FC = () => {
                   style={[
                     styles.statusBadge,
                     isCompact && styles.statusBadgeCompact,
-                    item.status === EventStatus.TAKEN ? styles.statusGood : styles.statusPending,
+                    item.status === 'TAKEN' ? styles.statusGood : styles.statusPending,
                   ]}
                 >
-                  {item.status === EventStatus.TAKEN ? 'Done' : 'Pending'}
+                  {item.status === 'TAKEN' ? 'Done' : item.status === 'SKIPPED' ? 'Skipped' : 'Pending'}
                 </Text>
               </View>
             ))
@@ -193,16 +128,7 @@ const styles = StyleSheet.create({
   metricValue: { color: colors.textPrimary, fontSize: 22, fontWeight: '700' },
   metricValueCompact: { fontSize: 18 },
   metricDanger: { color: colors.danger },
-  graphCard: { gap: 16 },
-  graphCardMobile: { padding: 20, borderRadius: 20 },
   sectionTitle: { color: colors.textPrimary, fontSize: 18, fontWeight: '600' },
-  weekBars: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end' },
-  weekBar: { alignItems: 'center', gap: 8, flex: 1 },
-  weekBarCompact: { gap: 6 },
-  barFill: { width: 28, borderRadius: 18, backgroundColor: colors.accent },
-  barFillCompact: { width: 20, borderRadius: 12 },
-  barLabel: { color: colors.textSecondary, fontSize: 12 },
-  barLabelCompact: { fontSize: 10 },
   timelineCard: { gap: 12 },
   timelineCardMobile: { padding: 20, borderRadius: 20, gap: 10 },
   timelineRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },

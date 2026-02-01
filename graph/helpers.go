@@ -2,7 +2,6 @@ package graph
 
 import (
 	"database/sql"
-	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -83,31 +82,6 @@ func ptrFromNullInt(ns sql.NullInt64) *int {
 		return &v
 	}
 	return nil
-}
-
-func decodeMetadata(raw string) (map[string]any, error) {
-	if strings.TrimSpace(raw) == "" {
-		return map[string]any{}, nil
-	}
-	var out map[string]any
-	if err := json.Unmarshal([]byte(raw), &out); err != nil {
-		return nil, fmt.Errorf("parse metadata: %w", err)
-	}
-	if out == nil {
-		out = map[string]any{}
-	}
-	return out, nil
-}
-
-func encodeMetadata(m map[string]any) (string, error) {
-	if m == nil {
-		m = map[string]any{}
-	}
-	data, err := json.Marshal(m)
-	if err != nil {
-		return "", fmt.Errorf("encode metadata: %w", err)
-	}
-	return string(data), nil
 }
 
 func hashPassword(password string) (string, error) {

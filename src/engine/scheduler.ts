@@ -93,10 +93,9 @@ export function detectConflicts(
     // Check if they're within the same minute
     if (current.time.hasSame(next.time, 'minute') && current.schedule.id !== next.schedule.id) {
       conflicts.push({
-        type: 'TIME_OVERLAP',
+        type: 'overlap',
         message: `Schedules overlap at ${current.time.toFormat('HH:mm')} on ${current.time.toFormat('MMM dd')}`,
         scheduleIds: [current.schedule.id, next.schedule.id],
-        occurrenceISO: current.time.toISO()!,
       });
     }
   }
@@ -129,11 +128,9 @@ export function detectConflicts(
           s.items.some((item) => item.pillId === pillId)
         );
         conflicts.push({
-          type: 'DAILY_LIMIT_EXCEEDED',
+          type: 'dailyLimit',
           message: `${pill.name} daily limit exceeded on ${dayKey}: ${qty} pills (max ${pill.maxDailyDose})`,
           scheduleIds: affectedSchedules.map((s) => s.id),
-          pillId,
-          occurrenceISO: dayKey,
         });
       }
     }

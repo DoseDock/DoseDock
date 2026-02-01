@@ -1,27 +1,96 @@
 import { create } from 'zustand';
-import { DateTime } from 'luxon';
-import type { Schedule } from '@types';
-import { scheduleRepository } from '@data/repositories/ScheduleRepository';
-import { eventLogRepository } from '@data/repositories/EventLogRepository';
-import { expandOccurrences, buildGroupLabel } from '@engine/scheduler';
-import { EventStatus } from '@types';
-import { usePillStore } from './pillStore';
-import * as NotificationService from '@notifications/index';
+import type { Schedule, ScheduleItem } from '@types';
+import { graphqlRequest } from '@/api/graphqlClient';
+import { graphQLConfig } from '@/config/env';
+import { useSessionStore } from './sessionStore';
 
 interface ScheduleStore {
   schedules: Schedule[];
   isLoading: boolean;
   error: string | null;
 
-  // Actions
   loadSchedules: () => Promise<void>;
   getScheduleById: (id: string) => Schedule | undefined;
-  addSchedule: (schedule: Omit<Schedule, 'id'>) => Promise<Schedule>;
-  updateSchedule: (id: string, updates: Partial<Omit<Schedule, 'id'>>) => Promise<void>;
-  deleteSchedule: (id: string) => Promise<void>;
-  reconcileEvents: (daysAhead?: number) => Promise<void>;
+  addSchedule: (input: CreateScheduleInput) => Promise<Schedule>;
+  archiveSchedule: (id: string) => Promise<void>;
   refreshSchedules: () => Promise<void>;
 }
+
+export type CreateScheduleInput = {
+  title: string;
+  timezone: string;
+  rrule: string;
+  startDateISO: string;
+  endDateISO?: string;
+  lockoutMinutes: number;
+  items: { medicationId: string; qty: number }[];
+};
+
+const SCHEDULE_FIELDS = `
+  id
+  patientId
+  title
+  timezone
+  rrule
+  startDateISO
+  endDateISO
+  lockoutMinutes
+  status
+  items {
+    id
+    scheduleId
+    medication {
+      id
+      name
+    }
+    qty
+  }
+`;
+
+type ScheduleItemGQL = {
+  id: string;
+  scheduleId: string;
+  medication: { id: string; name: string };
+  qty: number;
+};
+
+type ScheduleGQL = {
+  id: string;
+  patientId: string;
+  title: string;
+  timezone: string;
+  rrule: string;
+  startDateISO: string;
+  endDateISO?: string;
+  lockoutMinutes: number;
+  status: string;
+  items: ScheduleItemGQL[];
+};
+
+const ensurePatientId = (): string => {
+  const runtimePatientId = useSessionStore.getState().patient?.id;
+  if (runtimePatientId) return runtimePatientId;
+  if (graphQLConfig.patientId) return graphQLConfig.patientId;
+  throw new Error('No patient selected. Log in first or set EXPO_PUBLIC_GRAPHQL_PATIENT_ID.');
+};
+
+const mapGQLToSchedule = (gql: ScheduleGQL): Schedule => ({
+  id: gql.id,
+  patientId: gql.patientId,
+  title: gql.title,
+  times: [],
+  rrule: gql.rrule,
+  startDateISO: gql.startDateISO,
+  endDateISO: gql.endDateISO,
+  lockoutMinutes: gql.lockoutMinutes,
+  status: gql.status,
+  items: gql.items.map((item): ScheduleItem => ({
+    id: item.id,
+    scheduleId: item.scheduleId,
+    pillId: item.medication.id,
+    qty: item.qty,
+  })),
+});
 
 export const useScheduleStore = create<ScheduleStore>((set, get) => ({
   schedules: [],
@@ -31,35 +100,52 @@ export const useScheduleStore = create<ScheduleStore>((set, get) => ({
   loadSchedules: async () => {
     set({ isLoading: true, error: null });
     try {
-      const schedules = await scheduleRepository.getAll();
-      set({ schedules, isLoading: false });
+      const patientId = ensurePatientId();
+      const data = await graphqlRequest<{ schedules: ScheduleGQL[] }>(
+        `query Schedules($patientId: ID!) {
+          schedules(patientId: $patientId) {
+            ${SCHEDULE_FIELDS}
+          }
+        }`,
+        { patientId }
+      );
+      set({ schedules: data.schedules.map(mapGQLToSchedule), isLoading: false });
     } catch (error) {
       console.error('Failed to load schedules:', error);
       set({ error: 'Failed to load schedules', isLoading: false });
     }
   },
 
-  getScheduleById: (id: string) => {
-    return get().schedules.find((s) => s.id === id);
-  },
+  getScheduleById: (id) => get().schedules.find((s) => s.id === id),
 
-  addSchedule: async (scheduleData) => {
+  addSchedule: async (input) => {
     set({ isLoading: true, error: null });
     try {
-      const schedule = await scheduleRepository.create(scheduleData);
+      const patientId = ensurePatientId();
+      const data = await graphqlRequest<{ createSchedule: ScheduleGQL }>(
+        `mutation CreateSchedule($input: ScheduleInput!) {
+          createSchedule(input: $input) {
+            ${SCHEDULE_FIELDS}
+          }
+        }`,
+        {
+          input: {
+            patientId,
+            title: input.title,
+            timezone: input.timezone,
+            rrule: input.rrule,
+            startDateISO: input.startDateISO,
+            endDateISO: input.endDateISO,
+            lockoutMinutes: input.lockoutMinutes,
+            items: input.items,
+          },
+        }
+      );
+      const schedule = mapGQLToSchedule(data.createSchedule);
       set((state) => ({
         schedules: [...state.schedules, schedule],
         isLoading: false,
       }));
-
-      // Schedule notifications
-      const pillLookup = usePillStore.getState().pills;
-      const groupLabel = buildGroupLabel(schedule.items, pillLookup);
-      await NotificationService.scheduleNotificationsForSchedule(schedule, groupLabel);
-
-      // Reconcile events
-      await get().reconcileEvents();
-
       return schedule;
     } catch (error) {
       console.error('Failed to add schedule:', error);
@@ -68,101 +154,27 @@ export const useScheduleStore = create<ScheduleStore>((set, get) => ({
     }
   },
 
-  updateSchedule: async (id, updates) => {
+  archiveSchedule: async (id) => {
     set({ isLoading: true, error: null });
     try {
-      await scheduleRepository.update(id, updates);
-      set((state) => ({
-        schedules: state.schedules.map((s) => (s.id === id ? { ...s, ...updates } : s)),
-        isLoading: false,
-      }));
-
-      // Refresh notifications for this schedule
-      await NotificationService.cancelNotificationsForSchedule(id);
-      const updatedSchedule = get().getScheduleById(id);
-      if (updatedSchedule) {
-        const pillLookup = usePillStore.getState().pills;
-        const groupLabel = buildGroupLabel(updatedSchedule.items, pillLookup);
-        await NotificationService.scheduleNotificationsForSchedule(updatedSchedule, groupLabel);
-      }
-
-      // Reconcile events
-      await get().reconcileEvents();
-    } catch (error) {
-      console.error('Failed to update schedule:', error);
-      set({ error: 'Failed to update schedule', isLoading: false });
-      throw error;
-    }
-  },
-
-  deleteSchedule: async (id) => {
-    set({ isLoading: true, error: null });
-    try {
-      await scheduleRepository.delete(id);
+      await graphqlRequest(
+        `mutation ArchiveSchedule($id: ID!) {
+          archiveSchedule(id: $id) { id }
+        }`,
+        { id }
+      );
       set((state) => ({
         schedules: state.schedules.filter((s) => s.id !== id),
         isLoading: false,
       }));
-
-      // Cancel notifications
-      await NotificationService.cancelNotificationsForSchedule(id);
     } catch (error) {
-      console.error('Failed to delete schedule:', error);
-      set({ error: 'Failed to delete schedule', isLoading: false });
+      console.error('Failed to archive schedule:', error);
+      set({ error: 'Failed to archive schedule', isLoading: false });
       throw error;
-    }
-  },
-
-  reconcileEvents: async (daysAhead = 7) => {
-    try {
-      const now = DateTime.now();
-      const rangeEnd = now.plus({ days: daysAhead });
-      const schedules = get().schedules;
-      const pillLookup = usePillStore.getState().pills;
-
-      // Get existing events in range
-      const existingEvents = await eventLogRepository.getByDateRange(
-        now.toISO()!,
-        rangeEnd.toISO()!
-      );
-      const existingEventMap = new Map(
-        existingEvents.map((e) => [e.dueAtISO + '-' + e.groupLabel, e])
-      );
-
-      // Generate events for all schedules
-      for (const schedule of schedules) {
-        const occurrences = expandOccurrences(schedule, now.toISO()!, rangeEnd.toISO()!);
-        const groupLabel = buildGroupLabel(schedule.items, pillLookup);
-
-        for (const occurrence of occurrences) {
-          const key = occurrence.toISO() + '-' + groupLabel;
-
-          // Only create if doesn't exist
-          if (!existingEventMap.has(key)) {
-            await eventLogRepository.create({
-              dueAtISO: occurrence.toISO()!,
-              groupLabel,
-              status: EventStatus.PENDING,
-              detailsJSON: JSON.stringify({
-                scheduleId: schedule.id,
-                items: schedule.items,
-              }),
-            });
-          }
-        }
-      }
-
-      console.log('Event reconciliation complete');
-    } catch (error) {
-      console.error('Failed to reconcile events:', error);
     }
   },
 
   refreshSchedules: async () => {
     await get().loadSchedules();
-    await get().reconcileEvents();
   },
 }));
-
-
-

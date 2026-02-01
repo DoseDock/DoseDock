@@ -80,25 +80,12 @@ func (r *mutationResolver) Login(ctx context.Context, input model.LoginInput) (*
 
 // CreatePatient is the resolver for the createPatient field.
 func (r *mutationResolver) CreatePatient(ctx context.Context, input model.PatientInput) (*model.Patient, error) {
-	metaStr, err := encodeMetadata(input.Metadata)
-	if err != nil {
-		return nil, err
-	}
-
 	record, err := r.Queries.CreatePatient(ctx, db.CreatePatientParams{
-		ID:                uuid.NewString(),
-		UserID:            nullStringFromPtr(input.UserID),
-		FirstName:         input.FirstName,
-		LastName:          input.LastName,
-		DateOfBirth:       formatNullableTimePtr(input.DateOfBirth),
-		Gender:            nullStringFromPtr(input.Gender),
-		Timezone:          input.Timezone,
-		PreferredLanguage: nullStringFromPtr(input.PreferredLanguage),
-		CaregiverName:     nullStringFromPtr(input.CaregiverName),
-		CaregiverEmail:    nullStringFromPtr(input.CaregiverEmail),
-		CaregiverPhone:    nullStringFromPtr(input.CaregiverPhone),
-		Notes:             nullStringFromPtr(input.Notes),
-		Metadata:          metaStr,
+		ID:        uuid.NewString(),
+		UserID:    nullStringFromPtr(input.UserID),
+		FirstName: input.FirstName,
+		LastName:  input.LastName,
+		Timezone:  input.Timezone,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("create patient: %w", err)
@@ -118,61 +105,13 @@ func (r *mutationResolver) UpdatePatient(ctx context.Context, id string, input m
 	if input.UserID != nil {
 		userID = nullStringFromPtr(input.UserID)
 	}
-	dateOfBirth := existing.DateOfBirth
-	if input.DateOfBirth != nil {
-		dateOfBirth = formatNullableTimePtr(input.DateOfBirth)
-	}
-	gender := existing.Gender
-	if input.Gender != nil {
-		gender = nullStringFromPtr(input.Gender)
-	}
-	preferredLanguage := existing.PreferredLanguage
-	if input.PreferredLanguage != nil {
-		preferredLanguage = nullStringFromPtr(input.PreferredLanguage)
-	}
-	caregiverName := existing.CaregiverName
-	if input.CaregiverName != nil {
-		caregiverName = nullStringFromPtr(input.CaregiverName)
-	}
-	caregiverEmail := existing.CaregiverEmail
-	if input.CaregiverEmail != nil {
-		caregiverEmail = nullStringFromPtr(input.CaregiverEmail)
-	}
-	caregiverPhone := existing.CaregiverPhone
-	if input.CaregiverPhone != nil {
-		caregiverPhone = nullStringFromPtr(input.CaregiverPhone)
-	}
-	notes := existing.Notes
-	if input.Notes != nil {
-		notes = nullStringFromPtr(input.Notes)
-	}
-
-	metaSource, err := decodeMetadata(existing.Metadata)
-	if err != nil {
-		return nil, err
-	}
-	if input.Metadata != nil {
-		metaSource = input.Metadata
-	}
-	metaStr, err := encodeMetadata(metaSource)
-	if err != nil {
-		return nil, err
-	}
 
 	record, err := r.Queries.UpdatePatient(ctx, db.UpdatePatientParams{
-		UserID:            userID,
-		FirstName:         input.FirstName,
-		LastName:          input.LastName,
-		DateOfBirth:       dateOfBirth,
-		Gender:            gender,
-		Timezone:          input.Timezone,
-		PreferredLanguage: preferredLanguage,
-		CaregiverName:     caregiverName,
-		CaregiverEmail:    caregiverEmail,
-		CaregiverPhone:    caregiverPhone,
-		Notes:             notes,
-		Metadata:          metaStr,
-		ID:                id,
+		UserID:    userID,
+		FirstName: input.FirstName,
+		LastName:  input.LastName,
+		Timezone:  input.Timezone,
+		ID:        id,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("update patient: %w", err)
@@ -195,7 +134,6 @@ func (r *mutationResolver) UpsertMedication(ctx context.Context, input model.Med
 		}
 		return existing
 	}
-
 	defaultMaxDailyDose := func(existing int64) int64 {
 		if input.MaxDailyDose != nil {
 			return int64(*input.MaxDailyDose)
@@ -213,29 +151,15 @@ func (r *mutationResolver) UpsertMedication(ctx context.Context, input model.Med
 			lowStock = int64(*input.LowStockThreshold)
 		}
 
-		metaStr, err := encodeMetadata(input.Metadata)
-		if err != nil {
-			return nil, err
-		}
-
 		record, err := r.Queries.CreateMedication(ctx, db.CreateMedicationParams{
 			ID:                uuid.NewString(),
 			PatientID:         input.PatientID,
 			Name:              input.Name,
-			Nickname:          nullStringFromPtr(input.Nickname),
 			Color:             nullStringFromPtr(input.Color),
-			Shape:             nullStringFromPtr(input.Shape),
-			DosageForm:        nullStringFromPtr(input.DosageForm),
-			Strength:          nullStringFromPtr(input.Strength),
-			DosageMg:          nullIntFromPtr(input.DosageMg),
-			Instructions:      nullStringFromPtr(input.Instructions),
 			StockCount:        stock,
 			LowStockThreshold: lowStock,
 			CartridgeIndex:    nullIntFromPtr(input.CartridgeIndex),
-			Manufacturer:      nullStringFromPtr(input.Manufacturer),
-			ExternalID:        nullStringFromPtr(input.ExternalID),
 			MaxDailyDose:      defaultMaxDailyDose(1),
-			Metadata:          metaStr,
 		})
 		if err != nil {
 			return nil, fmt.Errorf("create medication: %w", err)
@@ -248,34 +172,13 @@ func (r *mutationResolver) UpsertMedication(ctx context.Context, input model.Med
 		return nil, fmt.Errorf("load medication %s: %w", *input.ID, err)
 	}
 
-	metaSource, err := decodeMetadata(existing.Metadata)
-	if err != nil {
-		return nil, err
-	}
-	if input.Metadata != nil {
-		metaSource = input.Metadata
-	}
-	metaStr, err := encodeMetadata(metaSource)
-	if err != nil {
-		return nil, err
-	}
-
 	record, err := r.Queries.UpdateMedication(ctx, db.UpdateMedicationParams{
 		Name:              input.Name,
-		Nickname:          nullStringFromPtr(input.Nickname),
 		Color:             nullStringFromPtr(input.Color),
-		Shape:             nullStringFromPtr(input.Shape),
-		DosageForm:        nullStringFromPtr(input.DosageForm),
-		Strength:          nullStringFromPtr(input.Strength),
-		DosageMg:          nullIntFromPtr(input.DosageMg),
-		Instructions:      nullStringFromPtr(input.Instructions),
 		StockCount:        defaultStock(existing.StockCount),
 		LowStockThreshold: defaultLowStock(existing.LowStockThreshold),
 		CartridgeIndex:    nullIntFromPtr(input.CartridgeIndex),
-		Manufacturer:      nullStringFromPtr(input.Manufacturer),
-		ExternalID:        nullStringFromPtr(input.ExternalID),
 		MaxDailyDose:      defaultMaxDailyDose(existing.MaxDailyDose),
-		Metadata:          metaStr,
 		ID:                *input.ID,
 	})
 	if err != nil {
@@ -303,27 +206,18 @@ func (r *mutationResolver) CreateSchedule(ctx context.Context, input model.Sched
 		status = *input.Status
 	}
 
-	metaStr, err := encodeMetadata(input.Metadata)
-	if err != nil {
-		return nil, err
-	}
-
 	var created db.Schedule
-	err = r.withTx(ctx, func(qtx *db.Queries) error {
+	err := r.withTx(ctx, func(qtx *db.Queries) error {
 		schedule, err := qtx.CreateSchedule(ctx, db.CreateScheduleParams{
-			ID:                    uuid.NewString(),
-			PatientID:             input.PatientID,
-			Title:                 input.Title,
-			Timezone:              input.Timezone,
-			Rrule:                 input.Rrule,
-			StartDateIso:          formatDBTime(input.StartDateIso),
-			EndDateIso:            formatNullableTimePtr(input.EndDateIso),
-			LockoutMinutes:        int64(input.LockoutMinutes),
-			SnoozeIntervalMinutes: int64(input.SnoozeIntervalMinutes),
-			SnoozeMax:             int64(input.SnoozeMax),
-			Status:                string(status),
-			Notes:                 nullStringFromPtr(input.Notes),
-			Metadata:              metaStr,
+			ID:             uuid.NewString(),
+			PatientID:      input.PatientID,
+			Title:          input.Title,
+			Timezone:       input.Timezone,
+			Rrule:          input.Rrule,
+			StartDateIso:   formatDBTime(input.StartDateIso),
+			EndDateIso:     formatNullableTimePtr(input.EndDateIso),
+			LockoutMinutes: int64(input.LockoutMinutes),
+			Status:         string(status),
 		})
 		if err != nil {
 			return err
@@ -336,7 +230,6 @@ func (r *mutationResolver) CreateSchedule(ctx context.Context, input model.Sched
 				ScheduleID:   schedule.ID,
 				MedicationID: item.MedicationID,
 				Qty:          int64(item.Qty),
-				Instructions: nullStringFromPtr(item.Instructions),
 			}); err != nil {
 				return err
 			}
@@ -360,26 +253,18 @@ func (r *mutationResolver) UpdateSchedule(ctx context.Context, id string, input 
 	if input.Status != nil {
 		status = *input.Status
 	}
-	metaStr, err := encodeMetadata(input.Metadata)
-	if err != nil {
-		return nil, err
-	}
 
 	var updated db.Schedule
-	err = r.withTx(ctx, func(qtx *db.Queries) error {
+	err := r.withTx(ctx, func(qtx *db.Queries) error {
 		schedule, err := qtx.UpdateSchedule(ctx, db.UpdateScheduleParams{
-			Title:                 input.Title,
-			Timezone:              input.Timezone,
-			Rrule:                 input.Rrule,
-			StartDateIso:          formatDBTime(input.StartDateIso),
-			EndDateIso:            formatNullableTimePtr(input.EndDateIso),
-			LockoutMinutes:        int64(input.LockoutMinutes),
-			SnoozeIntervalMinutes: int64(input.SnoozeIntervalMinutes),
-			SnoozeMax:             int64(input.SnoozeMax),
-			Status:                string(status),
-			Notes:                 nullStringFromPtr(input.Notes),
-			Metadata:              metaStr,
-			ID:                    id,
+			Title:          input.Title,
+			Timezone:       input.Timezone,
+			Rrule:          input.Rrule,
+			StartDateIso:   formatDBTime(input.StartDateIso),
+			EndDateIso:     formatNullableTimePtr(input.EndDateIso),
+			LockoutMinutes: int64(input.LockoutMinutes),
+			Status:         string(status),
+			ID:             id,
 		})
 		if err != nil {
 			return err
@@ -395,7 +280,6 @@ func (r *mutationResolver) UpdateSchedule(ctx context.Context, id string, input 
 				ScheduleID:   id,
 				MedicationID: item.MedicationID,
 				Qty:          int64(item.Qty),
-				Instructions: nullStringFromPtr(item.Instructions),
 			}); err != nil {
 				return err
 			}
@@ -420,37 +304,28 @@ func (r *mutationResolver) ArchiveSchedule(ctx context.Context, id string) (*mod
 
 // RecordDispenseAction is the resolver for the recordDispenseAction field.
 func (r *mutationResolver) RecordDispenseAction(ctx context.Context, input model.DispenseActionInput) (*model.DispenseEvent, error) {
-	metadataStr, err := encodeMetadata(input.Metadata)
-	if err != nil {
-		return nil, err
-	}
-
 	var record db.DispenseEvent
+	var err error
+
 	if input.EventID != nil && *input.EventID != "" {
 		record, err = r.Queries.UpdateDispenseEvent(ctx, db.UpdateDispenseEventParams{
-			PatientID:      input.PatientID,
-			ScheduleID:     input.ScheduleID,
-			ScheduleItemID: nullStringFromPtr(input.ScheduleItemID),
-			DueAtIso:       formatDBTime(input.DueAtIso),
-			ActedAtIso:     formatNullableTimePtr(input.ActedAtIso),
-			Status:         string(input.Status),
-			ActionSource:   nullStringFromPtr(input.ActionSource),
-			Notes:          nullStringFromPtr(input.Notes),
-			Metadata:       metadataStr,
-			ID:             *input.EventID,
+			PatientID:    input.PatientID,
+			ScheduleID:   input.ScheduleID,
+			DueAtIso:     formatDBTime(input.DueAtIso),
+			ActedAtIso:   formatNullableTimePtr(input.ActedAtIso),
+			Status:       string(input.Status),
+			ActionSource: nullStringFromPtr(input.ActionSource),
+			ID:           *input.EventID,
 		})
 	} else {
 		record, err = r.Queries.CreateDispenseEvent(ctx, db.CreateDispenseEventParams{
-			ID:             uuid.NewString(),
-			PatientID:      input.PatientID,
-			ScheduleID:     input.ScheduleID,
-			ScheduleItemID: nullStringFromPtr(input.ScheduleItemID),
-			DueAtIso:       formatDBTime(input.DueAtIso),
-			ActedAtIso:     formatNullableTimePtr(input.ActedAtIso),
-			Status:         string(input.Status),
-			ActionSource:   nullStringFromPtr(input.ActionSource),
-			Notes:          nullStringFromPtr(input.Notes),
-			Metadata:       metadataStr,
+			ID:           uuid.NewString(),
+			PatientID:    input.PatientID,
+			ScheduleID:   input.ScheduleID,
+			DueAtIso:     formatDBTime(input.DueAtIso),
+			ActedAtIso:   formatNullableTimePtr(input.ActedAtIso),
+			Status:       string(input.Status),
+			ActionSource: nullStringFromPtr(input.ActionSource),
 		})
 	}
 	if err != nil {
@@ -462,7 +337,7 @@ func (r *mutationResolver) RecordDispenseAction(ctx context.Context, input model
 
 // Ping is the resolver for the ping field.
 func (r *queryResolver) Ping(ctx context.Context) (string, error) {
-	panic(fmt.Errorf("not implemented: Ping - ping"))
+	return "pong", nil
 }
 
 // Users is the resolver for the users field.
@@ -586,7 +461,7 @@ func (r *queryResolver) DispenseEvents(ctx context.Context, patientID string, ra
 }
 
 // DueNow is the resolver for the dueNow field.
-// Returns schedules that are due within the specified time window (default ±1 minute).
+// Returns schedules that are due within the specified time window (default +-1 minute).
 // This endpoint is designed for firmware to poll every minute.
 func (r *queryResolver) DueNow(ctx context.Context, patientID string, windowMinutes *int) ([]*model.DueSchedule, error) {
 	// Default to 1 minute window
@@ -645,30 +520,10 @@ func (r *queryResolver) DueNow(ctx context.Context, patientID string, windowMinu
 		// Build DueMedication list from schedule items
 		dueMeds := make([]*model.DueMedication, 0, len(schedule.Items))
 		for _, item := range schedule.Items {
-			// Extract hardware profile from medication metadata
-			var hardwareProfile map[string]interface{}
-			var siloSlot *int
-
-			if item.Medication.Metadata != nil {
-				if hp, ok := item.Medication.Metadata["hardwareProfile"].(map[string]interface{}); ok {
-					hardwareProfile = hp
-					if slot, ok := hp["siloSlot"].(float64); ok {
-						slotInt := int(slot)
-						siloSlot = &slotInt
-					}
-				}
-			}
-
-			// Fall back to cartridgeIndex if no siloSlot in hardwareProfile
-			if siloSlot == nil && item.Medication.CartridgeIndex != nil {
-				siloSlot = item.Medication.CartridgeIndex
-			}
-
 			dueMeds = append(dueMeds, &model.DueMedication{
-				Medication:      item.Medication,
-				Qty:             item.Qty,
-				SiloSlot:        siloSlot,
-				HardwareProfile: hardwareProfile,
+				Medication: item.Medication,
+				Qty:        item.Qty,
+				SiloSlot:   item.Medication.CartridgeIndex,
 			})
 		}
 

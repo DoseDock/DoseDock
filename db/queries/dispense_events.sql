@@ -1,16 +1,5 @@
 -- name: ListDispenseEventsByPatient :many
-SELECT
-  id,
-  patient_id,
-  schedule_id,
-  schedule_item_id,
-  due_at_iso,
-  acted_at_iso,
-  status,
-  action_source,
-  notes,
-  metadata,
-  created_at
+SELECT id, patient_id, schedule_id, due_at_iso, acted_at_iso, status, action_source, created_at
 FROM dispense_events
 WHERE patient_id = ?
   AND due_at_iso >= ?
@@ -18,71 +7,23 @@ WHERE patient_id = ?
 ORDER BY due_at_iso DESC;
 
 -- name: GetDispenseEvent :one
-SELECT
-  id,
-  patient_id,
-  schedule_id,
-  schedule_item_id,
-  due_at_iso,
-  acted_at_iso,
-  status,
-  action_source,
-  notes,
-  metadata,
-  created_at
+SELECT id, patient_id, schedule_id, due_at_iso, acted_at_iso, status, action_source, created_at
 FROM dispense_events
 WHERE id = ?;
 
 -- name: CreateDispenseEvent :one
-INSERT INTO dispense_events (
-  id,
-  patient_id,
-  schedule_id,
-  schedule_item_id,
-  due_at_iso,
-  acted_at_iso,
-  status,
-  action_source,
-  notes,
-  metadata
-)
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-RETURNING
-  id,
-  patient_id,
-  schedule_id,
-  schedule_item_id,
-  due_at_iso,
-  acted_at_iso,
-  status,
-  action_source,
-  notes,
-  metadata,
-  created_at;
+INSERT INTO dispense_events (id, patient_id, schedule_id, due_at_iso, acted_at_iso, status, action_source)
+VALUES (?, ?, ?, ?, ?, ?, ?)
+RETURNING id, patient_id, schedule_id, due_at_iso, acted_at_iso, status, action_source, created_at;
 
 -- name: UpdateDispenseEvent :one
 UPDATE dispense_events
 SET
   patient_id = ?,
   schedule_id = ?,
-  schedule_item_id = ?,
   due_at_iso = ?,
   acted_at_iso = ?,
   status = ?,
-  action_source = ?,
-  notes = ?,
-  metadata = ?
+  action_source = ?
 WHERE id = ?
-RETURNING
-  id,
-  patient_id,
-  schedule_id,
-  schedule_item_id,
-  due_at_iso,
-  acted_at_iso,
-  status,
-  action_source,
-  notes,
-  metadata,
-  created_at;
-
+RETURNING id, patient_id, schedule_id, due_at_iso, acted_at_iso, status, action_source, created_at;

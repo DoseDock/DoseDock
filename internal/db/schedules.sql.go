@@ -16,22 +16,7 @@ SET
   status = 'ARCHIVED',
   updated_at = datetime('now')
 WHERE id = ?
-RETURNING
-  id,
-  patient_id,
-  title,
-  timezone,
-  rrule,
-  start_date_iso,
-  end_date_iso,
-  lockout_minutes,
-  snooze_interval_minutes,
-  snooze_max,
-  status,
-  notes,
-  metadata,
-  created_at,
-  updated_at
+RETURNING id, patient_id, title, timezone, rrule, start_date_iso, end_date_iso, lockout_minutes, status, created_at, updated_at
 `
 
 func (q *Queries) ArchiveSchedule(ctx context.Context, id string) (Schedule, error) {
@@ -46,11 +31,7 @@ func (q *Queries) ArchiveSchedule(ctx context.Context, id string) (Schedule, err
 		&i.StartDateIso,
 		&i.EndDateIso,
 		&i.LockoutMinutes,
-		&i.SnoozeIntervalMinutes,
-		&i.SnoozeMax,
 		&i.Status,
-		&i.Notes,
-		&i.Metadata,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
@@ -58,54 +39,21 @@ func (q *Queries) ArchiveSchedule(ctx context.Context, id string) (Schedule, err
 }
 
 const createSchedule = `-- name: CreateSchedule :one
-INSERT INTO schedules (
-  id,
-  patient_id,
-  title,
-  timezone,
-  rrule,
-  start_date_iso,
-  end_date_iso,
-  lockout_minutes,
-  snooze_interval_minutes,
-  snooze_max,
-  status,
-  notes,
-  metadata
-)
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-RETURNING
-  id,
-  patient_id,
-  title,
-  timezone,
-  rrule,
-  start_date_iso,
-  end_date_iso,
-  lockout_minutes,
-  snooze_interval_minutes,
-  snooze_max,
-  status,
-  notes,
-  metadata,
-  created_at,
-  updated_at
+INSERT INTO schedules (id, patient_id, title, timezone, rrule, start_date_iso, end_date_iso, lockout_minutes, status)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+RETURNING id, patient_id, title, timezone, rrule, start_date_iso, end_date_iso, lockout_minutes, status, created_at, updated_at
 `
 
 type CreateScheduleParams struct {
-	ID                    string         `json:"id"`
-	PatientID             string         `json:"patient_id"`
-	Title                 string         `json:"title"`
-	Timezone              string         `json:"timezone"`
-	Rrule                 string         `json:"rrule"`
-	StartDateIso          string         `json:"start_date_iso"`
-	EndDateIso            sql.NullString `json:"end_date_iso"`
-	LockoutMinutes        int64          `json:"lockout_minutes"`
-	SnoozeIntervalMinutes int64          `json:"snooze_interval_minutes"`
-	SnoozeMax             int64          `json:"snooze_max"`
-	Status                string         `json:"status"`
-	Notes                 sql.NullString `json:"notes"`
-	Metadata              string         `json:"metadata"`
+	ID             string         `json:"id"`
+	PatientID      string         `json:"patient_id"`
+	Title          string         `json:"title"`
+	Timezone       string         `json:"timezone"`
+	Rrule          string         `json:"rrule"`
+	StartDateIso   string         `json:"start_date_iso"`
+	EndDateIso     sql.NullString `json:"end_date_iso"`
+	LockoutMinutes int64          `json:"lockout_minutes"`
+	Status         string         `json:"status"`
 }
 
 func (q *Queries) CreateSchedule(ctx context.Context, arg CreateScheduleParams) (Schedule, error) {
@@ -118,11 +66,7 @@ func (q *Queries) CreateSchedule(ctx context.Context, arg CreateScheduleParams) 
 		arg.StartDateIso,
 		arg.EndDateIso,
 		arg.LockoutMinutes,
-		arg.SnoozeIntervalMinutes,
-		arg.SnoozeMax,
 		arg.Status,
-		arg.Notes,
-		arg.Metadata,
 	)
 	var i Schedule
 	err := row.Scan(
@@ -134,11 +78,7 @@ func (q *Queries) CreateSchedule(ctx context.Context, arg CreateScheduleParams) 
 		&i.StartDateIso,
 		&i.EndDateIso,
 		&i.LockoutMinutes,
-		&i.SnoozeIntervalMinutes,
-		&i.SnoozeMax,
 		&i.Status,
-		&i.Notes,
-		&i.Metadata,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
@@ -146,28 +86,16 @@ func (q *Queries) CreateSchedule(ctx context.Context, arg CreateScheduleParams) 
 }
 
 const createScheduleItem = `-- name: CreateScheduleItem :one
-INSERT INTO schedule_items (
-  id,
-  schedule_id,
-  medication_id,
-  qty,
-  instructions
-)
-VALUES (?, ?, ?, ?, ?)
-RETURNING
-  id,
-  schedule_id,
-  medication_id,
-  qty,
-  instructions
+INSERT INTO schedule_items (id, schedule_id, medication_id, qty)
+VALUES (?, ?, ?, ?)
+RETURNING id, schedule_id, medication_id, qty
 `
 
 type CreateScheduleItemParams struct {
-	ID           string         `json:"id"`
-	ScheduleID   string         `json:"schedule_id"`
-	MedicationID string         `json:"medication_id"`
-	Qty          int64          `json:"qty"`
-	Instructions sql.NullString `json:"instructions"`
+	ID           string `json:"id"`
+	ScheduleID   string `json:"schedule_id"`
+	MedicationID string `json:"medication_id"`
+	Qty          int64  `json:"qty"`
 }
 
 func (q *Queries) CreateScheduleItem(ctx context.Context, arg CreateScheduleItemParams) (ScheduleItem, error) {
@@ -176,7 +104,6 @@ func (q *Queries) CreateScheduleItem(ctx context.Context, arg CreateScheduleItem
 		arg.ScheduleID,
 		arg.MedicationID,
 		arg.Qty,
-		arg.Instructions,
 	)
 	var i ScheduleItem
 	err := row.Scan(
@@ -184,7 +111,6 @@ func (q *Queries) CreateScheduleItem(ctx context.Context, arg CreateScheduleItem
 		&i.ScheduleID,
 		&i.MedicationID,
 		&i.Qty,
-		&i.Instructions,
 	)
 	return i, err
 }
@@ -200,22 +126,7 @@ func (q *Queries) DeleteScheduleItemsBySchedule(ctx context.Context, scheduleID 
 }
 
 const getSchedule = `-- name: GetSchedule :one
-SELECT
-  id,
-  patient_id,
-  title,
-  timezone,
-  rrule,
-  start_date_iso,
-  end_date_iso,
-  lockout_minutes,
-  snooze_interval_minutes,
-  snooze_max,
-  status,
-  notes,
-  metadata,
-  created_at,
-  updated_at
+SELECT id, patient_id, title, timezone, rrule, start_date_iso, end_date_iso, lockout_minutes, status, created_at, updated_at
 FROM schedules
 WHERE id = ?
 `
@@ -232,11 +143,7 @@ func (q *Queries) GetSchedule(ctx context.Context, id string) (Schedule, error) 
 		&i.StartDateIso,
 		&i.EndDateIso,
 		&i.LockoutMinutes,
-		&i.SnoozeIntervalMinutes,
-		&i.SnoozeMax,
 		&i.Status,
-		&i.Notes,
-		&i.Metadata,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
@@ -249,24 +156,14 @@ SELECT
   si.schedule_id,
   si.medication_id AS schedule_medication_id,
   si.qty,
-  si.instructions AS schedule_item_instructions,
   m.id AS medication_id,
   m.patient_id AS medication_patient_id,
   m.name AS medication_name,
-  m.nickname AS medication_nickname,
   m.color AS medication_color,
-  m.shape AS medication_shape,
-  m.dosage_form AS medication_dosage_form,
-  m.strength AS medication_strength,
-  m.dosage_mg AS medication_dosage_mg,
-  m.instructions AS medication_instructions,
   m.stock_count AS medication_stock_count,
   m.low_stock_threshold AS medication_low_stock_threshold,
   m.cartridge_index AS medication_cartridge_index,
-  m.manufacturer AS medication_manufacturer,
-  m.external_id AS medication_external_id,
   m.max_daily_dose AS medication_max_daily_dose,
-  m.metadata AS medication_metadata,
   m.created_at AS medication_created_at,
   m.updated_at AS medication_updated_at
 FROM schedule_items si
@@ -280,24 +177,14 @@ type ListScheduleItemsByScheduleRow struct {
 	ScheduleID                  string         `json:"schedule_id"`
 	ScheduleMedicationID        string         `json:"schedule_medication_id"`
 	Qty                         int64          `json:"qty"`
-	ScheduleItemInstructions    sql.NullString `json:"schedule_item_instructions"`
 	MedicationID                string         `json:"medication_id"`
 	MedicationPatientID         string         `json:"medication_patient_id"`
 	MedicationName              string         `json:"medication_name"`
-	MedicationNickname          sql.NullString `json:"medication_nickname"`
 	MedicationColor             sql.NullString `json:"medication_color"`
-	MedicationShape             sql.NullString `json:"medication_shape"`
-	MedicationDosageForm        sql.NullString `json:"medication_dosage_form"`
-	MedicationStrength          sql.NullString `json:"medication_strength"`
-	MedicationDosageMg          sql.NullInt64  `json:"medication_dosage_mg"`
-	MedicationInstructions      sql.NullString `json:"medication_instructions"`
 	MedicationStockCount        int64          `json:"medication_stock_count"`
 	MedicationLowStockThreshold int64          `json:"medication_low_stock_threshold"`
 	MedicationCartridgeIndex    sql.NullInt64  `json:"medication_cartridge_index"`
-	MedicationManufacturer      sql.NullString `json:"medication_manufacturer"`
-	MedicationExternalID        sql.NullString `json:"medication_external_id"`
 	MedicationMaxDailyDose      int64          `json:"medication_max_daily_dose"`
-	MedicationMetadata          string         `json:"medication_metadata"`
 	MedicationCreatedAt         string         `json:"medication_created_at"`
 	MedicationUpdatedAt         string         `json:"medication_updated_at"`
 }
@@ -316,24 +203,14 @@ func (q *Queries) ListScheduleItemsBySchedule(ctx context.Context, scheduleID st
 			&i.ScheduleID,
 			&i.ScheduleMedicationID,
 			&i.Qty,
-			&i.ScheduleItemInstructions,
 			&i.MedicationID,
 			&i.MedicationPatientID,
 			&i.MedicationName,
-			&i.MedicationNickname,
 			&i.MedicationColor,
-			&i.MedicationShape,
-			&i.MedicationDosageForm,
-			&i.MedicationStrength,
-			&i.MedicationDosageMg,
-			&i.MedicationInstructions,
 			&i.MedicationStockCount,
 			&i.MedicationLowStockThreshold,
 			&i.MedicationCartridgeIndex,
-			&i.MedicationManufacturer,
-			&i.MedicationExternalID,
 			&i.MedicationMaxDailyDose,
-			&i.MedicationMetadata,
 			&i.MedicationCreatedAt,
 			&i.MedicationUpdatedAt,
 		); err != nil {
@@ -351,22 +228,7 @@ func (q *Queries) ListScheduleItemsBySchedule(ctx context.Context, scheduleID st
 }
 
 const listSchedulesByPatient = `-- name: ListSchedulesByPatient :many
-SELECT
-  id,
-  patient_id,
-  title,
-  timezone,
-  rrule,
-  start_date_iso,
-  end_date_iso,
-  lockout_minutes,
-  snooze_interval_minutes,
-  snooze_max,
-  status,
-  notes,
-  metadata,
-  created_at,
-  updated_at
+SELECT id, patient_id, title, timezone, rrule, start_date_iso, end_date_iso, lockout_minutes, status, created_at, updated_at
 FROM schedules
 WHERE patient_id = ?
 ORDER BY created_at DESC
@@ -390,11 +252,7 @@ func (q *Queries) ListSchedulesByPatient(ctx context.Context, patientID string) 
 			&i.StartDateIso,
 			&i.EndDateIso,
 			&i.LockoutMinutes,
-			&i.SnoozeIntervalMinutes,
-			&i.SnoozeMax,
 			&i.Status,
-			&i.Notes,
-			&i.Metadata,
 			&i.CreatedAt,
 			&i.UpdatedAt,
 		); err != nil {
@@ -420,44 +278,21 @@ SET
   start_date_iso = ?,
   end_date_iso = ?,
   lockout_minutes = ?,
-  snooze_interval_minutes = ?,
-  snooze_max = ?,
   status = ?,
-  notes = ?,
-  metadata = ?,
   updated_at = datetime('now')
 WHERE id = ?
-RETURNING
-  id,
-  patient_id,
-  title,
-  timezone,
-  rrule,
-  start_date_iso,
-  end_date_iso,
-  lockout_minutes,
-  snooze_interval_minutes,
-  snooze_max,
-  status,
-  notes,
-  metadata,
-  created_at,
-  updated_at
+RETURNING id, patient_id, title, timezone, rrule, start_date_iso, end_date_iso, lockout_minutes, status, created_at, updated_at
 `
 
 type UpdateScheduleParams struct {
-	Title                 string         `json:"title"`
-	Timezone              string         `json:"timezone"`
-	Rrule                 string         `json:"rrule"`
-	StartDateIso          string         `json:"start_date_iso"`
-	EndDateIso            sql.NullString `json:"end_date_iso"`
-	LockoutMinutes        int64          `json:"lockout_minutes"`
-	SnoozeIntervalMinutes int64          `json:"snooze_interval_minutes"`
-	SnoozeMax             int64          `json:"snooze_max"`
-	Status                string         `json:"status"`
-	Notes                 sql.NullString `json:"notes"`
-	Metadata              string         `json:"metadata"`
-	ID                    string         `json:"id"`
+	Title          string         `json:"title"`
+	Timezone       string         `json:"timezone"`
+	Rrule          string         `json:"rrule"`
+	StartDateIso   string         `json:"start_date_iso"`
+	EndDateIso     sql.NullString `json:"end_date_iso"`
+	LockoutMinutes int64          `json:"lockout_minutes"`
+	Status         string         `json:"status"`
+	ID             string         `json:"id"`
 }
 
 func (q *Queries) UpdateSchedule(ctx context.Context, arg UpdateScheduleParams) (Schedule, error) {
@@ -468,11 +303,7 @@ func (q *Queries) UpdateSchedule(ctx context.Context, arg UpdateScheduleParams) 
 		arg.StartDateIso,
 		arg.EndDateIso,
 		arg.LockoutMinutes,
-		arg.SnoozeIntervalMinutes,
-		arg.SnoozeMax,
 		arg.Status,
-		arg.Notes,
-		arg.Metadata,
 		arg.ID,
 	)
 	var i Schedule
@@ -485,11 +316,7 @@ func (q *Queries) UpdateSchedule(ctx context.Context, arg UpdateScheduleParams) 
 		&i.StartDateIso,
 		&i.EndDateIso,
 		&i.LockoutMinutes,
-		&i.SnoozeIntervalMinutes,
-		&i.SnoozeMax,
 		&i.Status,
-		&i.Notes,
-		&i.Metadata,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)

@@ -30,7 +30,7 @@ export const PillChip: React.FC<PillChipProps> = ({ pill, quantity, size = 'md' 
       <View
         className="w-3 h-3 rounded-full mr-2"
         style={{ backgroundColor: pill.color }}
-        accessibilityLabel={`${pill.color} ${pill.shape} pill`}
+        accessibilityLabel={`${pill.color} pill`}
       />
       {quantity && <Text className={`font-semibold mr-1 ${textSizeClasses[size]}`}>{quantity}×</Text>}
       <Text className={`font-medium ${textSizeClasses[size]}`}>{pill.name}</Text>

@@ -94,10 +94,6 @@ type CreatePatientRequest = {
   firstName: string;
   lastName: string;
   timezone: string;
-  dateOfBirth?: string;
-  gender?: string;
-  preferredLanguage?: string;
-  notes?: string;
 };
 
 export async function createPatientForUser(input: CreatePatientRequest): Promise<GraphQLPatient> {
@@ -113,11 +109,6 @@ export async function createPatientForUser(input: CreatePatientRequest): Promise
         firstName: input.firstName,
         lastName: input.lastName,
         timezone: input.timezone,
-        dateOfBirth: input.dateOfBirth || null,
-        gender: input.gender || null,
-        preferredLanguage: input.preferredLanguage || null,
-        notes: input.notes || null,
-        metadata: {},
       },
     }
   );

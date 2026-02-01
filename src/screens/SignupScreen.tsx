@@ -40,10 +40,6 @@ export const SignupScreen: React.FC = () => {
   const [fullName, setFullName] = useState('');
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
-  const [dateOfBirth, setDateOfBirth] = useState('');
-  const [gender, setGender] = useState('');
-  const [preferredLanguage, setPreferredLanguage] = useState('');
-  const [notes, setNotes] = useState('');
   const [timezone, setTimezone] = useState(DEFAULT_TIMEZONE);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoadingPatients, setIsLoadingPatients] = useState(false);
@@ -74,7 +70,6 @@ export const SignupScreen: React.FC = () => {
       });
 
       setCurrentUser(user);
-      // Convert GraphQLUser to SessionUser
       const sessionUser: SessionUser = {
         id: user.id,
         email: user.email,
@@ -87,20 +82,13 @@ export const SignupScreen: React.FC = () => {
       setPatients(userPatients);
 
       if (userPatients.length === 1) {
-        // Auto-select if only one patient
         const sessionPatient: SessionPatient = {
           id: userPatients[0].id,
           firstName: userPatients[0].firstName,
           lastName: userPatients[0].lastName,
           timezone: userPatients[0].timezone,
         };
-        console.log('Auto-selecting patient:', sessionPatient);
         setPatient(sessionPatient);
-        
-        // Wait a moment for store to update
-        await new Promise((resolve) => setTimeout(resolve, 100));
-        const storedPatient = useSessionStore.getState().patient;
-        console.log('Stored patient after auto-select:', storedPatient);
       }
     } catch (error: any) {
       Alert.alert('Login failed', error?.message || 'Invalid email or password. Please try again.');
@@ -140,7 +128,6 @@ export const SignupScreen: React.FC = () => {
 
     setIsSubmitting(true);
     try {
-      // Check if user already exists
       let user = await fetchUserByEmail(normalizedEmail);
       if (user) {
         Alert.alert(
@@ -152,7 +139,6 @@ export const SignupScreen: React.FC = () => {
         return;
       }
 
-      // Create new user with password
       user = await upsertUserProfile({
         email: normalizedEmail,
         fullName: trimmedFullName,
@@ -162,51 +148,20 @@ export const SignupScreen: React.FC = () => {
       setUser(user);
       setCurrentUser(user);
 
-      // Format dateOfBirth to ISO 8601 if provided
-      let formattedDateOfBirth: string | undefined = undefined;
-      if (dateOfBirth.trim()) {
-        const trimmedDate = dateOfBirth.trim();
-        // Validate YYYY-MM-DD format
-        const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
-        if (dateRegex.test(trimmedDate)) {
-          // Convert to ISO 8601 format (YYYY-MM-DDTHH:mm:ssZ)
-          // For date-only, we'll use midnight UTC: YYYY-MM-DDT00:00:00Z
-          formattedDateOfBirth = `${trimmedDate}T00:00:00Z`;
-        } else {
-          Alert.alert('Invalid date format', 'Date of birth must be in YYYY-MM-DD format (e.g., 2003-09-29)');
-          setIsSubmitting(false);
-          return;
-        }
-      }
-
-      // Create patient for this user
       const patient = await createPatientForUser({
         userId: user.id,
         firstName: trimmedFirstName,
         lastName: trimmedLastName,
         timezone: timezone || DEFAULT_TIMEZONE,
-        dateOfBirth: formattedDateOfBirth,
-        gender: gender.trim() || undefined,
-        preferredLanguage: preferredLanguage.trim() || undefined,
-        notes: notes.trim() || undefined,
       });
 
-      // Set patient and navigate
-      // Convert GraphQLPatient to SessionPatient (they have the same structure)
       const sessionPatient: SessionPatient = {
         id: patient.id,
         firstName: patient.firstName,
         lastName: patient.lastName,
         timezone: patient.timezone,
       };
-      console.log('Setting patient:', sessionPatient);
       setPatient(sessionPatient);
-      
-      // Wait a moment for AsyncStorage to persist, then check
-      await new Promise((resolve) => setTimeout(resolve, 100));
-      const storedPatient = useSessionStore.getState().patient;
-      console.log('Stored patient after set:', storedPatient);
-      
       setIsSubmitting(false);
     } catch (error: any) {
       console.error('Signup error:', error);
@@ -222,7 +177,6 @@ export const SignupScreen: React.FC = () => {
       lastName: patient.lastName,
       timezone: patient.timezone,
     };
-    console.log('Selecting patient:', sessionPatient);
     setPatient(sessionPatient);
   };
 
@@ -255,7 +209,6 @@ export const SignupScreen: React.FC = () => {
         lastName: patient.lastName,
         timezone: patient.timezone,
       };
-      console.log('Setting new patient:', sessionPatient);
       setPatient(sessionPatient);
     } catch (error: any) {
       Alert.alert('Create patient failed', error?.message || 'Unable to create patient.');
@@ -270,10 +223,6 @@ export const SignupScreen: React.FC = () => {
     setFullName('');
     setFirstName('');
     setLastName('');
-    setDateOfBirth('');
-    setGender('');
-    setPreferredLanguage('');
-    setNotes('');
     setTimezone(DEFAULT_TIMEZONE);
     setPatients([]);
     setCurrentUser(null);
@@ -401,7 +350,7 @@ export const SignupScreen: React.FC = () => {
               autoComplete="email"
               autoCapitalize="none"
               keyboardType="email-address"
-              placeholder="caregiver@example.com"
+              placeholder="you@example.com"
               style={styles.input}
               value={email}
               onChangeText={setEmail}
@@ -430,7 +379,7 @@ export const SignupScreen: React.FC = () => {
                 <TextInput
                   nativeID="signup-fullName"
                   autoComplete="name"
-                  placeholder="Care Giver"
+                  placeholder="Your Name"
                   style={styles.input}
                   value={fullName}
                   onChangeText={setFullName}
@@ -469,45 +418,6 @@ export const SignupScreen: React.FC = () => {
                 </View>
               </View>
 
-              <View style={styles.fieldRow}>
-                <View style={styles.fieldHalf}>
-                  <Text style={styles.label}>Date of Birth</Text>
-                  <TextInput
-                    nativeID="patient-dateOfBirth"
-                    placeholder="YYYY-MM-DD (e.g., 2003-09-29)"
-                    style={styles.input}
-                    value={dateOfBirth}
-                    onChangeText={setDateOfBirth}
-                    editable={!isSubmitting}
-                    maxLength={10}
-                  />
-                  <Text style={styles.hint}>Format: YYYY-MM-DD</Text>
-                </View>
-                <View style={styles.fieldHalf}>
-                  <Text style={styles.label}>Gender</Text>
-                  <TextInput
-                    nativeID="patient-gender"
-                    placeholder="Male, Female, Other"
-                    style={styles.input}
-                    value={gender}
-                    onChangeText={setGender}
-                    editable={!isSubmitting}
-                  />
-                </View>
-              </View>
-
-              <View style={styles.field}>
-                <Text style={styles.label}>Preferred Language</Text>
-                <TextInput
-                  nativeID="patient-preferredLanguage"
-                  placeholder="English, Spanish, etc."
-                  style={styles.input}
-                  value={preferredLanguage}
-                  onChangeText={setPreferredLanguage}
-                  editable={!isSubmitting}
-                />
-              </View>
-
               <View style={styles.field}>
                 <Text style={styles.label}>Timezone</Text>
                 <TextInput
@@ -519,20 +429,6 @@ export const SignupScreen: React.FC = () => {
                   editable={!isSubmitting}
                 />
                 <Text style={styles.hint}>Defaults to your browser timezone if left empty.</Text>
-              </View>
-
-              <View style={styles.field}>
-                <Text style={styles.label}>Notes</Text>
-                <TextInput
-                  nativeID="patient-notes"
-                  placeholder="Additional patient information..."
-                  style={[styles.input, styles.textArea]}
-                  value={notes}
-                  onChangeText={setNotes}
-                  editable={!isSubmitting}
-                  multiline
-                  numberOfLines={3}
-                />
               </View>
             </>
           )}
@@ -608,11 +504,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: colors.textPrimary,
   },
-  sectionSubtitle: {
-    fontSize: 15,
-    color: colors.textSecondary,
-    marginBottom: 4,
-  },
   field: {
     gap: 6,
   },
@@ -630,10 +521,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: colors.textPrimary,
     backgroundColor: colors.surfaceAlt,
-  },
-  textArea: {
-    minHeight: 80,
-    textAlignVertical: 'top',
   },
   primaryButton: {
     backgroundColor: colors.accent,
