@@ -40,18 +40,7 @@ type CreateUserParams struct {
 	PasswordHash sql.NullString `json:"password_hash"`
 }
 
-type CreateUserRow struct {
-	ID           string         `json:"id"`
-	Email        string         `json:"email"`
-	FullName     string         `json:"full_name"`
-	Phone        sql.NullString `json:"phone"`
-	Timezone     string         `json:"timezone"`
-	PasswordHash sql.NullString `json:"password_hash"`
-	CreatedAt    string         `json:"created_at"`
-	UpdatedAt    string         `json:"updated_at"`
-}
-
-func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (CreateUserRow, error) {
+func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, error) {
 	row := q.queryRow(ctx, q.createUserStmt, createUser,
 		arg.ID,
 		arg.Email,
@@ -60,7 +49,7 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (CreateU
 		arg.Timezone,
 		arg.PasswordHash,
 	)
-	var i CreateUserRow
+	var i User
 	err := row.Scan(
 		&i.ID,
 		&i.Email,
@@ -126,20 +115,9 @@ FROM users
 WHERE email = ?
 `
 
-type GetUserByEmailRow struct {
-	ID           string         `json:"id"`
-	Email        string         `json:"email"`
-	FullName     string         `json:"full_name"`
-	Phone        sql.NullString `json:"phone"`
-	Timezone     string         `json:"timezone"`
-	PasswordHash sql.NullString `json:"password_hash"`
-	CreatedAt    string         `json:"created_at"`
-	UpdatedAt    string         `json:"updated_at"`
-}
-
-func (q *Queries) GetUserByEmail(ctx context.Context, email string) (GetUserByEmailRow, error) {
+func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error) {
 	row := q.queryRow(ctx, q.getUserByEmailStmt, getUserByEmail, email)
-	var i GetUserByEmailRow
+	var i User
 	err := row.Scan(
 		&i.ID,
 		&i.Email,
@@ -237,18 +215,7 @@ type UpdateUserParams struct {
 	ID           string         `json:"id"`
 }
 
-type UpdateUserRow struct {
-	ID           string         `json:"id"`
-	Email        string         `json:"email"`
-	FullName     string         `json:"full_name"`
-	Phone        sql.NullString `json:"phone"`
-	Timezone     string         `json:"timezone"`
-	PasswordHash sql.NullString `json:"password_hash"`
-	CreatedAt    string         `json:"created_at"`
-	UpdatedAt    string         `json:"updated_at"`
-}
-
-func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) (UpdateUserRow, error) {
+func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) (User, error) {
 	row := q.queryRow(ctx, q.updateUserStmt, updateUser,
 		arg.Email,
 		arg.FullName,
@@ -257,7 +224,7 @@ func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) (UpdateU
 		arg.PasswordHash,
 		arg.ID,
 	)
-	var i UpdateUserRow
+	var i User
 	err := row.Scan(
 		&i.ID,
 		&i.Email,

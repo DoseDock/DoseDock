@@ -11,54 +11,17 @@ import (
 )
 
 const createPatient = `-- name: CreatePatient :one
-INSERT INTO patients (
-  id,
-  user_id,
-  first_name,
-  last_name,
-  date_of_birth,
-  gender,
-  timezone,
-  preferred_language,
-  caregiver_name,
-  caregiver_email,
-  caregiver_phone,
-  notes,
-  metadata
-)
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-RETURNING
-  id,
-  user_id,
-  first_name,
-  last_name,
-  date_of_birth,
-  gender,
-  timezone,
-  preferred_language,
-  caregiver_name,
-  caregiver_email,
-  caregiver_phone,
-  notes,
-  metadata,
-  created_at,
-  updated_at
+INSERT INTO patients (id, user_id, first_name, last_name, timezone)
+VALUES (?, ?, ?, ?, ?)
+RETURNING id, user_id, first_name, last_name, timezone, created_at, updated_at
 `
 
 type CreatePatientParams struct {
-	ID                string         `json:"id"`
-	UserID            sql.NullString `json:"user_id"`
-	FirstName         string         `json:"first_name"`
-	LastName          string         `json:"last_name"`
-	DateOfBirth       sql.NullString `json:"date_of_birth"`
-	Gender            sql.NullString `json:"gender"`
-	Timezone          string         `json:"timezone"`
-	PreferredLanguage sql.NullString `json:"preferred_language"`
-	CaregiverName     sql.NullString `json:"caregiver_name"`
-	CaregiverEmail    sql.NullString `json:"caregiver_email"`
-	CaregiverPhone    sql.NullString `json:"caregiver_phone"`
-	Notes             sql.NullString `json:"notes"`
-	Metadata          string         `json:"metadata"`
+	ID        string         `json:"id"`
+	UserID    sql.NullString `json:"user_id"`
+	FirstName string         `json:"first_name"`
+	LastName  string         `json:"last_name"`
+	Timezone  string         `json:"timezone"`
 }
 
 func (q *Queries) CreatePatient(ctx context.Context, arg CreatePatientParams) (Patient, error) {
@@ -67,15 +30,7 @@ func (q *Queries) CreatePatient(ctx context.Context, arg CreatePatientParams) (P
 		arg.UserID,
 		arg.FirstName,
 		arg.LastName,
-		arg.DateOfBirth,
-		arg.Gender,
 		arg.Timezone,
-		arg.PreferredLanguage,
-		arg.CaregiverName,
-		arg.CaregiverEmail,
-		arg.CaregiverPhone,
-		arg.Notes,
-		arg.Metadata,
 	)
 	var i Patient
 	err := row.Scan(
@@ -83,15 +38,7 @@ func (q *Queries) CreatePatient(ctx context.Context, arg CreatePatientParams) (P
 		&i.UserID,
 		&i.FirstName,
 		&i.LastName,
-		&i.DateOfBirth,
-		&i.Gender,
 		&i.Timezone,
-		&i.PreferredLanguage,
-		&i.CaregiverName,
-		&i.CaregiverEmail,
-		&i.CaregiverPhone,
-		&i.Notes,
-		&i.Metadata,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
@@ -99,22 +46,7 @@ func (q *Queries) CreatePatient(ctx context.Context, arg CreatePatientParams) (P
 }
 
 const getPatient = `-- name: GetPatient :one
-SELECT
-  id,
-  user_id,
-  first_name,
-  last_name,
-  date_of_birth,
-  gender,
-  timezone,
-  preferred_language,
-  caregiver_name,
-  caregiver_email,
-  caregiver_phone,
-  notes,
-  metadata,
-  created_at,
-  updated_at
+SELECT id, user_id, first_name, last_name, timezone, created_at, updated_at
 FROM patients
 WHERE id = ?
 `
@@ -127,15 +59,7 @@ func (q *Queries) GetPatient(ctx context.Context, id string) (Patient, error) {
 		&i.UserID,
 		&i.FirstName,
 		&i.LastName,
-		&i.DateOfBirth,
-		&i.Gender,
 		&i.Timezone,
-		&i.PreferredLanguage,
-		&i.CaregiverName,
-		&i.CaregiverEmail,
-		&i.CaregiverPhone,
-		&i.Notes,
-		&i.Metadata,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
@@ -143,22 +67,7 @@ func (q *Queries) GetPatient(ctx context.Context, id string) (Patient, error) {
 }
 
 const listPatients = `-- name: ListPatients :many
-SELECT
-  id,
-  user_id,
-  first_name,
-  last_name,
-  date_of_birth,
-  gender,
-  timezone,
-  preferred_language,
-  caregiver_name,
-  caregiver_email,
-  caregiver_phone,
-  notes,
-  metadata,
-  created_at,
-  updated_at
+SELECT id, user_id, first_name, last_name, timezone, created_at, updated_at
 FROM patients
 ORDER BY created_at DESC
 `
@@ -177,15 +86,7 @@ func (q *Queries) ListPatients(ctx context.Context) ([]Patient, error) {
 			&i.UserID,
 			&i.FirstName,
 			&i.LastName,
-			&i.DateOfBirth,
-			&i.Gender,
 			&i.Timezone,
-			&i.PreferredLanguage,
-			&i.CaregiverName,
-			&i.CaregiverEmail,
-			&i.CaregiverPhone,
-			&i.Notes,
-			&i.Metadata,
 			&i.CreatedAt,
 			&i.UpdatedAt,
 		); err != nil {
@@ -203,22 +104,7 @@ func (q *Queries) ListPatients(ctx context.Context) ([]Patient, error) {
 }
 
 const listPatientsByUser = `-- name: ListPatientsByUser :many
-SELECT
-  id,
-  user_id,
-  first_name,
-  last_name,
-  date_of_birth,
-  gender,
-  timezone,
-  preferred_language,
-  caregiver_name,
-  caregiver_email,
-  caregiver_phone,
-  notes,
-  metadata,
-  created_at,
-  updated_at
+SELECT id, user_id, first_name, last_name, timezone, created_at, updated_at
 FROM patients
 WHERE user_id = ?
 ORDER BY created_at DESC
@@ -238,15 +124,7 @@ func (q *Queries) ListPatientsByUser(ctx context.Context, userID sql.NullString)
 			&i.UserID,
 			&i.FirstName,
 			&i.LastName,
-			&i.DateOfBirth,
-			&i.Gender,
 			&i.Timezone,
-			&i.PreferredLanguage,
-			&i.CaregiverName,
-			&i.CaregiverEmail,
-			&i.CaregiverPhone,
-			&i.Notes,
-			&i.Metadata,
 			&i.CreatedAt,
 			&i.UpdatedAt,
 		); err != nil {
@@ -269,49 +147,18 @@ SET
   user_id = ?,
   first_name = ?,
   last_name = ?,
-  date_of_birth = ?,
-  gender = ?,
   timezone = ?,
-  preferred_language = ?,
-  caregiver_name = ?,
-  caregiver_email = ?,
-  caregiver_phone = ?,
-  notes = ?,
-  metadata = ?,
   updated_at = datetime('now')
 WHERE id = ?
-RETURNING
-  id,
-  user_id,
-  first_name,
-  last_name,
-  date_of_birth,
-  gender,
-  timezone,
-  preferred_language,
-  caregiver_name,
-  caregiver_email,
-  caregiver_phone,
-  notes,
-  metadata,
-  created_at,
-  updated_at
+RETURNING id, user_id, first_name, last_name, timezone, created_at, updated_at
 `
 
 type UpdatePatientParams struct {
-	UserID            sql.NullString `json:"user_id"`
-	FirstName         string         `json:"first_name"`
-	LastName          string         `json:"last_name"`
-	DateOfBirth       sql.NullString `json:"date_of_birth"`
-	Gender            sql.NullString `json:"gender"`
-	Timezone          string         `json:"timezone"`
-	PreferredLanguage sql.NullString `json:"preferred_language"`
-	CaregiverName     sql.NullString `json:"caregiver_name"`
-	CaregiverEmail    sql.NullString `json:"caregiver_email"`
-	CaregiverPhone    sql.NullString `json:"caregiver_phone"`
-	Notes             sql.NullString `json:"notes"`
-	Metadata          string         `json:"metadata"`
-	ID                string         `json:"id"`
+	UserID    sql.NullString `json:"user_id"`
+	FirstName string         `json:"first_name"`
+	LastName  string         `json:"last_name"`
+	Timezone  string         `json:"timezone"`
+	ID        string         `json:"id"`
 }
 
 func (q *Queries) UpdatePatient(ctx context.Context, arg UpdatePatientParams) (Patient, error) {
@@ -319,15 +166,7 @@ func (q *Queries) UpdatePatient(ctx context.Context, arg UpdatePatientParams) (P
 		arg.UserID,
 		arg.FirstName,
 		arg.LastName,
-		arg.DateOfBirth,
-		arg.Gender,
 		arg.Timezone,
-		arg.PreferredLanguage,
-		arg.CaregiverName,
-		arg.CaregiverEmail,
-		arg.CaregiverPhone,
-		arg.Notes,
-		arg.Metadata,
 		arg.ID,
 	)
 	var i Patient
@@ -336,15 +175,7 @@ func (q *Queries) UpdatePatient(ctx context.Context, arg UpdatePatientParams) (P
 		&i.UserID,
 		&i.FirstName,
 		&i.LastName,
-		&i.DateOfBirth,
-		&i.Gender,
 		&i.Timezone,
-		&i.PreferredLanguage,
-		&i.CaregiverName,
-		&i.CaregiverEmail,
-		&i.CaregiverPhone,
-		&i.Notes,
-		&i.Metadata,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)

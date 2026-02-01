@@ -16,7 +16,7 @@ type Querier interface {
 	CreatePatient(ctx context.Context, arg CreatePatientParams) (Patient, error)
 	CreateSchedule(ctx context.Context, arg CreateScheduleParams) (Schedule, error)
 	CreateScheduleItem(ctx context.Context, arg CreateScheduleItemParams) (ScheduleItem, error)
-	CreateUser(ctx context.Context, arg CreateUserParams) (CreateUserRow, error)
+	CreateUser(ctx context.Context, arg CreateUserParams) (User, error)
 	DeleteMedication(ctx context.Context, id string) error
 	DeleteScheduleItemsBySchedule(ctx context.Context, scheduleID string) error
 	GetDispenseEvent(ctx context.Context, id string) (DispenseEvent, error)
@@ -24,7 +24,7 @@ type Querier interface {
 	GetPatient(ctx context.Context, id string) (Patient, error)
 	GetSchedule(ctx context.Context, id string) (Schedule, error)
 	GetUser(ctx context.Context, id string) (GetUserRow, error)
-	GetUserByEmail(ctx context.Context, email string) (GetUserByEmailRow, error)
+	GetUserByEmail(ctx context.Context, email string) (User, error)
 	ListDispenseEventsByPatient(ctx context.Context, arg ListDispenseEventsByPatientParams) ([]DispenseEvent, error)
 	ListMedicationsByPatient(ctx context.Context, patientID string) ([]Medication, error)
 	ListPatients(ctx context.Context) ([]Patient, error)
@@ -36,7 +36,7 @@ type Querier interface {
 	UpdateMedication(ctx context.Context, arg UpdateMedicationParams) (Medication, error)
 	UpdatePatient(ctx context.Context, arg UpdatePatientParams) (Patient, error)
 	UpdateSchedule(ctx context.Context, arg UpdateScheduleParams) (Schedule, error)
-	UpdateUser(ctx context.Context, arg UpdateUserParams) (UpdateUserRow, error)
+	UpdateUser(ctx context.Context, arg UpdateUserParams) (User, error)
 }
 
 var _ Querier = (*Queries)(nil)

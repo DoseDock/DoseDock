@@ -1,5 +1,4 @@
 scalar DateTime
-scalar JSONObject
 
 enum ScheduleStatus {
   ACTIVE
@@ -11,7 +10,6 @@ enum DispenseStatus {
   PENDING
   TAKEN
   SKIPPED
-  SNOOZED
   FAILED
   MISSED
 }
@@ -32,15 +30,7 @@ type Patient {
   userId: ID
   firstName: String!
   lastName: String!
-  dateOfBirth: DateTime
-  gender: String
   timezone: String!
-  preferredLanguage: String
-  caregiverName: String
-  caregiverEmail: String
-  caregiverPhone: String
-  notes: String
-  metadata: JSONObject!
   createdAt: DateTime!
   updatedAt: DateTime!
   medications: [Medication!]!
@@ -52,20 +42,11 @@ type Medication {
   id: ID!
   patientId: ID!
   name: String!
-  nickname: String
   color: String
-  shape: String
-  dosageForm: String
-  strength: String
-  dosageMg: Int
-  instructions: String
   stockCount: Int!
   lowStockThreshold: Int!
   cartridgeIndex: Int
-  manufacturer: String
-  externalId: String
   maxDailyDose: Int!
-  metadata: JSONObject!
   createdAt: DateTime!
   updatedAt: DateTime!
 }
@@ -79,11 +60,7 @@ type Schedule {
   startDateISO: DateTime!
   endDateISO: DateTime
   lockoutMinutes: Int!
-  snoozeIntervalMinutes: Int!
-  snoozeMax: Int!
   status: ScheduleStatus!
-  notes: String
-  metadata: JSONObject!
   items: [ScheduleItem!]!
   createdAt: DateTime!
   updatedAt: DateTime!
@@ -94,20 +71,16 @@ type ScheduleItem {
   scheduleId: ID!
   medication: Medication!
   qty: Int!
-  instructions: String
 }
 
 type DispenseEvent {
   id: ID!
   patientId: ID!
   scheduleId: ID!
-  scheduleItemId: ID
   dueAtISO: DateTime!
   actedAtISO: DateTime
   status: DispenseStatus!
   actionSource: String
-  notes: String
-  metadata: JSONObject!
   createdAt: DateTime!
 }
 
@@ -116,7 +89,6 @@ type DueMedication {
   medication: Medication!
   qty: Int!
   siloSlot: Int
-  hardwareProfile: JSONObject
 }
 
 type DueSchedule {
@@ -143,41 +115,23 @@ input PatientInput {
   userId: ID
   firstName: String!
   lastName: String!
-  dateOfBirth: DateTime
-  gender: String
   timezone: String!
-  preferredLanguage: String
-  caregiverName: String
-  caregiverEmail: String
-  caregiverPhone: String
-  notes: String
-  metadata: JSONObject
 }
 
 input MedicationInput {
   id: ID
   patientId: ID!
   name: String!
-  nickname: String
   color: String
-  shape: String
-  dosageForm: String
-  strength: String
-  dosageMg: Int
-  instructions: String
   stockCount: Int
   lowStockThreshold: Int
   cartridgeIndex: Int
-  manufacturer: String
-  externalId: String
   maxDailyDose: Int
-  metadata: JSONObject
 }
 
 input ScheduleItemInput {
   medicationId: ID!
   qty: Int!
-  instructions: String
 }
 
 input ScheduleInput {
@@ -189,11 +143,7 @@ input ScheduleInput {
   startDateISO: DateTime!
   endDateISO: DateTime
   lockoutMinutes: Int!
-  snoozeIntervalMinutes: Int!
-  snoozeMax: Int!
   status: ScheduleStatus = ACTIVE
-  notes: String
-  metadata: JSONObject
   items: [ScheduleItemInput!]!
 }
 
@@ -201,13 +151,10 @@ input DispenseActionInput {
   eventId: ID
   patientId: ID!
   scheduleId: ID!
-  scheduleItemId: ID
   dueAtISO: DateTime!
   actedAtISO: DateTime
   status: DispenseStatus!
   actionSource: String
-  notes: String
-  metadata: JSONObject
 }
 
 input DateRangeInput {
@@ -227,7 +174,6 @@ type Query {
   schedules(patientId: ID!): [Schedule!]!
   schedule(id: ID!): Schedule
   dispenseEvents(patientId: ID!, range: DateRangeInput): [DispenseEvent!]!
-  # Firmware endpoint: returns schedules due within windowMinutes of now (default ±1 minute)
   dueNow(patientId: ID!, windowMinutes: Int): [DueSchedule!]!
 }
 
@@ -243,4 +189,3 @@ type Mutation {
   archiveSchedule(id: ID!): Schedule!
   recordDispenseAction(input: DispenseActionInput!): DispenseEvent!
 }
-

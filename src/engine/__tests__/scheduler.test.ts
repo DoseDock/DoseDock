@@ -15,7 +15,6 @@ describe('Scheduler Engine', () => {
     id: 'pill-1',
     name: 'Metformin',
     color: '#3b82f6',
-    shape: 'oval',
     cartridgeIndex: 0,
     maxDailyDose: 4,
     stockCount: 60,
@@ -27,7 +26,6 @@ describe('Scheduler Engine', () => {
     id: 'pill-2',
     name: 'Atorvastatin',
     color: '#ef4444',
-    shape: 'round',
     cartridgeIndex: 1,
     maxDailyDose: 2,
     stockCount: 30,
@@ -54,7 +52,7 @@ describe('Scheduler Engine', () => {
         rrule: rrule.toString(),
         startDateISO: startDate.toISO()!,
         lockoutMinutes: 60,
-        snooze: { intervalMinutes: 10, maxSnoozes: 3 },
+
         items: [{ pillId: 'pill-1', qty: 2 }],
       };
 
@@ -81,7 +79,7 @@ describe('Scheduler Engine', () => {
         rrule: rrule.toString(),
         startDateISO: startDate.toISO()!,
         lockoutMinutes: 60,
-        snooze: { intervalMinutes: 10, maxSnoozes: 3 },
+
         items: [{ pillId: 'pill-1', qty: 1 }],
       };
 
@@ -107,7 +105,7 @@ describe('Scheduler Engine', () => {
         startDateISO: startDate.toISO()!,
         endDateISO: endDate.toISO()!,
         lockoutMinutes: 60,
-        snooze: { intervalMinutes: 10, maxSnoozes: 3 },
+
         items: [{ pillId: 'pill-1', qty: 1 }],
       };
 
@@ -159,7 +157,7 @@ describe('Scheduler Engine', () => {
         rrule: rrule.toString(),
         startDateISO: startDate.toISO()!,
         lockoutMinutes: 60,
-        snooze: { intervalMinutes: 10, maxSnoozes: 3 },
+
         items: [{ pillId: 'pill-1', qty: 1 }],
       };
 
@@ -169,7 +167,7 @@ describe('Scheduler Engine', () => {
         rrule: rrule.toString(),
         startDateISO: startDate.toISO()!,
         lockoutMinutes: 60,
-        snooze: { intervalMinutes: 10, maxSnoozes: 3 },
+
         items: [{ pillId: 'pill-2', qty: 1 }],
       };
 
@@ -182,7 +180,7 @@ describe('Scheduler Engine', () => {
       );
 
       expect(conflicts.length).toBeGreaterThan(0);
-      expect(conflicts[0].type).toBe('TIME_OVERLAP');
+      expect(conflicts[0].type).toBe('overlap');
     });
 
     it('should detect daily limit exceeded', () => {
@@ -198,7 +196,7 @@ describe('Scheduler Engine', () => {
         rrule: rrule.toString(),
         startDateISO: startDate.toISO()!,
         lockoutMinutes: 60,
-        snooze: { intervalMinutes: 10, maxSnoozes: 3 },
+
         items: [{ pillId: 'pill-1', qty: 2 }],
       };
 
@@ -211,7 +209,7 @@ describe('Scheduler Engine', () => {
       );
 
       // 3 times × 2 pills = 6 pills > max 4
-      expect(conflicts.some((c) => c.type === 'DAILY_LIMIT_EXCEEDED')).toBe(true);
+      expect(conflicts.some((c) => c.type === 'dailyLimit')).toBe(true);
     });
 
     it('should return no conflicts for valid schedules', () => {
@@ -227,7 +225,7 @@ describe('Scheduler Engine', () => {
         rrule: rrule.toString(),
         startDateISO: startDate.toISO()!,
         lockoutMinutes: 60,
-        snooze: { intervalMinutes: 10, maxSnoozes: 3 },
+
         items: [{ pillId: 'pill-1', qty: 1 }],
       };
 
@@ -272,7 +270,7 @@ describe('Scheduler Engine', () => {
         rrule: rrule.toString(),
         startDateISO: startDate.toISO()!,
         lockoutMinutes: 60,
-        snooze: { intervalMinutes: 10, maxSnoozes: 3 },
+
         items: [{ pillId: 'pill-1', qty: 2 }],
       };
 
@@ -298,7 +296,7 @@ describe('Scheduler Engine', () => {
         rrule: rrule.toString(),
         startDateISO: startDate.toISO()!,
         lockoutMinutes: 60,
-        snooze: { intervalMinutes: 10, maxSnoozes: 3 },
+
         items: [{ pillId: 'pill-1', qty: 1 }],
       };
 

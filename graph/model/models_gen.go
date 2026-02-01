@@ -16,37 +16,30 @@ type DateRangeInput struct {
 }
 
 type DispenseActionInput struct {
-	EventID        *string        `json:"eventId,omitempty"`
-	PatientID      string         `json:"patientId"`
-	ScheduleID     string         `json:"scheduleId"`
-	ScheduleItemID *string        `json:"scheduleItemId,omitempty"`
-	DueAtIso       time.Time      `json:"dueAtISO"`
-	ActedAtIso     *time.Time     `json:"actedAtISO,omitempty"`
-	Status         DispenseStatus `json:"status"`
-	ActionSource   *string        `json:"actionSource,omitempty"`
-	Notes          *string        `json:"notes,omitempty"`
-	Metadata       map[string]any `json:"metadata,omitempty"`
+	EventID      *string        `json:"eventId,omitempty"`
+	PatientID    string         `json:"patientId"`
+	ScheduleID   string         `json:"scheduleId"`
+	DueAtIso     time.Time      `json:"dueAtISO"`
+	ActedAtIso   *time.Time     `json:"actedAtISO,omitempty"`
+	Status       DispenseStatus `json:"status"`
+	ActionSource *string        `json:"actionSource,omitempty"`
 }
 
 type DispenseEvent struct {
-	ID             string         `json:"id"`
-	PatientID      string         `json:"patientId"`
-	ScheduleID     string         `json:"scheduleId"`
-	ScheduleItemID *string        `json:"scheduleItemId,omitempty"`
-	DueAtIso       time.Time      `json:"dueAtISO"`
-	ActedAtIso     *time.Time     `json:"actedAtISO,omitempty"`
-	Status         DispenseStatus `json:"status"`
-	ActionSource   *string        `json:"actionSource,omitempty"`
-	Notes          *string        `json:"notes,omitempty"`
-	Metadata       map[string]any `json:"metadata"`
-	CreatedAt      time.Time      `json:"createdAt"`
+	ID           string         `json:"id"`
+	PatientID    string         `json:"patientId"`
+	ScheduleID   string         `json:"scheduleId"`
+	DueAtIso     time.Time      `json:"dueAtISO"`
+	ActedAtIso   *time.Time     `json:"actedAtISO,omitempty"`
+	Status       DispenseStatus `json:"status"`
+	ActionSource *string        `json:"actionSource,omitempty"`
+	CreatedAt    time.Time      `json:"createdAt"`
 }
 
 type DueMedication struct {
-	Medication      *Medication    `json:"medication"`
-	Qty             int            `json:"qty"`
-	SiloSlot        *int           `json:"siloSlot,omitempty"`
-	HardwareProfile map[string]any `json:"hardwareProfile,omitempty"`
+	Medication *Medication `json:"medication"`
+	Qty        int         `json:"qty"`
+	SiloSlot   *int        `json:"siloSlot,omitempty"`
 }
 
 type DueSchedule struct {
@@ -61,45 +54,27 @@ type LoginInput struct {
 }
 
 type Medication struct {
-	ID                string         `json:"id"`
-	PatientID         string         `json:"patientId"`
-	Name              string         `json:"name"`
-	Nickname          *string        `json:"nickname,omitempty"`
-	Color             *string        `json:"color,omitempty"`
-	Shape             *string        `json:"shape,omitempty"`
-	DosageForm        *string        `json:"dosageForm,omitempty"`
-	Strength          *string        `json:"strength,omitempty"`
-	DosageMg          *int           `json:"dosageMg,omitempty"`
-	Instructions      *string        `json:"instructions,omitempty"`
-	StockCount        int            `json:"stockCount"`
-	LowStockThreshold int            `json:"lowStockThreshold"`
-	CartridgeIndex    *int           `json:"cartridgeIndex,omitempty"`
-	Manufacturer      *string        `json:"manufacturer,omitempty"`
-	ExternalID        *string        `json:"externalId,omitempty"`
-	MaxDailyDose      int            `json:"maxDailyDose"`
-	Metadata          map[string]any `json:"metadata"`
-	CreatedAt         time.Time      `json:"createdAt"`
-	UpdatedAt         time.Time      `json:"updatedAt"`
+	ID                string    `json:"id"`
+	PatientID         string    `json:"patientId"`
+	Name              string    `json:"name"`
+	Color             *string   `json:"color,omitempty"`
+	StockCount        int       `json:"stockCount"`
+	LowStockThreshold int       `json:"lowStockThreshold"`
+	CartridgeIndex    *int      `json:"cartridgeIndex,omitempty"`
+	MaxDailyDose      int       `json:"maxDailyDose"`
+	CreatedAt         time.Time `json:"createdAt"`
+	UpdatedAt         time.Time `json:"updatedAt"`
 }
 
 type MedicationInput struct {
-	ID                *string        `json:"id,omitempty"`
-	PatientID         string         `json:"patientId"`
-	Name              string         `json:"name"`
-	Nickname          *string        `json:"nickname,omitempty"`
-	Color             *string        `json:"color,omitempty"`
-	Shape             *string        `json:"shape,omitempty"`
-	DosageForm        *string        `json:"dosageForm,omitempty"`
-	Strength          *string        `json:"strength,omitempty"`
-	DosageMg          *int           `json:"dosageMg,omitempty"`
-	Instructions      *string        `json:"instructions,omitempty"`
-	StockCount        *int           `json:"stockCount,omitempty"`
-	LowStockThreshold *int           `json:"lowStockThreshold,omitempty"`
-	CartridgeIndex    *int           `json:"cartridgeIndex,omitempty"`
-	Manufacturer      *string        `json:"manufacturer,omitempty"`
-	ExternalID        *string        `json:"externalId,omitempty"`
-	MaxDailyDose      *int           `json:"maxDailyDose,omitempty"`
-	Metadata          map[string]any `json:"metadata,omitempty"`
+	ID                *string `json:"id,omitempty"`
+	PatientID         string  `json:"patientId"`
+	Name              string  `json:"name"`
+	Color             *string `json:"color,omitempty"`
+	StockCount        *int    `json:"stockCount,omitempty"`
+	LowStockThreshold *int    `json:"lowStockThreshold,omitempty"`
+	CartridgeIndex    *int    `json:"cartridgeIndex,omitempty"`
+	MaxDailyDose      *int    `json:"maxDailyDose,omitempty"`
 }
 
 type Mutation struct {
@@ -110,15 +85,7 @@ type Patient struct {
 	UserID                 *string          `json:"userId,omitempty"`
 	FirstName              string           `json:"firstName"`
 	LastName               string           `json:"lastName"`
-	DateOfBirth            *time.Time       `json:"dateOfBirth,omitempty"`
-	Gender                 *string          `json:"gender,omitempty"`
 	Timezone               string           `json:"timezone"`
-	PreferredLanguage      *string          `json:"preferredLanguage,omitempty"`
-	CaregiverName          *string          `json:"caregiverName,omitempty"`
-	CaregiverEmail         *string          `json:"caregiverEmail,omitempty"`
-	CaregiverPhone         *string          `json:"caregiverPhone,omitempty"`
-	Notes                  *string          `json:"notes,omitempty"`
-	Metadata               map[string]any   `json:"metadata"`
 	CreatedAt              time.Time        `json:"createdAt"`
 	UpdatedAt              time.Time        `json:"updatedAt"`
 	Medications            []*Medication    `json:"medications"`
@@ -127,71 +94,53 @@ type Patient struct {
 }
 
 type PatientInput struct {
-	UserID            *string        `json:"userId,omitempty"`
-	FirstName         string         `json:"firstName"`
-	LastName          string         `json:"lastName"`
-	DateOfBirth       *time.Time     `json:"dateOfBirth,omitempty"`
-	Gender            *string        `json:"gender,omitempty"`
-	Timezone          string         `json:"timezone"`
-	PreferredLanguage *string        `json:"preferredLanguage,omitempty"`
-	CaregiverName     *string        `json:"caregiverName,omitempty"`
-	CaregiverEmail    *string        `json:"caregiverEmail,omitempty"`
-	CaregiverPhone    *string        `json:"caregiverPhone,omitempty"`
-	Notes             *string        `json:"notes,omitempty"`
-	Metadata          map[string]any `json:"metadata,omitempty"`
+	UserID    *string `json:"userId,omitempty"`
+	FirstName string  `json:"firstName"`
+	LastName  string  `json:"lastName"`
+	Timezone  string  `json:"timezone"`
 }
 
 type Query struct {
 }
 
 type Schedule struct {
-	ID                    string          `json:"id"`
-	PatientID             string          `json:"patientId"`
-	Title                 string          `json:"title"`
-	Timezone              string          `json:"timezone"`
-	Rrule                 string          `json:"rrule"`
-	StartDateIso          time.Time       `json:"startDateISO"`
-	EndDateIso            *time.Time      `json:"endDateISO,omitempty"`
-	LockoutMinutes        int             `json:"lockoutMinutes"`
-	SnoozeIntervalMinutes int             `json:"snoozeIntervalMinutes"`
-	SnoozeMax             int             `json:"snoozeMax"`
-	Status                ScheduleStatus  `json:"status"`
-	Notes                 *string         `json:"notes,omitempty"`
-	Metadata              map[string]any  `json:"metadata"`
-	Items                 []*ScheduleItem `json:"items"`
-	CreatedAt             time.Time       `json:"createdAt"`
-	UpdatedAt             time.Time       `json:"updatedAt"`
+	ID             string          `json:"id"`
+	PatientID      string          `json:"patientId"`
+	Title          string          `json:"title"`
+	Timezone       string          `json:"timezone"`
+	Rrule          string          `json:"rrule"`
+	StartDateIso   time.Time       `json:"startDateISO"`
+	EndDateIso     *time.Time      `json:"endDateISO,omitempty"`
+	LockoutMinutes int             `json:"lockoutMinutes"`
+	Status         ScheduleStatus  `json:"status"`
+	Items          []*ScheduleItem `json:"items"`
+	CreatedAt      time.Time       `json:"createdAt"`
+	UpdatedAt      time.Time       `json:"updatedAt"`
 }
 
 type ScheduleInput struct {
-	ID                    *string              `json:"id,omitempty"`
-	PatientID             string               `json:"patientId"`
-	Title                 string               `json:"title"`
-	Timezone              string               `json:"timezone"`
-	Rrule                 string               `json:"rrule"`
-	StartDateIso          time.Time            `json:"startDateISO"`
-	EndDateIso            *time.Time           `json:"endDateISO,omitempty"`
-	LockoutMinutes        int                  `json:"lockoutMinutes"`
-	SnoozeIntervalMinutes int                  `json:"snoozeIntervalMinutes"`
-	SnoozeMax             int                  `json:"snoozeMax"`
-	Status                *ScheduleStatus      `json:"status,omitempty"`
-	Notes                 *string              `json:"notes,omitempty"`
-	Metadata              map[string]any       `json:"metadata,omitempty"`
-	Items                 []*ScheduleItemInput `json:"items"`
+	ID             *string              `json:"id,omitempty"`
+	PatientID      string               `json:"patientId"`
+	Title          string               `json:"title"`
+	Timezone       string               `json:"timezone"`
+	Rrule          string               `json:"rrule"`
+	StartDateIso   time.Time            `json:"startDateISO"`
+	EndDateIso     *time.Time           `json:"endDateISO,omitempty"`
+	LockoutMinutes int                  `json:"lockoutMinutes"`
+	Status         *ScheduleStatus      `json:"status,omitempty"`
+	Items          []*ScheduleItemInput `json:"items"`
 }
 
 type ScheduleItem struct {
-	ID           string      `json:"id"`
-	ScheduleID   string      `json:"scheduleId"`
-	Medication   *Medication `json:"medication"`
-	Qty          int         `json:"qty"`
-	Instructions *string     `json:"instructions,omitempty"`
+	ID         string      `json:"id"`
+	ScheduleID string      `json:"scheduleId"`
+	Medication *Medication `json:"medication"`
+	Qty        int         `json:"qty"`
 }
 
 type ScheduleItemInput struct {
-	MedicationID string  `json:"medicationId"`
-	Qty          int     `json:"qty"`
-	Instructions *string `json:"instructions,omitempty"`
+	MedicationID string `json:"medicationId"`
+	Qty          int    `json:"qty"`
 }
 
 type User struct {
@@ -220,7 +169,6 @@ const (
 	DispenseStatusPending DispenseStatus = "PENDING"
 	DispenseStatusTaken   DispenseStatus = "TAKEN"
 	DispenseStatusSkipped DispenseStatus = "SKIPPED"
-	DispenseStatusSnoozed DispenseStatus = "SNOOZED"
 	DispenseStatusFailed  DispenseStatus = "FAILED"
 	DispenseStatusMissed  DispenseStatus = "MISSED"
 )
@@ -229,14 +177,13 @@ var AllDispenseStatus = []DispenseStatus{
 	DispenseStatusPending,
 	DispenseStatusTaken,
 	DispenseStatusSkipped,
-	DispenseStatusSnoozed,
 	DispenseStatusFailed,
 	DispenseStatusMissed,
 }
 
 func (e DispenseStatus) IsValid() bool {
 	switch e {
-	case DispenseStatusPending, DispenseStatusTaken, DispenseStatusSkipped, DispenseStatusSnoozed, DispenseStatusFailed, DispenseStatusMissed:
+	case DispenseStatusPending, DispenseStatusTaken, DispenseStatusSkipped, DispenseStatusFailed, DispenseStatusMissed:
 		return true
 	}
 	return false

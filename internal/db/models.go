@@ -9,91 +9,58 @@ import (
 )
 
 type DispenseEvent struct {
-	ID             string         `json:"id"`
-	PatientID      string         `json:"patient_id"`
-	ScheduleID     string         `json:"schedule_id"`
-	ScheduleItemID sql.NullString `json:"schedule_item_id"`
-	DueAtIso       string         `json:"due_at_iso"`
-	ActedAtIso     sql.NullString `json:"acted_at_iso"`
-	Status         string         `json:"status"`
-	ActionSource   sql.NullString `json:"action_source"`
-	Notes          sql.NullString `json:"notes"`
-	Metadata       string         `json:"metadata"`
-	CreatedAt      string         `json:"created_at"`
+	ID           string         `json:"id"`
+	PatientID    string         `json:"patient_id"`
+	ScheduleID   string         `json:"schedule_id"`
+	DueAtIso     string         `json:"due_at_iso"`
+	ActedAtIso   sql.NullString `json:"acted_at_iso"`
+	Status       string         `json:"status"`
+	ActionSource sql.NullString `json:"action_source"`
+	CreatedAt    string         `json:"created_at"`
 }
 
 type Medication struct {
 	ID                string         `json:"id"`
 	PatientID         string         `json:"patient_id"`
 	Name              string         `json:"name"`
-	Nickname          sql.NullString `json:"nickname"`
 	Color             sql.NullString `json:"color"`
-	Shape             sql.NullString `json:"shape"`
-	DosageForm        sql.NullString `json:"dosage_form"`
-	Strength          sql.NullString `json:"strength"`
-	DosageMg          sql.NullInt64  `json:"dosage_mg"`
-	Instructions      sql.NullString `json:"instructions"`
 	StockCount        int64          `json:"stock_count"`
 	LowStockThreshold int64          `json:"low_stock_threshold"`
 	CartridgeIndex    sql.NullInt64  `json:"cartridge_index"`
-	Manufacturer      sql.NullString `json:"manufacturer"`
-	ExternalID        sql.NullString `json:"external_id"`
+	MaxDailyDose      int64          `json:"max_daily_dose"`
 	CreatedAt         string         `json:"created_at"`
 	UpdatedAt         string         `json:"updated_at"`
-	MaxDailyDose      int64          `json:"max_daily_dose"`
-	Metadata          string         `json:"metadata"`
 }
 
 type Patient struct {
-	ID                string         `json:"id"`
-	UserID            sql.NullString `json:"user_id"`
-	FirstName         string         `json:"first_name"`
-	LastName          string         `json:"last_name"`
-	DateOfBirth       sql.NullString `json:"date_of_birth"`
-	Gender            sql.NullString `json:"gender"`
-	Timezone          string         `json:"timezone"`
-	PreferredLanguage sql.NullString `json:"preferred_language"`
-	CaregiverName     sql.NullString `json:"caregiver_name"`
-	CaregiverEmail    sql.NullString `json:"caregiver_email"`
-	CaregiverPhone    sql.NullString `json:"caregiver_phone"`
-	Notes             sql.NullString `json:"notes"`
-	Metadata          string         `json:"metadata"`
-	CreatedAt         string         `json:"created_at"`
-	UpdatedAt         string         `json:"updated_at"`
-}
-
-type PatientTag struct {
-	ID        string `json:"id"`
-	PatientID string `json:"patient_id"`
-	Label     string `json:"label"`
-	Color     string `json:"color"`
-	CreatedAt string `json:"created_at"`
+	ID        string         `json:"id"`
+	UserID    sql.NullString `json:"user_id"`
+	FirstName string         `json:"first_name"`
+	LastName  string         `json:"last_name"`
+	Timezone  string         `json:"timezone"`
+	CreatedAt string         `json:"created_at"`
+	UpdatedAt string         `json:"updated_at"`
 }
 
 type Schedule struct {
-	ID                    string         `json:"id"`
-	PatientID             string         `json:"patient_id"`
-	Title                 string         `json:"title"`
-	Timezone              string         `json:"timezone"`
-	Rrule                 string         `json:"rrule"`
-	StartDateIso          string         `json:"start_date_iso"`
-	EndDateIso            sql.NullString `json:"end_date_iso"`
-	LockoutMinutes        int64          `json:"lockout_minutes"`
-	SnoozeIntervalMinutes int64          `json:"snooze_interval_minutes"`
-	SnoozeMax             int64          `json:"snooze_max"`
-	Status                string         `json:"status"`
-	Notes                 sql.NullString `json:"notes"`
-	Metadata              string         `json:"metadata"`
-	CreatedAt             string         `json:"created_at"`
-	UpdatedAt             string         `json:"updated_at"`
+	ID             string         `json:"id"`
+	PatientID      string         `json:"patient_id"`
+	Title          string         `json:"title"`
+	Timezone       string         `json:"timezone"`
+	Rrule          string         `json:"rrule"`
+	StartDateIso   string         `json:"start_date_iso"`
+	EndDateIso     sql.NullString `json:"end_date_iso"`
+	LockoutMinutes int64          `json:"lockout_minutes"`
+	Status         string         `json:"status"`
+	CreatedAt      string         `json:"created_at"`
+	UpdatedAt      string         `json:"updated_at"`
 }
 
 type ScheduleItem struct {
-	ID           string         `json:"id"`
-	ScheduleID   string         `json:"schedule_id"`
-	MedicationID string         `json:"medication_id"`
-	Qty          int64          `json:"qty"`
-	Instructions sql.NullString `json:"instructions"`
+	ID           string `json:"id"`
+	ScheduleID   string `json:"schedule_id"`
+	MedicationID string `json:"medication_id"`
+	Qty          int64  `json:"qty"`
 }
 
 type User struct {
@@ -102,7 +69,7 @@ type User struct {
 	FullName     string         `json:"full_name"`
 	Phone        sql.NullString `json:"phone"`
 	Timezone     string         `json:"timezone"`
+	PasswordHash sql.NullString `json:"password_hash"`
 	CreatedAt    string         `json:"created_at"`
 	UpdatedAt    string         `json:"updated_at"`
-	PasswordHash sql.NullString `json:"password_hash"`
 }

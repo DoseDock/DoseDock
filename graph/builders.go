@@ -55,14 +55,6 @@ func (r *Resolver) buildPatientModel(ctx context.Context, record db.Patient) (*m
 	if err != nil {
 		return nil, err
 	}
-	dob, err := parseNullableDBTime(record.DateOfBirth)
-	if err != nil {
-		return nil, err
-	}
-	metadata, err := decodeMetadata(record.Metadata)
-	if err != nil {
-		return nil, err
-	}
 
 	meds, err := r.loadMedications(ctx, record.ID)
 	if err != nil {
@@ -84,15 +76,7 @@ func (r *Resolver) buildPatientModel(ctx context.Context, record db.Patient) (*m
 		UserID:                 ptrFromNullString(record.UserID),
 		FirstName:              record.FirstName,
 		LastName:               record.LastName,
-		DateOfBirth:            dob,
-		Gender:                 ptrFromNullString(record.Gender),
 		Timezone:               record.Timezone,
-		PreferredLanguage:      ptrFromNullString(record.PreferredLanguage),
-		CaregiverName:          ptrFromNullString(record.CaregiverName),
-		CaregiverEmail:         ptrFromNullString(record.CaregiverEmail),
-		CaregiverPhone:         ptrFromNullString(record.CaregiverPhone),
-		Notes:                  ptrFromNullString(record.Notes),
-		Metadata:               metadata,
 		CreatedAt:              createdAt,
 		UpdatedAt:              updatedAt,
 		Medications:            meds,
@@ -127,29 +111,15 @@ func buildMedicationModel(row db.Medication) (*model.Medication, error) {
 		return nil, err
 	}
 
-	metadata, err := decodeMetadata(row.Metadata)
-	if err != nil {
-		return nil, err
-	}
-
 	return &model.Medication{
 		ID:                row.ID,
 		PatientID:         row.PatientID,
 		Name:              row.Name,
-		Nickname:          ptrFromNullString(row.Nickname),
 		Color:             ptrFromNullString(row.Color),
-		Shape:             ptrFromNullString(row.Shape),
-		DosageForm:        ptrFromNullString(row.DosageForm),
-		Strength:          ptrFromNullString(row.Strength),
-		DosageMg:          ptrFromNullInt(row.DosageMg),
-		Instructions:      ptrFromNullString(row.Instructions),
 		StockCount:        int(row.StockCount),
 		LowStockThreshold: int(row.LowStockThreshold),
 		CartridgeIndex:    ptrFromNullInt(row.CartridgeIndex),
-		Manufacturer:      ptrFromNullString(row.Manufacturer),
-		ExternalID:        ptrFromNullString(row.ExternalID),
 		MaxDailyDose:      int(row.MaxDailyDose),
-		Metadata:          metadata,
 		CreatedAt:         createdAt,
 		UpdatedAt:         updatedAt,
 	}, nil
@@ -189,10 +159,6 @@ func (r *Resolver) buildScheduleModel(ctx context.Context, record db.Schedule) (
 	if err != nil {
 		return nil, err
 	}
-	metadata, err := decodeMetadata(record.Metadata)
-	if err != nil {
-		return nil, err
-	}
 
 	itemRows, err := r.Queries.ListScheduleItemsBySchedule(ctx, record.ID)
 	if err != nil {
@@ -205,20 +171,11 @@ func (r *Resolver) buildScheduleModel(ctx context.Context, record db.Schedule) (
 			ID:                row.MedicationID,
 			PatientID:         row.MedicationPatientID,
 			Name:              row.MedicationName,
-			Nickname:          row.MedicationNickname,
 			Color:             row.MedicationColor,
-			Shape:             row.MedicationShape,
-			DosageForm:        row.MedicationDosageForm,
-			Strength:          row.MedicationStrength,
-			DosageMg:          row.MedicationDosageMg,
-			Instructions:      row.MedicationInstructions,
 			StockCount:        row.MedicationStockCount,
 			LowStockThreshold: row.MedicationLowStockThreshold,
 			CartridgeIndex:    row.MedicationCartridgeIndex,
-			Manufacturer:      row.MedicationManufacturer,
-			ExternalID:        row.MedicationExternalID,
 			MaxDailyDose:      row.MedicationMaxDailyDose,
-			Metadata:          row.MedicationMetadata,
 			CreatedAt:         row.MedicationCreatedAt,
 			UpdatedAt:         row.MedicationUpdatedAt,
 		})
@@ -227,31 +184,26 @@ func (r *Resolver) buildScheduleModel(ctx context.Context, record db.Schedule) (
 		}
 
 		items = append(items, &model.ScheduleItem{
-			ID:           row.ScheduleItemID,
-			ScheduleID:   row.ScheduleID,
-			Medication:   med,
-			Qty:          int(row.Qty),
-			Instructions: ptrFromNullString(row.ScheduleItemInstructions),
+			ID:         row.ScheduleItemID,
+			ScheduleID: row.ScheduleID,
+			Medication: med,
+			Qty:        int(row.Qty),
 		})
 	}
 
 	return &model.Schedule{
-		ID:                    record.ID,
-		PatientID:             record.PatientID,
-		Title:                 record.Title,
-		Timezone:              record.Timezone,
-		Rrule:                 record.Rrule,
-		StartDateIso:          start,
-		EndDateIso:            end,
-		LockoutMinutes:        int(record.LockoutMinutes),
-		SnoozeIntervalMinutes: int(record.SnoozeIntervalMinutes),
-		SnoozeMax:             int(record.SnoozeMax),
-		Status:                model.ScheduleStatus(record.Status),
-		Notes:                 ptrFromNullString(record.Notes),
-		Metadata:              metadata,
-		Items:                 items,
-		CreatedAt:             createdAt,
-		UpdatedAt:             updatedAt,
+		ID:             record.ID,
+		PatientID:      record.PatientID,
+		Title:          record.Title,
+		Timezone:       record.Timezone,
+		Rrule:          record.Rrule,
+		StartDateIso:   start,
+		EndDateIso:     end,
+		LockoutMinutes: int(record.LockoutMinutes),
+		Status:         model.ScheduleStatus(record.Status),
+		Items:          items,
+		CreatedAt:      createdAt,
+		UpdatedAt:      updatedAt,
 	}, nil
 }
 
@@ -284,23 +236,16 @@ func buildDispenseEvent(row db.DispenseEvent) (*model.DispenseEvent, error) {
 	if err != nil {
 		return nil, err
 	}
-	metadata, err := decodeMetadata(row.Metadata)
-	if err != nil {
-		return nil, err
-	}
 
 	return &model.DispenseEvent{
-		ID:             row.ID,
-		PatientID:      row.PatientID,
-		ScheduleID:     row.ScheduleID,
-		ScheduleItemID: ptrFromNullString(row.ScheduleItemID),
-		DueAtIso:       due,
-		ActedAtIso:     acted,
-		Status:         model.DispenseStatus(row.Status),
-		ActionSource:   ptrFromNullString(row.ActionSource),
-		Notes:          ptrFromNullString(row.Notes),
-		Metadata:       metadata,
-		CreatedAt:      createdAt,
+		ID:           row.ID,
+		PatientID:    row.PatientID,
+		ScheduleID:   row.ScheduleID,
+		DueAtIso:     due,
+		ActedAtIso:   acted,
+		Status:       model.DispenseStatus(row.Status),
+		ActionSource: ptrFromNullString(row.ActionSource),
+		CreatedAt:    createdAt,
 	}, nil
 }
 

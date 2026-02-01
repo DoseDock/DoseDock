@@ -49,24 +49,20 @@ type DirectiveRoot struct {
 
 type ComplexityRoot struct {
 	DispenseEvent struct {
-		ActedAtIso     func(childComplexity int) int
-		ActionSource   func(childComplexity int) int
-		CreatedAt      func(childComplexity int) int
-		DueAtIso       func(childComplexity int) int
-		ID             func(childComplexity int) int
-		Metadata       func(childComplexity int) int
-		Notes          func(childComplexity int) int
-		PatientID      func(childComplexity int) int
-		ScheduleID     func(childComplexity int) int
-		ScheduleItemID func(childComplexity int) int
-		Status         func(childComplexity int) int
+		ActedAtIso   func(childComplexity int) int
+		ActionSource func(childComplexity int) int
+		CreatedAt    func(childComplexity int) int
+		DueAtIso     func(childComplexity int) int
+		ID           func(childComplexity int) int
+		PatientID    func(childComplexity int) int
+		ScheduleID   func(childComplexity int) int
+		Status       func(childComplexity int) int
 	}
 
 	DueMedication struct {
-		HardwareProfile func(childComplexity int) int
-		Medication      func(childComplexity int) int
-		Qty             func(childComplexity int) int
-		SiloSlot        func(childComplexity int) int
+		Medication func(childComplexity int) int
+		Qty        func(childComplexity int) int
+		SiloSlot   func(childComplexity int) int
 	}
 
 	DueSchedule struct {
@@ -79,21 +75,12 @@ type ComplexityRoot struct {
 		CartridgeIndex    func(childComplexity int) int
 		Color             func(childComplexity int) int
 		CreatedAt         func(childComplexity int) int
-		DosageForm        func(childComplexity int) int
-		DosageMg          func(childComplexity int) int
-		ExternalID        func(childComplexity int) int
 		ID                func(childComplexity int) int
-		Instructions      func(childComplexity int) int
 		LowStockThreshold func(childComplexity int) int
-		Manufacturer      func(childComplexity int) int
 		MaxDailyDose      func(childComplexity int) int
-		Metadata          func(childComplexity int) int
 		Name              func(childComplexity int) int
-		Nickname          func(childComplexity int) int
 		PatientID         func(childComplexity int) int
-		Shape             func(childComplexity int) int
 		StockCount        func(childComplexity int) int
-		Strength          func(childComplexity int) int
 		UpdatedAt         func(childComplexity int) int
 	}
 
@@ -111,19 +98,11 @@ type ComplexityRoot struct {
 	}
 
 	Patient struct {
-		CaregiverEmail         func(childComplexity int) int
-		CaregiverName          func(childComplexity int) int
-		CaregiverPhone         func(childComplexity int) int
 		CreatedAt              func(childComplexity int) int
-		DateOfBirth            func(childComplexity int) int
 		FirstName              func(childComplexity int) int
-		Gender                 func(childComplexity int) int
 		ID                     func(childComplexity int) int
 		LastName               func(childComplexity int) int
 		Medications            func(childComplexity int) int
-		Metadata               func(childComplexity int) int
-		Notes                  func(childComplexity int) int
-		PreferredLanguage      func(childComplexity int) int
 		Schedules              func(childComplexity int) int
 		Timezone               func(childComplexity int) int
 		UpcomingDispenseEvents func(childComplexity int) int
@@ -147,30 +126,25 @@ type ComplexityRoot struct {
 	}
 
 	Schedule struct {
-		CreatedAt             func(childComplexity int) int
-		EndDateIso            func(childComplexity int) int
-		ID                    func(childComplexity int) int
-		Items                 func(childComplexity int) int
-		LockoutMinutes        func(childComplexity int) int
-		Metadata              func(childComplexity int) int
-		Notes                 func(childComplexity int) int
-		PatientID             func(childComplexity int) int
-		Rrule                 func(childComplexity int) int
-		SnoozeIntervalMinutes func(childComplexity int) int
-		SnoozeMax             func(childComplexity int) int
-		StartDateIso          func(childComplexity int) int
-		Status                func(childComplexity int) int
-		Timezone              func(childComplexity int) int
-		Title                 func(childComplexity int) int
-		UpdatedAt             func(childComplexity int) int
+		CreatedAt      func(childComplexity int) int
+		EndDateIso     func(childComplexity int) int
+		ID             func(childComplexity int) int
+		Items          func(childComplexity int) int
+		LockoutMinutes func(childComplexity int) int
+		PatientID      func(childComplexity int) int
+		Rrule          func(childComplexity int) int
+		StartDateIso   func(childComplexity int) int
+		Status         func(childComplexity int) int
+		Timezone       func(childComplexity int) int
+		Title          func(childComplexity int) int
+		UpdatedAt      func(childComplexity int) int
 	}
 
 	ScheduleItem struct {
-		ID           func(childComplexity int) int
-		Instructions func(childComplexity int) int
-		Medication   func(childComplexity int) int
-		Qty          func(childComplexity int) int
-		ScheduleID   func(childComplexity int) int
+		ID         func(childComplexity int) int
+		Medication func(childComplexity int) int
+		Qty        func(childComplexity int) int
+		ScheduleID func(childComplexity int) int
 	}
 
 	User struct {
@@ -261,18 +235,6 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.DispenseEvent.ID(childComplexity), true
-	case "DispenseEvent.metadata":
-		if e.complexity.DispenseEvent.Metadata == nil {
-			break
-		}
-
-		return e.complexity.DispenseEvent.Metadata(childComplexity), true
-	case "DispenseEvent.notes":
-		if e.complexity.DispenseEvent.Notes == nil {
-			break
-		}
-
-		return e.complexity.DispenseEvent.Notes(childComplexity), true
 	case "DispenseEvent.patientId":
 		if e.complexity.DispenseEvent.PatientID == nil {
 			break
@@ -285,12 +247,6 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.DispenseEvent.ScheduleID(childComplexity), true
-	case "DispenseEvent.scheduleItemId":
-		if e.complexity.DispenseEvent.ScheduleItemID == nil {
-			break
-		}
-
-		return e.complexity.DispenseEvent.ScheduleItemID(childComplexity), true
 	case "DispenseEvent.status":
 		if e.complexity.DispenseEvent.Status == nil {
 			break
@@ -298,12 +254,6 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.DispenseEvent.Status(childComplexity), true
 
-	case "DueMedication.hardwareProfile":
-		if e.complexity.DueMedication.HardwareProfile == nil {
-			break
-		}
-
-		return e.complexity.DueMedication.HardwareProfile(childComplexity), true
 	case "DueMedication.medication":
 		if e.complexity.DueMedication.Medication == nil {
 			break
@@ -360,96 +310,42 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Medication.CreatedAt(childComplexity), true
-	case "Medication.dosageForm":
-		if e.complexity.Medication.DosageForm == nil {
-			break
-		}
-
-		return e.complexity.Medication.DosageForm(childComplexity), true
-	case "Medication.dosageMg":
-		if e.complexity.Medication.DosageMg == nil {
-			break
-		}
-
-		return e.complexity.Medication.DosageMg(childComplexity), true
-	case "Medication.externalId":
-		if e.complexity.Medication.ExternalID == nil {
-			break
-		}
-
-		return e.complexity.Medication.ExternalID(childComplexity), true
 	case "Medication.id":
 		if e.complexity.Medication.ID == nil {
 			break
 		}
 
 		return e.complexity.Medication.ID(childComplexity), true
-	case "Medication.instructions":
-		if e.complexity.Medication.Instructions == nil {
-			break
-		}
-
-		return e.complexity.Medication.Instructions(childComplexity), true
 	case "Medication.lowStockThreshold":
 		if e.complexity.Medication.LowStockThreshold == nil {
 			break
 		}
 
 		return e.complexity.Medication.LowStockThreshold(childComplexity), true
-	case "Medication.manufacturer":
-		if e.complexity.Medication.Manufacturer == nil {
-			break
-		}
-
-		return e.complexity.Medication.Manufacturer(childComplexity), true
 	case "Medication.maxDailyDose":
 		if e.complexity.Medication.MaxDailyDose == nil {
 			break
 		}
 
 		return e.complexity.Medication.MaxDailyDose(childComplexity), true
-	case "Medication.metadata":
-		if e.complexity.Medication.Metadata == nil {
-			break
-		}
-
-		return e.complexity.Medication.Metadata(childComplexity), true
 	case "Medication.name":
 		if e.complexity.Medication.Name == nil {
 			break
 		}
 
 		return e.complexity.Medication.Name(childComplexity), true
-	case "Medication.nickname":
-		if e.complexity.Medication.Nickname == nil {
-			break
-		}
-
-		return e.complexity.Medication.Nickname(childComplexity), true
 	case "Medication.patientId":
 		if e.complexity.Medication.PatientID == nil {
 			break
 		}
 
 		return e.complexity.Medication.PatientID(childComplexity), true
-	case "Medication.shape":
-		if e.complexity.Medication.Shape == nil {
-			break
-		}
-
-		return e.complexity.Medication.Shape(childComplexity), true
 	case "Medication.stockCount":
 		if e.complexity.Medication.StockCount == nil {
 			break
 		}
 
 		return e.complexity.Medication.StockCount(childComplexity), true
-	case "Medication.strength":
-		if e.complexity.Medication.Strength == nil {
-			break
-		}
-
-		return e.complexity.Medication.Strength(childComplexity), true
 	case "Medication.updatedAt":
 		if e.complexity.Medication.UpdatedAt == nil {
 			break
@@ -568,48 +464,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.Mutation.UpsertUser(childComplexity, args["input"].(model.UserInput)), true
 
-	case "Patient.caregiverEmail":
-		if e.complexity.Patient.CaregiverEmail == nil {
-			break
-		}
-
-		return e.complexity.Patient.CaregiverEmail(childComplexity), true
-	case "Patient.caregiverName":
-		if e.complexity.Patient.CaregiverName == nil {
-			break
-		}
-
-		return e.complexity.Patient.CaregiverName(childComplexity), true
-	case "Patient.caregiverPhone":
-		if e.complexity.Patient.CaregiverPhone == nil {
-			break
-		}
-
-		return e.complexity.Patient.CaregiverPhone(childComplexity), true
 	case "Patient.createdAt":
 		if e.complexity.Patient.CreatedAt == nil {
 			break
 		}
 
 		return e.complexity.Patient.CreatedAt(childComplexity), true
-	case "Patient.dateOfBirth":
-		if e.complexity.Patient.DateOfBirth == nil {
-			break
-		}
-
-		return e.complexity.Patient.DateOfBirth(childComplexity), true
 	case "Patient.firstName":
 		if e.complexity.Patient.FirstName == nil {
 			break
 		}
 
 		return e.complexity.Patient.FirstName(childComplexity), true
-	case "Patient.gender":
-		if e.complexity.Patient.Gender == nil {
-			break
-		}
-
-		return e.complexity.Patient.Gender(childComplexity), true
 	case "Patient.id":
 		if e.complexity.Patient.ID == nil {
 			break
@@ -628,24 +494,6 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Patient.Medications(childComplexity), true
-	case "Patient.metadata":
-		if e.complexity.Patient.Metadata == nil {
-			break
-		}
-
-		return e.complexity.Patient.Metadata(childComplexity), true
-	case "Patient.notes":
-		if e.complexity.Patient.Notes == nil {
-			break
-		}
-
-		return e.complexity.Patient.Notes(childComplexity), true
-	case "Patient.preferredLanguage":
-		if e.complexity.Patient.PreferredLanguage == nil {
-			break
-		}
-
-		return e.complexity.Patient.PreferredLanguage(childComplexity), true
 	case "Patient.schedules":
 		if e.complexity.Patient.Schedules == nil {
 			break
@@ -830,18 +678,6 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Schedule.LockoutMinutes(childComplexity), true
-	case "Schedule.metadata":
-		if e.complexity.Schedule.Metadata == nil {
-			break
-		}
-
-		return e.complexity.Schedule.Metadata(childComplexity), true
-	case "Schedule.notes":
-		if e.complexity.Schedule.Notes == nil {
-			break
-		}
-
-		return e.complexity.Schedule.Notes(childComplexity), true
 	case "Schedule.patientId":
 		if e.complexity.Schedule.PatientID == nil {
 			break
@@ -854,18 +690,6 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Schedule.Rrule(childComplexity), true
-	case "Schedule.snoozeIntervalMinutes":
-		if e.complexity.Schedule.SnoozeIntervalMinutes == nil {
-			break
-		}
-
-		return e.complexity.Schedule.SnoozeIntervalMinutes(childComplexity), true
-	case "Schedule.snoozeMax":
-		if e.complexity.Schedule.SnoozeMax == nil {
-			break
-		}
-
-		return e.complexity.Schedule.SnoozeMax(childComplexity), true
 	case "Schedule.startDateISO":
 		if e.complexity.Schedule.StartDateIso == nil {
 			break
@@ -903,12 +727,6 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.ScheduleItem.ID(childComplexity), true
-	case "ScheduleItem.instructions":
-		if e.complexity.ScheduleItem.Instructions == nil {
-			break
-		}
-
-		return e.complexity.ScheduleItem.Instructions(childComplexity), true
 	case "ScheduleItem.medication":
 		if e.complexity.ScheduleItem.Medication == nil {
 			break
@@ -1499,35 +1317,6 @@ func (ec *executionContext) fieldContext_DispenseEvent_scheduleId(_ context.Cont
 	return fc, nil
 }
 
-func (ec *executionContext) _DispenseEvent_scheduleItemId(ctx context.Context, field graphql.CollectedField, obj *model.DispenseEvent) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_DispenseEvent_scheduleItemId,
-		func(ctx context.Context) (any, error) {
-			return obj.ScheduleItemID, nil
-		},
-		nil,
-		ec.marshalOID2ᚖstring,
-		true,
-		false,
-	)
-}
-
-func (ec *executionContext) fieldContext_DispenseEvent_scheduleItemId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "DispenseEvent",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type ID does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
 func (ec *executionContext) _DispenseEvent_dueAtISO(ctx context.Context, field graphql.CollectedField, obj *model.DispenseEvent) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -1644,64 +1433,6 @@ func (ec *executionContext) fieldContext_DispenseEvent_actionSource(_ context.Co
 	return fc, nil
 }
 
-func (ec *executionContext) _DispenseEvent_notes(ctx context.Context, field graphql.CollectedField, obj *model.DispenseEvent) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_DispenseEvent_notes,
-		func(ctx context.Context) (any, error) {
-			return obj.Notes, nil
-		},
-		nil,
-		ec.marshalOString2ᚖstring,
-		true,
-		false,
-	)
-}
-
-func (ec *executionContext) fieldContext_DispenseEvent_notes(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "DispenseEvent",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _DispenseEvent_metadata(ctx context.Context, field graphql.CollectedField, obj *model.DispenseEvent) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_DispenseEvent_metadata,
-		func(ctx context.Context) (any, error) {
-			return obj.Metadata, nil
-		},
-		nil,
-		ec.marshalNJSONObject2map,
-		true,
-		true,
-	)
-}
-
-func (ec *executionContext) fieldContext_DispenseEvent_metadata(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "DispenseEvent",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type JSONObject does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
 func (ec *executionContext) _DispenseEvent_createdAt(ctx context.Context, field graphql.CollectedField, obj *model.DispenseEvent) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -1761,34 +1492,16 @@ func (ec *executionContext) fieldContext_DueMedication_medication(_ context.Cont
 				return ec.fieldContext_Medication_patientId(ctx, field)
 			case "name":
 				return ec.fieldContext_Medication_name(ctx, field)
-			case "nickname":
-				return ec.fieldContext_Medication_nickname(ctx, field)
 			case "color":
 				return ec.fieldContext_Medication_color(ctx, field)
-			case "shape":
-				return ec.fieldContext_Medication_shape(ctx, field)
-			case "dosageForm":
-				return ec.fieldContext_Medication_dosageForm(ctx, field)
-			case "strength":
-				return ec.fieldContext_Medication_strength(ctx, field)
-			case "dosageMg":
-				return ec.fieldContext_Medication_dosageMg(ctx, field)
-			case "instructions":
-				return ec.fieldContext_Medication_instructions(ctx, field)
 			case "stockCount":
 				return ec.fieldContext_Medication_stockCount(ctx, field)
 			case "lowStockThreshold":
 				return ec.fieldContext_Medication_lowStockThreshold(ctx, field)
 			case "cartridgeIndex":
 				return ec.fieldContext_Medication_cartridgeIndex(ctx, field)
-			case "manufacturer":
-				return ec.fieldContext_Medication_manufacturer(ctx, field)
-			case "externalId":
-				return ec.fieldContext_Medication_externalId(ctx, field)
 			case "maxDailyDose":
 				return ec.fieldContext_Medication_maxDailyDose(ctx, field)
-			case "metadata":
-				return ec.fieldContext_Medication_metadata(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_Medication_createdAt(ctx, field)
 			case "updatedAt":
@@ -1858,35 +1571,6 @@ func (ec *executionContext) fieldContext_DueMedication_siloSlot(_ context.Contex
 	return fc, nil
 }
 
-func (ec *executionContext) _DueMedication_hardwareProfile(ctx context.Context, field graphql.CollectedField, obj *model.DueMedication) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_DueMedication_hardwareProfile,
-		func(ctx context.Context) (any, error) {
-			return obj.HardwareProfile, nil
-		},
-		nil,
-		ec.marshalOJSONObject2map,
-		true,
-		false,
-	)
-}
-
-func (ec *executionContext) fieldContext_DueMedication_hardwareProfile(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "DueMedication",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type JSONObject does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
 func (ec *executionContext) _DueSchedule_schedule(ctx context.Context, field graphql.CollectedField, obj *model.DueSchedule) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -1927,16 +1611,8 @@ func (ec *executionContext) fieldContext_DueSchedule_schedule(_ context.Context,
 				return ec.fieldContext_Schedule_endDateISO(ctx, field)
 			case "lockoutMinutes":
 				return ec.fieldContext_Schedule_lockoutMinutes(ctx, field)
-			case "snoozeIntervalMinutes":
-				return ec.fieldContext_Schedule_snoozeIntervalMinutes(ctx, field)
-			case "snoozeMax":
-				return ec.fieldContext_Schedule_snoozeMax(ctx, field)
 			case "status":
 				return ec.fieldContext_Schedule_status(ctx, field)
-			case "notes":
-				return ec.fieldContext_Schedule_notes(ctx, field)
-			case "metadata":
-				return ec.fieldContext_Schedule_metadata(ctx, field)
 			case "items":
 				return ec.fieldContext_Schedule_items(ctx, field)
 			case "createdAt":
@@ -2009,8 +1685,6 @@ func (ec *executionContext) fieldContext_DueSchedule_medications(_ context.Conte
 				return ec.fieldContext_DueMedication_qty(ctx, field)
 			case "siloSlot":
 				return ec.fieldContext_DueMedication_siloSlot(ctx, field)
-			case "hardwareProfile":
-				return ec.fieldContext_DueMedication_hardwareProfile(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type DueMedication", field.Name)
 		},
@@ -2105,35 +1779,6 @@ func (ec *executionContext) fieldContext_Medication_name(_ context.Context, fiel
 	return fc, nil
 }
 
-func (ec *executionContext) _Medication_nickname(ctx context.Context, field graphql.CollectedField, obj *model.Medication) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_Medication_nickname,
-		func(ctx context.Context) (any, error) {
-			return obj.Nickname, nil
-		},
-		nil,
-		ec.marshalOString2ᚖstring,
-		true,
-		false,
-	)
-}
-
-func (ec *executionContext) fieldContext_Medication_nickname(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Medication",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
 func (ec *executionContext) _Medication_color(ctx context.Context, field graphql.CollectedField, obj *model.Medication) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -2151,151 +1796,6 @@ func (ec *executionContext) _Medication_color(ctx context.Context, field graphql
 }
 
 func (ec *executionContext) fieldContext_Medication_color(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Medication",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Medication_shape(ctx context.Context, field graphql.CollectedField, obj *model.Medication) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_Medication_shape,
-		func(ctx context.Context) (any, error) {
-			return obj.Shape, nil
-		},
-		nil,
-		ec.marshalOString2ᚖstring,
-		true,
-		false,
-	)
-}
-
-func (ec *executionContext) fieldContext_Medication_shape(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Medication",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Medication_dosageForm(ctx context.Context, field graphql.CollectedField, obj *model.Medication) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_Medication_dosageForm,
-		func(ctx context.Context) (any, error) {
-			return obj.DosageForm, nil
-		},
-		nil,
-		ec.marshalOString2ᚖstring,
-		true,
-		false,
-	)
-}
-
-func (ec *executionContext) fieldContext_Medication_dosageForm(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Medication",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Medication_strength(ctx context.Context, field graphql.CollectedField, obj *model.Medication) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_Medication_strength,
-		func(ctx context.Context) (any, error) {
-			return obj.Strength, nil
-		},
-		nil,
-		ec.marshalOString2ᚖstring,
-		true,
-		false,
-	)
-}
-
-func (ec *executionContext) fieldContext_Medication_strength(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Medication",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Medication_dosageMg(ctx context.Context, field graphql.CollectedField, obj *model.Medication) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_Medication_dosageMg,
-		func(ctx context.Context) (any, error) {
-			return obj.DosageMg, nil
-		},
-		nil,
-		ec.marshalOInt2ᚖint,
-		true,
-		false,
-	)
-}
-
-func (ec *executionContext) fieldContext_Medication_dosageMg(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Medication",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Int does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Medication_instructions(ctx context.Context, field graphql.CollectedField, obj *model.Medication) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_Medication_instructions,
-		func(ctx context.Context) (any, error) {
-			return obj.Instructions, nil
-		},
-		nil,
-		ec.marshalOString2ᚖstring,
-		true,
-		false,
-	)
-}
-
-func (ec *executionContext) fieldContext_Medication_instructions(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Medication",
 		Field:      field,
@@ -2395,64 +1895,6 @@ func (ec *executionContext) fieldContext_Medication_cartridgeIndex(_ context.Con
 	return fc, nil
 }
 
-func (ec *executionContext) _Medication_manufacturer(ctx context.Context, field graphql.CollectedField, obj *model.Medication) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_Medication_manufacturer,
-		func(ctx context.Context) (any, error) {
-			return obj.Manufacturer, nil
-		},
-		nil,
-		ec.marshalOString2ᚖstring,
-		true,
-		false,
-	)
-}
-
-func (ec *executionContext) fieldContext_Medication_manufacturer(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Medication",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Medication_externalId(ctx context.Context, field graphql.CollectedField, obj *model.Medication) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_Medication_externalId,
-		func(ctx context.Context) (any, error) {
-			return obj.ExternalID, nil
-		},
-		nil,
-		ec.marshalOString2ᚖstring,
-		true,
-		false,
-	)
-}
-
-func (ec *executionContext) fieldContext_Medication_externalId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Medication",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
 func (ec *executionContext) _Medication_maxDailyDose(ctx context.Context, field graphql.CollectedField, obj *model.Medication) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -2477,35 +1919,6 @@ func (ec *executionContext) fieldContext_Medication_maxDailyDose(_ context.Conte
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Int does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Medication_metadata(ctx context.Context, field graphql.CollectedField, obj *model.Medication) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_Medication_metadata,
-		func(ctx context.Context) (any, error) {
-			return obj.Metadata, nil
-		},
-		nil,
-		ec.marshalNJSONObject2map,
-		true,
-		true,
-	)
-}
-
-func (ec *executionContext) fieldContext_Medication_metadata(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Medication",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type JSONObject does not have child fields")
 		},
 	}
 	return fc, nil
@@ -2720,24 +2133,8 @@ func (ec *executionContext) fieldContext_Mutation_createPatient(ctx context.Cont
 				return ec.fieldContext_Patient_firstName(ctx, field)
 			case "lastName":
 				return ec.fieldContext_Patient_lastName(ctx, field)
-			case "dateOfBirth":
-				return ec.fieldContext_Patient_dateOfBirth(ctx, field)
-			case "gender":
-				return ec.fieldContext_Patient_gender(ctx, field)
 			case "timezone":
 				return ec.fieldContext_Patient_timezone(ctx, field)
-			case "preferredLanguage":
-				return ec.fieldContext_Patient_preferredLanguage(ctx, field)
-			case "caregiverName":
-				return ec.fieldContext_Patient_caregiverName(ctx, field)
-			case "caregiverEmail":
-				return ec.fieldContext_Patient_caregiverEmail(ctx, field)
-			case "caregiverPhone":
-				return ec.fieldContext_Patient_caregiverPhone(ctx, field)
-			case "notes":
-				return ec.fieldContext_Patient_notes(ctx, field)
-			case "metadata":
-				return ec.fieldContext_Patient_metadata(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_Patient_createdAt(ctx, field)
 			case "updatedAt":
@@ -2799,24 +2196,8 @@ func (ec *executionContext) fieldContext_Mutation_updatePatient(ctx context.Cont
 				return ec.fieldContext_Patient_firstName(ctx, field)
 			case "lastName":
 				return ec.fieldContext_Patient_lastName(ctx, field)
-			case "dateOfBirth":
-				return ec.fieldContext_Patient_dateOfBirth(ctx, field)
-			case "gender":
-				return ec.fieldContext_Patient_gender(ctx, field)
 			case "timezone":
 				return ec.fieldContext_Patient_timezone(ctx, field)
-			case "preferredLanguage":
-				return ec.fieldContext_Patient_preferredLanguage(ctx, field)
-			case "caregiverName":
-				return ec.fieldContext_Patient_caregiverName(ctx, field)
-			case "caregiverEmail":
-				return ec.fieldContext_Patient_caregiverEmail(ctx, field)
-			case "caregiverPhone":
-				return ec.fieldContext_Patient_caregiverPhone(ctx, field)
-			case "notes":
-				return ec.fieldContext_Patient_notes(ctx, field)
-			case "metadata":
-				return ec.fieldContext_Patient_metadata(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_Patient_createdAt(ctx, field)
 			case "updatedAt":
@@ -2876,34 +2257,16 @@ func (ec *executionContext) fieldContext_Mutation_upsertMedication(ctx context.C
 				return ec.fieldContext_Medication_patientId(ctx, field)
 			case "name":
 				return ec.fieldContext_Medication_name(ctx, field)
-			case "nickname":
-				return ec.fieldContext_Medication_nickname(ctx, field)
 			case "color":
 				return ec.fieldContext_Medication_color(ctx, field)
-			case "shape":
-				return ec.fieldContext_Medication_shape(ctx, field)
-			case "dosageForm":
-				return ec.fieldContext_Medication_dosageForm(ctx, field)
-			case "strength":
-				return ec.fieldContext_Medication_strength(ctx, field)
-			case "dosageMg":
-				return ec.fieldContext_Medication_dosageMg(ctx, field)
-			case "instructions":
-				return ec.fieldContext_Medication_instructions(ctx, field)
 			case "stockCount":
 				return ec.fieldContext_Medication_stockCount(ctx, field)
 			case "lowStockThreshold":
 				return ec.fieldContext_Medication_lowStockThreshold(ctx, field)
 			case "cartridgeIndex":
 				return ec.fieldContext_Medication_cartridgeIndex(ctx, field)
-			case "manufacturer":
-				return ec.fieldContext_Medication_manufacturer(ctx, field)
-			case "externalId":
-				return ec.fieldContext_Medication_externalId(ctx, field)
 			case "maxDailyDose":
 				return ec.fieldContext_Medication_maxDailyDose(ctx, field)
-			case "metadata":
-				return ec.fieldContext_Medication_metadata(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_Medication_createdAt(ctx, field)
 			case "updatedAt":
@@ -3008,16 +2371,8 @@ func (ec *executionContext) fieldContext_Mutation_createSchedule(ctx context.Con
 				return ec.fieldContext_Schedule_endDateISO(ctx, field)
 			case "lockoutMinutes":
 				return ec.fieldContext_Schedule_lockoutMinutes(ctx, field)
-			case "snoozeIntervalMinutes":
-				return ec.fieldContext_Schedule_snoozeIntervalMinutes(ctx, field)
-			case "snoozeMax":
-				return ec.fieldContext_Schedule_snoozeMax(ctx, field)
 			case "status":
 				return ec.fieldContext_Schedule_status(ctx, field)
-			case "notes":
-				return ec.fieldContext_Schedule_notes(ctx, field)
-			case "metadata":
-				return ec.fieldContext_Schedule_metadata(ctx, field)
 			case "items":
 				return ec.fieldContext_Schedule_items(ctx, field)
 			case "createdAt":
@@ -3083,16 +2438,8 @@ func (ec *executionContext) fieldContext_Mutation_updateSchedule(ctx context.Con
 				return ec.fieldContext_Schedule_endDateISO(ctx, field)
 			case "lockoutMinutes":
 				return ec.fieldContext_Schedule_lockoutMinutes(ctx, field)
-			case "snoozeIntervalMinutes":
-				return ec.fieldContext_Schedule_snoozeIntervalMinutes(ctx, field)
-			case "snoozeMax":
-				return ec.fieldContext_Schedule_snoozeMax(ctx, field)
 			case "status":
 				return ec.fieldContext_Schedule_status(ctx, field)
-			case "notes":
-				return ec.fieldContext_Schedule_notes(ctx, field)
-			case "metadata":
-				return ec.fieldContext_Schedule_metadata(ctx, field)
 			case "items":
 				return ec.fieldContext_Schedule_items(ctx, field)
 			case "createdAt":
@@ -3158,16 +2505,8 @@ func (ec *executionContext) fieldContext_Mutation_archiveSchedule(ctx context.Co
 				return ec.fieldContext_Schedule_endDateISO(ctx, field)
 			case "lockoutMinutes":
 				return ec.fieldContext_Schedule_lockoutMinutes(ctx, field)
-			case "snoozeIntervalMinutes":
-				return ec.fieldContext_Schedule_snoozeIntervalMinutes(ctx, field)
-			case "snoozeMax":
-				return ec.fieldContext_Schedule_snoozeMax(ctx, field)
 			case "status":
 				return ec.fieldContext_Schedule_status(ctx, field)
-			case "notes":
-				return ec.fieldContext_Schedule_notes(ctx, field)
-			case "metadata":
-				return ec.fieldContext_Schedule_metadata(ctx, field)
 			case "items":
 				return ec.fieldContext_Schedule_items(ctx, field)
 			case "createdAt":
@@ -3223,8 +2562,6 @@ func (ec *executionContext) fieldContext_Mutation_recordDispenseAction(ctx conte
 				return ec.fieldContext_DispenseEvent_patientId(ctx, field)
 			case "scheduleId":
 				return ec.fieldContext_DispenseEvent_scheduleId(ctx, field)
-			case "scheduleItemId":
-				return ec.fieldContext_DispenseEvent_scheduleItemId(ctx, field)
 			case "dueAtISO":
 				return ec.fieldContext_DispenseEvent_dueAtISO(ctx, field)
 			case "actedAtISO":
@@ -3233,10 +2570,6 @@ func (ec *executionContext) fieldContext_Mutation_recordDispenseAction(ctx conte
 				return ec.fieldContext_DispenseEvent_status(ctx, field)
 			case "actionSource":
 				return ec.fieldContext_DispenseEvent_actionSource(ctx, field)
-			case "notes":
-				return ec.fieldContext_DispenseEvent_notes(ctx, field)
-			case "metadata":
-				return ec.fieldContext_DispenseEvent_metadata(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_DispenseEvent_createdAt(ctx, field)
 			}
@@ -3373,64 +2706,6 @@ func (ec *executionContext) fieldContext_Patient_lastName(_ context.Context, fie
 	return fc, nil
 }
 
-func (ec *executionContext) _Patient_dateOfBirth(ctx context.Context, field graphql.CollectedField, obj *model.Patient) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_Patient_dateOfBirth,
-		func(ctx context.Context) (any, error) {
-			return obj.DateOfBirth, nil
-		},
-		nil,
-		ec.marshalODateTime2ᚖtimeᚐTime,
-		true,
-		false,
-	)
-}
-
-func (ec *executionContext) fieldContext_Patient_dateOfBirth(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Patient",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type DateTime does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Patient_gender(ctx context.Context, field graphql.CollectedField, obj *model.Patient) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_Patient_gender,
-		func(ctx context.Context) (any, error) {
-			return obj.Gender, nil
-		},
-		nil,
-		ec.marshalOString2ᚖstring,
-		true,
-		false,
-	)
-}
-
-func (ec *executionContext) fieldContext_Patient_gender(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Patient",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
 func (ec *executionContext) _Patient_timezone(ctx context.Context, field graphql.CollectedField, obj *model.Patient) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -3455,180 +2730,6 @@ func (ec *executionContext) fieldContext_Patient_timezone(_ context.Context, fie
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Patient_preferredLanguage(ctx context.Context, field graphql.CollectedField, obj *model.Patient) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_Patient_preferredLanguage,
-		func(ctx context.Context) (any, error) {
-			return obj.PreferredLanguage, nil
-		},
-		nil,
-		ec.marshalOString2ᚖstring,
-		true,
-		false,
-	)
-}
-
-func (ec *executionContext) fieldContext_Patient_preferredLanguage(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Patient",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Patient_caregiverName(ctx context.Context, field graphql.CollectedField, obj *model.Patient) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_Patient_caregiverName,
-		func(ctx context.Context) (any, error) {
-			return obj.CaregiverName, nil
-		},
-		nil,
-		ec.marshalOString2ᚖstring,
-		true,
-		false,
-	)
-}
-
-func (ec *executionContext) fieldContext_Patient_caregiverName(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Patient",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Patient_caregiverEmail(ctx context.Context, field graphql.CollectedField, obj *model.Patient) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_Patient_caregiverEmail,
-		func(ctx context.Context) (any, error) {
-			return obj.CaregiverEmail, nil
-		},
-		nil,
-		ec.marshalOString2ᚖstring,
-		true,
-		false,
-	)
-}
-
-func (ec *executionContext) fieldContext_Patient_caregiverEmail(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Patient",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Patient_caregiverPhone(ctx context.Context, field graphql.CollectedField, obj *model.Patient) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_Patient_caregiverPhone,
-		func(ctx context.Context) (any, error) {
-			return obj.CaregiverPhone, nil
-		},
-		nil,
-		ec.marshalOString2ᚖstring,
-		true,
-		false,
-	)
-}
-
-func (ec *executionContext) fieldContext_Patient_caregiverPhone(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Patient",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Patient_notes(ctx context.Context, field graphql.CollectedField, obj *model.Patient) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_Patient_notes,
-		func(ctx context.Context) (any, error) {
-			return obj.Notes, nil
-		},
-		nil,
-		ec.marshalOString2ᚖstring,
-		true,
-		false,
-	)
-}
-
-func (ec *executionContext) fieldContext_Patient_notes(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Patient",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Patient_metadata(ctx context.Context, field graphql.CollectedField, obj *model.Patient) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_Patient_metadata,
-		func(ctx context.Context) (any, error) {
-			return obj.Metadata, nil
-		},
-		nil,
-		ec.marshalNJSONObject2map,
-		true,
-		true,
-	)
-}
-
-func (ec *executionContext) fieldContext_Patient_metadata(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Patient",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type JSONObject does not have child fields")
 		},
 	}
 	return fc, nil
@@ -3722,34 +2823,16 @@ func (ec *executionContext) fieldContext_Patient_medications(_ context.Context, 
 				return ec.fieldContext_Medication_patientId(ctx, field)
 			case "name":
 				return ec.fieldContext_Medication_name(ctx, field)
-			case "nickname":
-				return ec.fieldContext_Medication_nickname(ctx, field)
 			case "color":
 				return ec.fieldContext_Medication_color(ctx, field)
-			case "shape":
-				return ec.fieldContext_Medication_shape(ctx, field)
-			case "dosageForm":
-				return ec.fieldContext_Medication_dosageForm(ctx, field)
-			case "strength":
-				return ec.fieldContext_Medication_strength(ctx, field)
-			case "dosageMg":
-				return ec.fieldContext_Medication_dosageMg(ctx, field)
-			case "instructions":
-				return ec.fieldContext_Medication_instructions(ctx, field)
 			case "stockCount":
 				return ec.fieldContext_Medication_stockCount(ctx, field)
 			case "lowStockThreshold":
 				return ec.fieldContext_Medication_lowStockThreshold(ctx, field)
 			case "cartridgeIndex":
 				return ec.fieldContext_Medication_cartridgeIndex(ctx, field)
-			case "manufacturer":
-				return ec.fieldContext_Medication_manufacturer(ctx, field)
-			case "externalId":
-				return ec.fieldContext_Medication_externalId(ctx, field)
 			case "maxDailyDose":
 				return ec.fieldContext_Medication_maxDailyDose(ctx, field)
-			case "metadata":
-				return ec.fieldContext_Medication_metadata(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_Medication_createdAt(ctx, field)
 			case "updatedAt":
@@ -3801,16 +2884,8 @@ func (ec *executionContext) fieldContext_Patient_schedules(_ context.Context, fi
 				return ec.fieldContext_Schedule_endDateISO(ctx, field)
 			case "lockoutMinutes":
 				return ec.fieldContext_Schedule_lockoutMinutes(ctx, field)
-			case "snoozeIntervalMinutes":
-				return ec.fieldContext_Schedule_snoozeIntervalMinutes(ctx, field)
-			case "snoozeMax":
-				return ec.fieldContext_Schedule_snoozeMax(ctx, field)
 			case "status":
 				return ec.fieldContext_Schedule_status(ctx, field)
-			case "notes":
-				return ec.fieldContext_Schedule_notes(ctx, field)
-			case "metadata":
-				return ec.fieldContext_Schedule_metadata(ctx, field)
 			case "items":
 				return ec.fieldContext_Schedule_items(ctx, field)
 			case "createdAt":
@@ -3854,8 +2929,6 @@ func (ec *executionContext) fieldContext_Patient_upcomingDispenseEvents(_ contex
 				return ec.fieldContext_DispenseEvent_patientId(ctx, field)
 			case "scheduleId":
 				return ec.fieldContext_DispenseEvent_scheduleId(ctx, field)
-			case "scheduleItemId":
-				return ec.fieldContext_DispenseEvent_scheduleItemId(ctx, field)
 			case "dueAtISO":
 				return ec.fieldContext_DispenseEvent_dueAtISO(ctx, field)
 			case "actedAtISO":
@@ -3864,10 +2937,6 @@ func (ec *executionContext) fieldContext_Patient_upcomingDispenseEvents(_ contex
 				return ec.fieldContext_DispenseEvent_status(ctx, field)
 			case "actionSource":
 				return ec.fieldContext_DispenseEvent_actionSource(ctx, field)
-			case "notes":
-				return ec.fieldContext_DispenseEvent_notes(ctx, field)
-			case "metadata":
-				return ec.fieldContext_DispenseEvent_metadata(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_DispenseEvent_createdAt(ctx, field)
 			}
@@ -4104,24 +3173,8 @@ func (ec *executionContext) fieldContext_Query_patient(ctx context.Context, fiel
 				return ec.fieldContext_Patient_firstName(ctx, field)
 			case "lastName":
 				return ec.fieldContext_Patient_lastName(ctx, field)
-			case "dateOfBirth":
-				return ec.fieldContext_Patient_dateOfBirth(ctx, field)
-			case "gender":
-				return ec.fieldContext_Patient_gender(ctx, field)
 			case "timezone":
 				return ec.fieldContext_Patient_timezone(ctx, field)
-			case "preferredLanguage":
-				return ec.fieldContext_Patient_preferredLanguage(ctx, field)
-			case "caregiverName":
-				return ec.fieldContext_Patient_caregiverName(ctx, field)
-			case "caregiverEmail":
-				return ec.fieldContext_Patient_caregiverEmail(ctx, field)
-			case "caregiverPhone":
-				return ec.fieldContext_Patient_caregiverPhone(ctx, field)
-			case "notes":
-				return ec.fieldContext_Patient_notes(ctx, field)
-			case "metadata":
-				return ec.fieldContext_Patient_metadata(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_Patient_createdAt(ctx, field)
 			case "updatedAt":
@@ -4183,24 +3236,8 @@ func (ec *executionContext) fieldContext_Query_patients(ctx context.Context, fie
 				return ec.fieldContext_Patient_firstName(ctx, field)
 			case "lastName":
 				return ec.fieldContext_Patient_lastName(ctx, field)
-			case "dateOfBirth":
-				return ec.fieldContext_Patient_dateOfBirth(ctx, field)
-			case "gender":
-				return ec.fieldContext_Patient_gender(ctx, field)
 			case "timezone":
 				return ec.fieldContext_Patient_timezone(ctx, field)
-			case "preferredLanguage":
-				return ec.fieldContext_Patient_preferredLanguage(ctx, field)
-			case "caregiverName":
-				return ec.fieldContext_Patient_caregiverName(ctx, field)
-			case "caregiverEmail":
-				return ec.fieldContext_Patient_caregiverEmail(ctx, field)
-			case "caregiverPhone":
-				return ec.fieldContext_Patient_caregiverPhone(ctx, field)
-			case "notes":
-				return ec.fieldContext_Patient_notes(ctx, field)
-			case "metadata":
-				return ec.fieldContext_Patient_metadata(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_Patient_createdAt(ctx, field)
 			case "updatedAt":
@@ -4260,34 +3297,16 @@ func (ec *executionContext) fieldContext_Query_medications(ctx context.Context, 
 				return ec.fieldContext_Medication_patientId(ctx, field)
 			case "name":
 				return ec.fieldContext_Medication_name(ctx, field)
-			case "nickname":
-				return ec.fieldContext_Medication_nickname(ctx, field)
 			case "color":
 				return ec.fieldContext_Medication_color(ctx, field)
-			case "shape":
-				return ec.fieldContext_Medication_shape(ctx, field)
-			case "dosageForm":
-				return ec.fieldContext_Medication_dosageForm(ctx, field)
-			case "strength":
-				return ec.fieldContext_Medication_strength(ctx, field)
-			case "dosageMg":
-				return ec.fieldContext_Medication_dosageMg(ctx, field)
-			case "instructions":
-				return ec.fieldContext_Medication_instructions(ctx, field)
 			case "stockCount":
 				return ec.fieldContext_Medication_stockCount(ctx, field)
 			case "lowStockThreshold":
 				return ec.fieldContext_Medication_lowStockThreshold(ctx, field)
 			case "cartridgeIndex":
 				return ec.fieldContext_Medication_cartridgeIndex(ctx, field)
-			case "manufacturer":
-				return ec.fieldContext_Medication_manufacturer(ctx, field)
-			case "externalId":
-				return ec.fieldContext_Medication_externalId(ctx, field)
 			case "maxDailyDose":
 				return ec.fieldContext_Medication_maxDailyDose(ctx, field)
-			case "metadata":
-				return ec.fieldContext_Medication_metadata(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_Medication_createdAt(ctx, field)
 			case "updatedAt":
@@ -4341,34 +3360,16 @@ func (ec *executionContext) fieldContext_Query_medication(ctx context.Context, f
 				return ec.fieldContext_Medication_patientId(ctx, field)
 			case "name":
 				return ec.fieldContext_Medication_name(ctx, field)
-			case "nickname":
-				return ec.fieldContext_Medication_nickname(ctx, field)
 			case "color":
 				return ec.fieldContext_Medication_color(ctx, field)
-			case "shape":
-				return ec.fieldContext_Medication_shape(ctx, field)
-			case "dosageForm":
-				return ec.fieldContext_Medication_dosageForm(ctx, field)
-			case "strength":
-				return ec.fieldContext_Medication_strength(ctx, field)
-			case "dosageMg":
-				return ec.fieldContext_Medication_dosageMg(ctx, field)
-			case "instructions":
-				return ec.fieldContext_Medication_instructions(ctx, field)
 			case "stockCount":
 				return ec.fieldContext_Medication_stockCount(ctx, field)
 			case "lowStockThreshold":
 				return ec.fieldContext_Medication_lowStockThreshold(ctx, field)
 			case "cartridgeIndex":
 				return ec.fieldContext_Medication_cartridgeIndex(ctx, field)
-			case "manufacturer":
-				return ec.fieldContext_Medication_manufacturer(ctx, field)
-			case "externalId":
-				return ec.fieldContext_Medication_externalId(ctx, field)
 			case "maxDailyDose":
 				return ec.fieldContext_Medication_maxDailyDose(ctx, field)
-			case "metadata":
-				return ec.fieldContext_Medication_metadata(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_Medication_createdAt(ctx, field)
 			case "updatedAt":
@@ -4432,16 +3433,8 @@ func (ec *executionContext) fieldContext_Query_schedules(ctx context.Context, fi
 				return ec.fieldContext_Schedule_endDateISO(ctx, field)
 			case "lockoutMinutes":
 				return ec.fieldContext_Schedule_lockoutMinutes(ctx, field)
-			case "snoozeIntervalMinutes":
-				return ec.fieldContext_Schedule_snoozeIntervalMinutes(ctx, field)
-			case "snoozeMax":
-				return ec.fieldContext_Schedule_snoozeMax(ctx, field)
 			case "status":
 				return ec.fieldContext_Schedule_status(ctx, field)
-			case "notes":
-				return ec.fieldContext_Schedule_notes(ctx, field)
-			case "metadata":
-				return ec.fieldContext_Schedule_metadata(ctx, field)
 			case "items":
 				return ec.fieldContext_Schedule_items(ctx, field)
 			case "createdAt":
@@ -4507,16 +3500,8 @@ func (ec *executionContext) fieldContext_Query_schedule(ctx context.Context, fie
 				return ec.fieldContext_Schedule_endDateISO(ctx, field)
 			case "lockoutMinutes":
 				return ec.fieldContext_Schedule_lockoutMinutes(ctx, field)
-			case "snoozeIntervalMinutes":
-				return ec.fieldContext_Schedule_snoozeIntervalMinutes(ctx, field)
-			case "snoozeMax":
-				return ec.fieldContext_Schedule_snoozeMax(ctx, field)
 			case "status":
 				return ec.fieldContext_Schedule_status(ctx, field)
-			case "notes":
-				return ec.fieldContext_Schedule_notes(ctx, field)
-			case "metadata":
-				return ec.fieldContext_Schedule_metadata(ctx, field)
 			case "items":
 				return ec.fieldContext_Schedule_items(ctx, field)
 			case "createdAt":
@@ -4572,8 +3557,6 @@ func (ec *executionContext) fieldContext_Query_dispenseEvents(ctx context.Contex
 				return ec.fieldContext_DispenseEvent_patientId(ctx, field)
 			case "scheduleId":
 				return ec.fieldContext_DispenseEvent_scheduleId(ctx, field)
-			case "scheduleItemId":
-				return ec.fieldContext_DispenseEvent_scheduleItemId(ctx, field)
 			case "dueAtISO":
 				return ec.fieldContext_DispenseEvent_dueAtISO(ctx, field)
 			case "actedAtISO":
@@ -4582,10 +3565,6 @@ func (ec *executionContext) fieldContext_Query_dispenseEvents(ctx context.Contex
 				return ec.fieldContext_DispenseEvent_status(ctx, field)
 			case "actionSource":
 				return ec.fieldContext_DispenseEvent_actionSource(ctx, field)
-			case "notes":
-				return ec.fieldContext_DispenseEvent_notes(ctx, field)
-			case "metadata":
-				return ec.fieldContext_DispenseEvent_metadata(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_DispenseEvent_createdAt(ctx, field)
 			}
@@ -4995,64 +3974,6 @@ func (ec *executionContext) fieldContext_Schedule_lockoutMinutes(_ context.Conte
 	return fc, nil
 }
 
-func (ec *executionContext) _Schedule_snoozeIntervalMinutes(ctx context.Context, field graphql.CollectedField, obj *model.Schedule) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_Schedule_snoozeIntervalMinutes,
-		func(ctx context.Context) (any, error) {
-			return obj.SnoozeIntervalMinutes, nil
-		},
-		nil,
-		ec.marshalNInt2int,
-		true,
-		true,
-	)
-}
-
-func (ec *executionContext) fieldContext_Schedule_snoozeIntervalMinutes(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Schedule",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Int does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Schedule_snoozeMax(ctx context.Context, field graphql.CollectedField, obj *model.Schedule) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_Schedule_snoozeMax,
-		func(ctx context.Context) (any, error) {
-			return obj.SnoozeMax, nil
-		},
-		nil,
-		ec.marshalNInt2int,
-		true,
-		true,
-	)
-}
-
-func (ec *executionContext) fieldContext_Schedule_snoozeMax(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Schedule",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Int does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
 func (ec *executionContext) _Schedule_status(ctx context.Context, field graphql.CollectedField, obj *model.Schedule) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -5077,64 +3998,6 @@ func (ec *executionContext) fieldContext_Schedule_status(_ context.Context, fiel
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type ScheduleStatus does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Schedule_notes(ctx context.Context, field graphql.CollectedField, obj *model.Schedule) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_Schedule_notes,
-		func(ctx context.Context) (any, error) {
-			return obj.Notes, nil
-		},
-		nil,
-		ec.marshalOString2ᚖstring,
-		true,
-		false,
-	)
-}
-
-func (ec *executionContext) fieldContext_Schedule_notes(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Schedule",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Schedule_metadata(ctx context.Context, field graphql.CollectedField, obj *model.Schedule) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_Schedule_metadata,
-		func(ctx context.Context) (any, error) {
-			return obj.Metadata, nil
-		},
-		nil,
-		ec.marshalNJSONObject2map,
-		true,
-		true,
-	)
-}
-
-func (ec *executionContext) fieldContext_Schedule_metadata(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Schedule",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type JSONObject does not have child fields")
 		},
 	}
 	return fc, nil
@@ -5172,8 +4035,6 @@ func (ec *executionContext) fieldContext_Schedule_items(_ context.Context, field
 				return ec.fieldContext_ScheduleItem_medication(ctx, field)
 			case "qty":
 				return ec.fieldContext_ScheduleItem_qty(ctx, field)
-			case "instructions":
-				return ec.fieldContext_ScheduleItem_instructions(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type ScheduleItem", field.Name)
 		},
@@ -5327,34 +4188,16 @@ func (ec *executionContext) fieldContext_ScheduleItem_medication(_ context.Conte
 				return ec.fieldContext_Medication_patientId(ctx, field)
 			case "name":
 				return ec.fieldContext_Medication_name(ctx, field)
-			case "nickname":
-				return ec.fieldContext_Medication_nickname(ctx, field)
 			case "color":
 				return ec.fieldContext_Medication_color(ctx, field)
-			case "shape":
-				return ec.fieldContext_Medication_shape(ctx, field)
-			case "dosageForm":
-				return ec.fieldContext_Medication_dosageForm(ctx, field)
-			case "strength":
-				return ec.fieldContext_Medication_strength(ctx, field)
-			case "dosageMg":
-				return ec.fieldContext_Medication_dosageMg(ctx, field)
-			case "instructions":
-				return ec.fieldContext_Medication_instructions(ctx, field)
 			case "stockCount":
 				return ec.fieldContext_Medication_stockCount(ctx, field)
 			case "lowStockThreshold":
 				return ec.fieldContext_Medication_lowStockThreshold(ctx, field)
 			case "cartridgeIndex":
 				return ec.fieldContext_Medication_cartridgeIndex(ctx, field)
-			case "manufacturer":
-				return ec.fieldContext_Medication_manufacturer(ctx, field)
-			case "externalId":
-				return ec.fieldContext_Medication_externalId(ctx, field)
 			case "maxDailyDose":
 				return ec.fieldContext_Medication_maxDailyDose(ctx, field)
-			case "metadata":
-				return ec.fieldContext_Medication_metadata(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_Medication_createdAt(ctx, field)
 			case "updatedAt":
@@ -5390,35 +4233,6 @@ func (ec *executionContext) fieldContext_ScheduleItem_qty(_ context.Context, fie
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Int does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _ScheduleItem_instructions(ctx context.Context, field graphql.CollectedField, obj *model.ScheduleItem) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_ScheduleItem_instructions,
-		func(ctx context.Context) (any, error) {
-			return obj.Instructions, nil
-		},
-		nil,
-		ec.marshalOString2ᚖstring,
-		true,
-		false,
-	)
-}
-
-func (ec *executionContext) fieldContext_ScheduleItem_instructions(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "ScheduleItem",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
 		},
 	}
 	return fc, nil
@@ -5659,24 +4473,8 @@ func (ec *executionContext) fieldContext_User_patients(_ context.Context, field 
 				return ec.fieldContext_Patient_firstName(ctx, field)
 			case "lastName":
 				return ec.fieldContext_Patient_lastName(ctx, field)
-			case "dateOfBirth":
-				return ec.fieldContext_Patient_dateOfBirth(ctx, field)
-			case "gender":
-				return ec.fieldContext_Patient_gender(ctx, field)
 			case "timezone":
 				return ec.fieldContext_Patient_timezone(ctx, field)
-			case "preferredLanguage":
-				return ec.fieldContext_Patient_preferredLanguage(ctx, field)
-			case "caregiverName":
-				return ec.fieldContext_Patient_caregiverName(ctx, field)
-			case "caregiverEmail":
-				return ec.fieldContext_Patient_caregiverEmail(ctx, field)
-			case "caregiverPhone":
-				return ec.fieldContext_Patient_caregiverPhone(ctx, field)
-			case "notes":
-				return ec.fieldContext_Patient_notes(ctx, field)
-			case "metadata":
-				return ec.fieldContext_Patient_metadata(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_Patient_createdAt(ctx, field)
 			case "updatedAt":
@@ -7181,7 +5979,7 @@ func (ec *executionContext) unmarshalInputDispenseActionInput(ctx context.Contex
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"eventId", "patientId", "scheduleId", "scheduleItemId", "dueAtISO", "actedAtISO", "status", "actionSource", "notes", "metadata"}
+	fieldsInOrder := [...]string{"eventId", "patientId", "scheduleId", "dueAtISO", "actedAtISO", "status", "actionSource"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -7209,13 +6007,6 @@ func (ec *executionContext) unmarshalInputDispenseActionInput(ctx context.Contex
 				return it, err
 			}
 			it.ScheduleID = data
-		case "scheduleItemId":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("scheduleItemId"))
-			data, err := ec.unmarshalOID2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.ScheduleItemID = data
 		case "dueAtISO":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("dueAtISO"))
 			data, err := ec.unmarshalNDateTime2timeᚐTime(ctx, v)
@@ -7244,20 +6035,6 @@ func (ec *executionContext) unmarshalInputDispenseActionInput(ctx context.Contex
 				return it, err
 			}
 			it.ActionSource = data
-		case "notes":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("notes"))
-			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.Notes = data
-		case "metadata":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("metadata"))
-			data, err := ec.unmarshalOJSONObject2map(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.Metadata = data
 		}
 	}
 
@@ -7305,7 +6082,7 @@ func (ec *executionContext) unmarshalInputMedicationInput(ctx context.Context, o
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"id", "patientId", "name", "nickname", "color", "shape", "dosageForm", "strength", "dosageMg", "instructions", "stockCount", "lowStockThreshold", "cartridgeIndex", "manufacturer", "externalId", "maxDailyDose", "metadata"}
+	fieldsInOrder := [...]string{"id", "patientId", "name", "color", "stockCount", "lowStockThreshold", "cartridgeIndex", "maxDailyDose"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -7333,13 +6110,6 @@ func (ec *executionContext) unmarshalInputMedicationInput(ctx context.Context, o
 				return it, err
 			}
 			it.Name = data
-		case "nickname":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("nickname"))
-			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.Nickname = data
 		case "color":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("color"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
@@ -7347,41 +6117,6 @@ func (ec *executionContext) unmarshalInputMedicationInput(ctx context.Context, o
 				return it, err
 			}
 			it.Color = data
-		case "shape":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("shape"))
-			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.Shape = data
-		case "dosageForm":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("dosageForm"))
-			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.DosageForm = data
-		case "strength":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("strength"))
-			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.Strength = data
-		case "dosageMg":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("dosageMg"))
-			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.DosageMg = data
-		case "instructions":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("instructions"))
-			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.Instructions = data
 		case "stockCount":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("stockCount"))
 			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
@@ -7403,20 +6138,6 @@ func (ec *executionContext) unmarshalInputMedicationInput(ctx context.Context, o
 				return it, err
 			}
 			it.CartridgeIndex = data
-		case "manufacturer":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("manufacturer"))
-			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.Manufacturer = data
-		case "externalId":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("externalId"))
-			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.ExternalID = data
 		case "maxDailyDose":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("maxDailyDose"))
 			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
@@ -7424,13 +6145,6 @@ func (ec *executionContext) unmarshalInputMedicationInput(ctx context.Context, o
 				return it, err
 			}
 			it.MaxDailyDose = data
-		case "metadata":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("metadata"))
-			data, err := ec.unmarshalOJSONObject2map(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.Metadata = data
 		}
 	}
 
@@ -7444,7 +6158,7 @@ func (ec *executionContext) unmarshalInputPatientInput(ctx context.Context, obj 
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"userId", "firstName", "lastName", "dateOfBirth", "gender", "timezone", "preferredLanguage", "caregiverName", "caregiverEmail", "caregiverPhone", "notes", "metadata"}
+	fieldsInOrder := [...]string{"userId", "firstName", "lastName", "timezone"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -7472,20 +6186,6 @@ func (ec *executionContext) unmarshalInputPatientInput(ctx context.Context, obj 
 				return it, err
 			}
 			it.LastName = data
-		case "dateOfBirth":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("dateOfBirth"))
-			data, err := ec.unmarshalODateTime2ᚖtimeᚐTime(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.DateOfBirth = data
-		case "gender":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("gender"))
-			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.Gender = data
 		case "timezone":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("timezone"))
 			data, err := ec.unmarshalNString2string(ctx, v)
@@ -7493,48 +6193,6 @@ func (ec *executionContext) unmarshalInputPatientInput(ctx context.Context, obj 
 				return it, err
 			}
 			it.Timezone = data
-		case "preferredLanguage":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("preferredLanguage"))
-			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.PreferredLanguage = data
-		case "caregiverName":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("caregiverName"))
-			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.CaregiverName = data
-		case "caregiverEmail":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("caregiverEmail"))
-			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.CaregiverEmail = data
-		case "caregiverPhone":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("caregiverPhone"))
-			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.CaregiverPhone = data
-		case "notes":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("notes"))
-			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.Notes = data
-		case "metadata":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("metadata"))
-			data, err := ec.unmarshalOJSONObject2map(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.Metadata = data
 		}
 	}
 
@@ -7552,7 +6210,7 @@ func (ec *executionContext) unmarshalInputScheduleInput(ctx context.Context, obj
 		asMap["status"] = "ACTIVE"
 	}
 
-	fieldsInOrder := [...]string{"id", "patientId", "title", "timezone", "rrule", "startDateISO", "endDateISO", "lockoutMinutes", "snoozeIntervalMinutes", "snoozeMax", "status", "notes", "metadata", "items"}
+	fieldsInOrder := [...]string{"id", "patientId", "title", "timezone", "rrule", "startDateISO", "endDateISO", "lockoutMinutes", "status", "items"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -7615,20 +6273,6 @@ func (ec *executionContext) unmarshalInputScheduleInput(ctx context.Context, obj
 				return it, err
 			}
 			it.LockoutMinutes = data
-		case "snoozeIntervalMinutes":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("snoozeIntervalMinutes"))
-			data, err := ec.unmarshalNInt2int(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.SnoozeIntervalMinutes = data
-		case "snoozeMax":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("snoozeMax"))
-			data, err := ec.unmarshalNInt2int(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.SnoozeMax = data
 		case "status":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("status"))
 			data, err := ec.unmarshalOScheduleStatus2ᚖpillboxᚋgraphᚋmodelᚐScheduleStatus(ctx, v)
@@ -7636,20 +6280,6 @@ func (ec *executionContext) unmarshalInputScheduleInput(ctx context.Context, obj
 				return it, err
 			}
 			it.Status = data
-		case "notes":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("notes"))
-			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.Notes = data
-		case "metadata":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("metadata"))
-			data, err := ec.unmarshalOJSONObject2map(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.Metadata = data
 		case "items":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("items"))
 			data, err := ec.unmarshalNScheduleItemInput2ᚕᚖpillboxᚋgraphᚋmodelᚐScheduleItemInputᚄ(ctx, v)
@@ -7670,7 +6300,7 @@ func (ec *executionContext) unmarshalInputScheduleItemInput(ctx context.Context,
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"medicationId", "qty", "instructions"}
+	fieldsInOrder := [...]string{"medicationId", "qty"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -7691,13 +6321,6 @@ func (ec *executionContext) unmarshalInputScheduleItemInput(ctx context.Context,
 				return it, err
 			}
 			it.Qty = data
-		case "instructions":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("instructions"))
-			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.Instructions = data
 		}
 	}
 
@@ -7800,8 +6423,6 @@ func (ec *executionContext) _DispenseEvent(ctx context.Context, sel ast.Selectio
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "scheduleItemId":
-			out.Values[i] = ec._DispenseEvent_scheduleItemId(ctx, field, obj)
 		case "dueAtISO":
 			out.Values[i] = ec._DispenseEvent_dueAtISO(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -7816,13 +6437,6 @@ func (ec *executionContext) _DispenseEvent(ctx context.Context, sel ast.Selectio
 			}
 		case "actionSource":
 			out.Values[i] = ec._DispenseEvent_actionSource(ctx, field, obj)
-		case "notes":
-			out.Values[i] = ec._DispenseEvent_notes(ctx, field, obj)
-		case "metadata":
-			out.Values[i] = ec._DispenseEvent_metadata(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
 		case "createdAt":
 			out.Values[i] = ec._DispenseEvent_createdAt(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -7874,8 +6488,6 @@ func (ec *executionContext) _DueMedication(ctx context.Context, sel ast.Selectio
 			}
 		case "siloSlot":
 			out.Values[i] = ec._DueMedication_siloSlot(ctx, field, obj)
-		case "hardwareProfile":
-			out.Values[i] = ec._DueMedication_hardwareProfile(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -7974,20 +6586,8 @@ func (ec *executionContext) _Medication(ctx context.Context, sel ast.SelectionSe
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "nickname":
-			out.Values[i] = ec._Medication_nickname(ctx, field, obj)
 		case "color":
 			out.Values[i] = ec._Medication_color(ctx, field, obj)
-		case "shape":
-			out.Values[i] = ec._Medication_shape(ctx, field, obj)
-		case "dosageForm":
-			out.Values[i] = ec._Medication_dosageForm(ctx, field, obj)
-		case "strength":
-			out.Values[i] = ec._Medication_strength(ctx, field, obj)
-		case "dosageMg":
-			out.Values[i] = ec._Medication_dosageMg(ctx, field, obj)
-		case "instructions":
-			out.Values[i] = ec._Medication_instructions(ctx, field, obj)
 		case "stockCount":
 			out.Values[i] = ec._Medication_stockCount(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -8000,17 +6600,8 @@ func (ec *executionContext) _Medication(ctx context.Context, sel ast.SelectionSe
 			}
 		case "cartridgeIndex":
 			out.Values[i] = ec._Medication_cartridgeIndex(ctx, field, obj)
-		case "manufacturer":
-			out.Values[i] = ec._Medication_manufacturer(ctx, field, obj)
-		case "externalId":
-			out.Values[i] = ec._Medication_externalId(ctx, field, obj)
 		case "maxDailyDose":
 			out.Values[i] = ec._Medication_maxDailyDose(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "metadata":
-			out.Values[i] = ec._Medication_metadata(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -8187,27 +6778,8 @@ func (ec *executionContext) _Patient(ctx context.Context, sel ast.SelectionSet, 
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "dateOfBirth":
-			out.Values[i] = ec._Patient_dateOfBirth(ctx, field, obj)
-		case "gender":
-			out.Values[i] = ec._Patient_gender(ctx, field, obj)
 		case "timezone":
 			out.Values[i] = ec._Patient_timezone(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "preferredLanguage":
-			out.Values[i] = ec._Patient_preferredLanguage(ctx, field, obj)
-		case "caregiverName":
-			out.Values[i] = ec._Patient_caregiverName(ctx, field, obj)
-		case "caregiverEmail":
-			out.Values[i] = ec._Patient_caregiverEmail(ctx, field, obj)
-		case "caregiverPhone":
-			out.Values[i] = ec._Patient_caregiverPhone(ctx, field, obj)
-		case "notes":
-			out.Values[i] = ec._Patient_notes(ctx, field, obj)
-		case "metadata":
-			out.Values[i] = ec._Patient_metadata(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -8606,25 +7178,8 @@ func (ec *executionContext) _Schedule(ctx context.Context, sel ast.SelectionSet,
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "snoozeIntervalMinutes":
-			out.Values[i] = ec._Schedule_snoozeIntervalMinutes(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "snoozeMax":
-			out.Values[i] = ec._Schedule_snoozeMax(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
 		case "status":
 			out.Values[i] = ec._Schedule_status(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "notes":
-			out.Values[i] = ec._Schedule_notes(ctx, field, obj)
-		case "metadata":
-			out.Values[i] = ec._Schedule_metadata(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -8697,8 +7252,6 @@ func (ec *executionContext) _ScheduleItem(ctx context.Context, sel ast.Selection
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "instructions":
-			out.Values[i] = ec._ScheduleItem_instructions(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -9364,21 +7917,6 @@ func (ec *executionContext) marshalNInt2int(ctx context.Context, sel ast.Selecti
 		}
 	}
 	return res
-}
-
-func (ec *executionContext) unmarshalNJSONObject2map(ctx context.Context, v any) (map[string]any, error) {
-	res, err := ec.unmarshalInputJSONObject(ctx, v)
-	return res, graphql.ErrorOnPath(ctx, err)
-}
-
-func (ec *executionContext) marshalNJSONObject2map(ctx context.Context, sel ast.SelectionSet, v map[string]any) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
-		}
-		return graphql.Null
-	}
-	return ec._JSONObject(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNLoginInput2pillboxᚋgraphᚋmodelᚐLoginInput(ctx context.Context, v any) (model.LoginInput, error) {
@@ -10078,21 +8616,6 @@ func (ec *executionContext) marshalOInt2ᚖint(ctx context.Context, sel ast.Sele
 	_ = ctx
 	res := graphql.MarshalInt(*v)
 	return res
-}
-
-func (ec *executionContext) unmarshalOJSONObject2map(ctx context.Context, v any) (map[string]any, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalInputJSONObject(ctx, v)
-	return res, graphql.ErrorOnPath(ctx, err)
-}
-
-func (ec *executionContext) marshalOJSONObject2map(ctx context.Context, sel ast.SelectionSet, v map[string]any) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	return ec._JSONObject(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalOMedication2ᚖpillboxᚋgraphᚋmodelᚐMedication(ctx context.Context, sel ast.SelectionSet, v *model.Medication) graphql.Marshaler {

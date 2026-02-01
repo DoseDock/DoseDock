@@ -11,47 +11,20 @@ import (
 )
 
 const createMedication = `-- name: CreateMedication :one
-INSERT INTO medications (
-  id,
-  patient_id,
-  name,
-  nickname,
-  color,
-  shape,
-  dosage_form,
-  strength,
-  dosage_mg,
-  instructions,
-  stock_count,
-  low_stock_threshold,
-  cartridge_index,
-  manufacturer,
-  external_id,
-  max_daily_dose,
-  metadata
-)
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-RETURNING id, patient_id, name, nickname, color, shape, dosage_form, strength, dosage_mg, instructions, stock_count, low_stock_threshold, cartridge_index, manufacturer, external_id, created_at, updated_at, max_daily_dose, metadata
+INSERT INTO medications (id, patient_id, name, color, stock_count, low_stock_threshold, cartridge_index, max_daily_dose)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+RETURNING id, patient_id, name, color, stock_count, low_stock_threshold, cartridge_index, max_daily_dose, created_at, updated_at
 `
 
 type CreateMedicationParams struct {
 	ID                string         `json:"id"`
 	PatientID         string         `json:"patient_id"`
 	Name              string         `json:"name"`
-	Nickname          sql.NullString `json:"nickname"`
 	Color             sql.NullString `json:"color"`
-	Shape             sql.NullString `json:"shape"`
-	DosageForm        sql.NullString `json:"dosage_form"`
-	Strength          sql.NullString `json:"strength"`
-	DosageMg          sql.NullInt64  `json:"dosage_mg"`
-	Instructions      sql.NullString `json:"instructions"`
 	StockCount        int64          `json:"stock_count"`
 	LowStockThreshold int64          `json:"low_stock_threshold"`
 	CartridgeIndex    sql.NullInt64  `json:"cartridge_index"`
-	Manufacturer      sql.NullString `json:"manufacturer"`
-	ExternalID        sql.NullString `json:"external_id"`
 	MaxDailyDose      int64          `json:"max_daily_dose"`
-	Metadata          string         `json:"metadata"`
 }
 
 func (q *Queries) CreateMedication(ctx context.Context, arg CreateMedicationParams) (Medication, error) {
@@ -59,42 +32,24 @@ func (q *Queries) CreateMedication(ctx context.Context, arg CreateMedicationPara
 		arg.ID,
 		arg.PatientID,
 		arg.Name,
-		arg.Nickname,
 		arg.Color,
-		arg.Shape,
-		arg.DosageForm,
-		arg.Strength,
-		arg.DosageMg,
-		arg.Instructions,
 		arg.StockCount,
 		arg.LowStockThreshold,
 		arg.CartridgeIndex,
-		arg.Manufacturer,
-		arg.ExternalID,
 		arg.MaxDailyDose,
-		arg.Metadata,
 	)
 	var i Medication
 	err := row.Scan(
 		&i.ID,
 		&i.PatientID,
 		&i.Name,
-		&i.Nickname,
 		&i.Color,
-		&i.Shape,
-		&i.DosageForm,
-		&i.Strength,
-		&i.DosageMg,
-		&i.Instructions,
 		&i.StockCount,
 		&i.LowStockThreshold,
 		&i.CartridgeIndex,
-		&i.Manufacturer,
-		&i.ExternalID,
+		&i.MaxDailyDose,
 		&i.CreatedAt,
 		&i.UpdatedAt,
-		&i.MaxDailyDose,
-		&i.Metadata,
 	)
 	return i, err
 }
@@ -110,8 +65,7 @@ func (q *Queries) DeleteMedication(ctx context.Context, id string) error {
 }
 
 const getMedication = `-- name: GetMedication :one
-SELECT id, patient_id, name, nickname, color, shape, dosage_form, strength, dosage_mg, instructions, stock_count, low_stock_threshold, cartridge_index, manufacturer, external_id, created_at, updated_at, max_daily_dose, metadata
-FROM medications
+SELECT id, patient_id, name, color, stock_count, low_stock_threshold, cartridge_index, max_daily_dose, created_at, updated_at FROM medications
 WHERE id = ?
 `
 
@@ -122,29 +76,19 @@ func (q *Queries) GetMedication(ctx context.Context, id string) (Medication, err
 		&i.ID,
 		&i.PatientID,
 		&i.Name,
-		&i.Nickname,
 		&i.Color,
-		&i.Shape,
-		&i.DosageForm,
-		&i.Strength,
-		&i.DosageMg,
-		&i.Instructions,
 		&i.StockCount,
 		&i.LowStockThreshold,
 		&i.CartridgeIndex,
-		&i.Manufacturer,
-		&i.ExternalID,
+		&i.MaxDailyDose,
 		&i.CreatedAt,
 		&i.UpdatedAt,
-		&i.MaxDailyDose,
-		&i.Metadata,
 	)
 	return i, err
 }
 
 const listMedicationsByPatient = `-- name: ListMedicationsByPatient :many
-SELECT id, patient_id, name, nickname, color, shape, dosage_form, strength, dosage_mg, instructions, stock_count, low_stock_threshold, cartridge_index, manufacturer, external_id, created_at, updated_at, max_daily_dose, metadata
-FROM medications
+SELECT id, patient_id, name, color, stock_count, low_stock_threshold, cartridge_index, max_daily_dose, created_at, updated_at FROM medications
 WHERE patient_id = ?
 ORDER BY name
 `
@@ -162,22 +106,13 @@ func (q *Queries) ListMedicationsByPatient(ctx context.Context, patientID string
 			&i.ID,
 			&i.PatientID,
 			&i.Name,
-			&i.Nickname,
 			&i.Color,
-			&i.Shape,
-			&i.DosageForm,
-			&i.Strength,
-			&i.DosageMg,
-			&i.Instructions,
 			&i.StockCount,
 			&i.LowStockThreshold,
 			&i.CartridgeIndex,
-			&i.Manufacturer,
-			&i.ExternalID,
+			&i.MaxDailyDose,
 			&i.CreatedAt,
 			&i.UpdatedAt,
-			&i.MaxDailyDose,
-			&i.Metadata,
 		); err != nil {
 			return nil, err
 		}
@@ -196,61 +131,34 @@ const updateMedication = `-- name: UpdateMedication :one
 UPDATE medications
 SET
   name = ?,
-  nickname = ?,
   color = ?,
-  shape = ?,
-  dosage_form = ?,
-  strength = ?,
-  dosage_mg = ?,
-  instructions = ?,
   stock_count = ?,
   low_stock_threshold = ?,
   cartridge_index = ?,
-  manufacturer = ?,
-  external_id = ?,
   max_daily_dose = ?,
-  metadata = ?,
   updated_at = datetime('now')
 WHERE id = ?
-RETURNING id, patient_id, name, nickname, color, shape, dosage_form, strength, dosage_mg, instructions, stock_count, low_stock_threshold, cartridge_index, manufacturer, external_id, created_at, updated_at, max_daily_dose, metadata
+RETURNING id, patient_id, name, color, stock_count, low_stock_threshold, cartridge_index, max_daily_dose, created_at, updated_at
 `
 
 type UpdateMedicationParams struct {
 	Name              string         `json:"name"`
-	Nickname          sql.NullString `json:"nickname"`
 	Color             sql.NullString `json:"color"`
-	Shape             sql.NullString `json:"shape"`
-	DosageForm        sql.NullString `json:"dosage_form"`
-	Strength          sql.NullString `json:"strength"`
-	DosageMg          sql.NullInt64  `json:"dosage_mg"`
-	Instructions      sql.NullString `json:"instructions"`
 	StockCount        int64          `json:"stock_count"`
 	LowStockThreshold int64          `json:"low_stock_threshold"`
 	CartridgeIndex    sql.NullInt64  `json:"cartridge_index"`
-	Manufacturer      sql.NullString `json:"manufacturer"`
-	ExternalID        sql.NullString `json:"external_id"`
 	MaxDailyDose      int64          `json:"max_daily_dose"`
-	Metadata          string         `json:"metadata"`
 	ID                string         `json:"id"`
 }
 
 func (q *Queries) UpdateMedication(ctx context.Context, arg UpdateMedicationParams) (Medication, error) {
 	row := q.queryRow(ctx, q.updateMedicationStmt, updateMedication,
 		arg.Name,
-		arg.Nickname,
 		arg.Color,
-		arg.Shape,
-		arg.DosageForm,
-		arg.Strength,
-		arg.DosageMg,
-		arg.Instructions,
 		arg.StockCount,
 		arg.LowStockThreshold,
 		arg.CartridgeIndex,
-		arg.Manufacturer,
-		arg.ExternalID,
 		arg.MaxDailyDose,
-		arg.Metadata,
 		arg.ID,
 	)
 	var i Medication
@@ -258,22 +166,13 @@ func (q *Queries) UpdateMedication(ctx context.Context, arg UpdateMedicationPara
 		&i.ID,
 		&i.PatientID,
 		&i.Name,
-		&i.Nickname,
 		&i.Color,
-		&i.Shape,
-		&i.DosageForm,
-		&i.Strength,
-		&i.DosageMg,
-		&i.Instructions,
 		&i.StockCount,
 		&i.LowStockThreshold,
 		&i.CartridgeIndex,
-		&i.Manufacturer,
-		&i.ExternalID,
+		&i.MaxDailyDose,
 		&i.CreatedAt,
 		&i.UpdatedAt,
-		&i.MaxDailyDose,
-		&i.Metadata,
 	)
 	return i, err
 }

@@ -7,6 +7,8 @@ type PillOption = {
   name: string;
 };
 
+export type ScheduleFrequency = 'once' | 'daily' | 'weekly';
+
 interface ScheduleModalProps {
   visible: boolean;
   selectedDate: string;
@@ -15,8 +17,7 @@ interface ScheduleModalProps {
   onSave: (schedule: {
     pillId: string;
     time: string;
-    providerNotes: string;
-    personalNotes: string;
+    frequency: ScheduleFrequency;
   }) => void;
 }
 
@@ -33,16 +34,14 @@ export const ScheduleModal: React.FC<ScheduleModalProps> = ({
   const [search, setSearch] = useState('');
   const [pillId, setPillId] = useState('');
   const [time, setTime] = useState('');
-  const [providerNotes, setProviderNotes] = useState('');
-  const [personalNotes, setPersonalNotes] = useState('');
+  const [frequency, setFrequency] = useState<ScheduleFrequency>('daily');
 
   useEffect(() => {
     if (visible) {
       setSearch('');
       setPillId('');
       setTime('');
-      setProviderNotes('');
-      setPersonalNotes('');
+      setFrequency('once');
     }
   }, [visible]);
 
@@ -81,10 +80,10 @@ export const ScheduleModal: React.FC<ScheduleModalProps> = ({
     if (!pillId) {
       if (search.trim()) {
         alert(
-          `"${search}" is not available for scheduling. Only medications with hardware mappings can be scheduled. Please select a medication from the list below or map this medication to a hardware slot first.`
+          `"${search}" is not available for scheduling. Only medications assigned to a silo can be scheduled. Please select a medication from the list below.`
         );
       } else {
-        alert('Please select a medication from the list. Only medications with hardware mappings can be scheduled.');
+        alert('Please select a medication from the list. Only medications assigned to a silo can be scheduled.');
       }
       return;
     }
@@ -100,7 +99,7 @@ export const ScheduleModal: React.FC<ScheduleModalProps> = ({
       return;
     }
 
-    onSave({ pillId, time, providerNotes, personalNotes });
+    onSave({ pillId, time, frequency });
     onClose();
   };
 
@@ -108,8 +107,6 @@ export const ScheduleModal: React.FC<ScheduleModalProps> = ({
     setTime('');
     setSearch('');
     setPillId('');
-    setProviderNotes('');
-    setPersonalNotes('');
     onClose();
   };
 
@@ -125,7 +122,7 @@ export const ScheduleModal: React.FC<ScheduleModalProps> = ({
           <View style={[styles.header, isMobile && styles.headerMobile]}>
             <Text style={[styles.headerTitle, isSmallMobile && styles.headerTitleSmall]}>Schedule Medication</Text>
             <TouchableOpacity onPress={handleCancel} style={[styles.closeButton, isSmallMobile && styles.closeButtonSmall]}>
-              <Text style={[styles.closeButtonText, isSmallMobile && styles.closeButtonTextSmall]}>✕</Text>
+              <Text style={[styles.closeButtonText, isSmallMobile && styles.closeButtonTextSmall]}>X</Text>
             </TouchableOpacity>
           </View>
 
@@ -185,12 +182,37 @@ export const ScheduleModal: React.FC<ScheduleModalProps> = ({
                 {filteredOptions.length === 0 && (
                   <Text style={styles.emptyText}>
                     {search.trim()
-                      ? `"${search}" not found. Only medications with hardware mappings can be scheduled.${pillOptions.length > 0 ? ` Available: ${pillOptions.map(p => p.name).join(', ')}` : ''}`
+                      ? `"${search}" not found. Only medications assigned to silos can be scheduled.${pillOptions.length > 0 ? ` Available: ${pillOptions.map(p => p.name).join(', ')}` : ''}`
                       : pillOptions.length === 0
-                      ? 'No medications with hardware mappings found. Please map medications to hardware slots first in the Hardware Mapping screen.'
+                      ? 'No medications assigned to silos. Please assign medications to silos first in the Device screen.'
                       : 'No medications match your search.'}
                   </Text>
                 )}
+              </View>
+            </View>
+
+            <View style={styles.field}>
+              <Text style={[styles.label, isSmallMobile && styles.labelSmall]}>Frequency</Text>
+              <View style={styles.frequencyRow}>
+                {([['once', 'Once'], ['daily', 'Daily'], ['weekly', 'Weekly']] as const).map(([value, label]) => (
+                  <TouchableOpacity
+                    key={value}
+                    style={[
+                      styles.frequencyButton,
+                      frequency === value && styles.frequencyButtonActive,
+                    ]}
+                    onPress={() => setFrequency(value)}
+                  >
+                    <Text
+                      style={[
+                        styles.frequencyText,
+                        frequency === value && styles.frequencyTextActive,
+                      ]}
+                    >
+                      {label}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
               </View>
             </View>
 
@@ -204,32 +226,6 @@ export const ScheduleModal: React.FC<ScheduleModalProps> = ({
                 placeholderTextColor="#9ca3af"
               />
               <Text style={[styles.hint, isSmallMobile && styles.hintSmall]}>24-hour format: HH:MM</Text>
-            </View>
-
-            <View style={styles.field}>
-              <Text style={[styles.label, isSmallMobile && styles.labelSmall]}>Provider Notes</Text>
-              <TextInput
-                style={[styles.input, styles.textArea, isSmallMobile && styles.textAreaSmall]}
-                value={providerNotes}
-                onChangeText={setProviderNotes}
-                placeholder="Clinical instructions"
-                placeholderTextColor="#9ca3af"
-                multiline
-                numberOfLines={isSmallMobile ? 2 : 3}
-              />
-            </View>
-
-            <View style={styles.field}>
-              <Text style={[styles.label, isSmallMobile && styles.labelSmall]}>Personal Notes</Text>
-              <TextInput
-                style={[styles.input, styles.textArea, isSmallMobile && styles.textAreaSmall]}
-                value={personalNotes}
-                onChangeText={setPersonalNotes}
-                placeholder="Reminders for yourself"
-                placeholderTextColor="#9ca3af"
-                multiline
-                numberOfLines={isSmallMobile ? 2 : 3}
-              />
             </View>
           </ScrollView>
 
@@ -359,12 +355,31 @@ const styles = StyleSheet.create({
     fontSize: 14,
     borderRadius: 6,
   },
-  textArea: {
-    height: 80,
-    textAlignVertical: 'top',
+  frequencyRow: {
+    flexDirection: 'row',
+    gap: 10,
   },
-  textAreaSmall: {
-    height: 60,
+  frequencyButton: {
+    flex: 1,
+    paddingVertical: 10,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surfaceAlt,
+    alignItems: 'center',
+  },
+  frequencyButtonActive: {
+    borderColor: colors.accent,
+    backgroundColor: colors.surface,
+  },
+  frequencyText: {
+    color: colors.textSecondary,
+    fontSize: 15,
+    fontWeight: '500',
+  },
+  frequencyTextActive: {
+    color: colors.textPrimary,
+    fontWeight: '600',
   },
   optionList: {
     marginTop: 12,
@@ -447,6 +462,3 @@ const styles = StyleSheet.create({
     color: 'white',
   },
 });
-
-
-

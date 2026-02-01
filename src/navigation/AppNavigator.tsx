@@ -15,7 +15,6 @@ import { TodayScreen } from '@screens/TodayScreen';
 import { ScheduleScreen } from '@screens/ScheduleScreen';
 import { HistoryScreen } from '@screens/HistoryScreen';
 import { SettingsScreen } from '@screens/SettingsScreen';
-import { ScheduleWizardScreen } from '@screens/ScheduleWizardScreen';
 import { HardwareMappingScreen } from '@screens/HardwareMappingScreen';
 import { colors } from '@theme/colors';
 import { SignupScreen } from '@screens/SignupScreen';
@@ -91,14 +90,6 @@ function AuthedNavigator() {
   return (
     <AppStack.Navigator screenOptions={{ headerShown: false }}>
       <AppStack.Screen name="Main" component={TabNavigator} />
-      <AppStack.Screen
-        name="ScheduleWizard"
-        component={ScheduleWizardScreen}
-        options={{
-          presentation: 'modal',
-          headerShown: false,
-        }}
-      />
     </AppStack.Navigator>
   );
 }

@@ -11,44 +11,19 @@ import (
 )
 
 const createDispenseEvent = `-- name: CreateDispenseEvent :one
-INSERT INTO dispense_events (
-  id,
-  patient_id,
-  schedule_id,
-  schedule_item_id,
-  due_at_iso,
-  acted_at_iso,
-  status,
-  action_source,
-  notes,
-  metadata
-)
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-RETURNING
-  id,
-  patient_id,
-  schedule_id,
-  schedule_item_id,
-  due_at_iso,
-  acted_at_iso,
-  status,
-  action_source,
-  notes,
-  metadata,
-  created_at
+INSERT INTO dispense_events (id, patient_id, schedule_id, due_at_iso, acted_at_iso, status, action_source)
+VALUES (?, ?, ?, ?, ?, ?, ?)
+RETURNING id, patient_id, schedule_id, due_at_iso, acted_at_iso, status, action_source, created_at
 `
 
 type CreateDispenseEventParams struct {
-	ID             string         `json:"id"`
-	PatientID      string         `json:"patient_id"`
-	ScheduleID     string         `json:"schedule_id"`
-	ScheduleItemID sql.NullString `json:"schedule_item_id"`
-	DueAtIso       string         `json:"due_at_iso"`
-	ActedAtIso     sql.NullString `json:"acted_at_iso"`
-	Status         string         `json:"status"`
-	ActionSource   sql.NullString `json:"action_source"`
-	Notes          sql.NullString `json:"notes"`
-	Metadata       string         `json:"metadata"`
+	ID           string         `json:"id"`
+	PatientID    string         `json:"patient_id"`
+	ScheduleID   string         `json:"schedule_id"`
+	DueAtIso     string         `json:"due_at_iso"`
+	ActedAtIso   sql.NullString `json:"acted_at_iso"`
+	Status       string         `json:"status"`
+	ActionSource sql.NullString `json:"action_source"`
 }
 
 func (q *Queries) CreateDispenseEvent(ctx context.Context, arg CreateDispenseEventParams) (DispenseEvent, error) {
@@ -56,44 +31,27 @@ func (q *Queries) CreateDispenseEvent(ctx context.Context, arg CreateDispenseEve
 		arg.ID,
 		arg.PatientID,
 		arg.ScheduleID,
-		arg.ScheduleItemID,
 		arg.DueAtIso,
 		arg.ActedAtIso,
 		arg.Status,
 		arg.ActionSource,
-		arg.Notes,
-		arg.Metadata,
 	)
 	var i DispenseEvent
 	err := row.Scan(
 		&i.ID,
 		&i.PatientID,
 		&i.ScheduleID,
-		&i.ScheduleItemID,
 		&i.DueAtIso,
 		&i.ActedAtIso,
 		&i.Status,
 		&i.ActionSource,
-		&i.Notes,
-		&i.Metadata,
 		&i.CreatedAt,
 	)
 	return i, err
 }
 
 const getDispenseEvent = `-- name: GetDispenseEvent :one
-SELECT
-  id,
-  patient_id,
-  schedule_id,
-  schedule_item_id,
-  due_at_iso,
-  acted_at_iso,
-  status,
-  action_source,
-  notes,
-  metadata,
-  created_at
+SELECT id, patient_id, schedule_id, due_at_iso, acted_at_iso, status, action_source, created_at
 FROM dispense_events
 WHERE id = ?
 `
@@ -105,31 +63,17 @@ func (q *Queries) GetDispenseEvent(ctx context.Context, id string) (DispenseEven
 		&i.ID,
 		&i.PatientID,
 		&i.ScheduleID,
-		&i.ScheduleItemID,
 		&i.DueAtIso,
 		&i.ActedAtIso,
 		&i.Status,
 		&i.ActionSource,
-		&i.Notes,
-		&i.Metadata,
 		&i.CreatedAt,
 	)
 	return i, err
 }
 
 const listDispenseEventsByPatient = `-- name: ListDispenseEventsByPatient :many
-SELECT
-  id,
-  patient_id,
-  schedule_id,
-  schedule_item_id,
-  due_at_iso,
-  acted_at_iso,
-  status,
-  action_source,
-  notes,
-  metadata,
-  created_at
+SELECT id, patient_id, schedule_id, due_at_iso, acted_at_iso, status, action_source, created_at
 FROM dispense_events
 WHERE patient_id = ?
   AND due_at_iso >= ?
@@ -156,13 +100,10 @@ func (q *Queries) ListDispenseEventsByPatient(ctx context.Context, arg ListDispe
 			&i.ID,
 			&i.PatientID,
 			&i.ScheduleID,
-			&i.ScheduleItemID,
 			&i.DueAtIso,
 			&i.ActedAtIso,
 			&i.Status,
 			&i.ActionSource,
-			&i.Notes,
-			&i.Metadata,
 			&i.CreatedAt,
 		); err != nil {
 			return nil, err
@@ -183,52 +124,32 @@ UPDATE dispense_events
 SET
   patient_id = ?,
   schedule_id = ?,
-  schedule_item_id = ?,
   due_at_iso = ?,
   acted_at_iso = ?,
   status = ?,
-  action_source = ?,
-  notes = ?,
-  metadata = ?
+  action_source = ?
 WHERE id = ?
-RETURNING
-  id,
-  patient_id,
-  schedule_id,
-  schedule_item_id,
-  due_at_iso,
-  acted_at_iso,
-  status,
-  action_source,
-  notes,
-  metadata,
-  created_at
+RETURNING id, patient_id, schedule_id, due_at_iso, acted_at_iso, status, action_source, created_at
 `
 
 type UpdateDispenseEventParams struct {
-	PatientID      string         `json:"patient_id"`
-	ScheduleID     string         `json:"schedule_id"`
-	ScheduleItemID sql.NullString `json:"schedule_item_id"`
-	DueAtIso       string         `json:"due_at_iso"`
-	ActedAtIso     sql.NullString `json:"acted_at_iso"`
-	Status         string         `json:"status"`
-	ActionSource   sql.NullString `json:"action_source"`
-	Notes          sql.NullString `json:"notes"`
-	Metadata       string         `json:"metadata"`
-	ID             string         `json:"id"`
+	PatientID    string         `json:"patient_id"`
+	ScheduleID   string         `json:"schedule_id"`
+	DueAtIso     string         `json:"due_at_iso"`
+	ActedAtIso   sql.NullString `json:"acted_at_iso"`
+	Status       string         `json:"status"`
+	ActionSource sql.NullString `json:"action_source"`
+	ID           string         `json:"id"`
 }
 
 func (q *Queries) UpdateDispenseEvent(ctx context.Context, arg UpdateDispenseEventParams) (DispenseEvent, error) {
 	row := q.queryRow(ctx, q.updateDispenseEventStmt, updateDispenseEvent,
 		arg.PatientID,
 		arg.ScheduleID,
-		arg.ScheduleItemID,
 		arg.DueAtIso,
 		arg.ActedAtIso,
 		arg.Status,
 		arg.ActionSource,
-		arg.Notes,
-		arg.Metadata,
 		arg.ID,
 	)
 	var i DispenseEvent
@@ -236,13 +157,10 @@ func (q *Queries) UpdateDispenseEvent(ctx context.Context, arg UpdateDispenseEve
 		&i.ID,
 		&i.PatientID,
 		&i.ScheduleID,
-		&i.ScheduleItemID,
 		&i.DueAtIso,
 		&i.ActedAtIso,
 		&i.Status,
 		&i.ActionSource,
-		&i.Notes,
-		&i.Metadata,
 		&i.CreatedAt,
 	)
 	return i, err

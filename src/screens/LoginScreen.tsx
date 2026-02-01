@@ -354,7 +354,7 @@ export const LoginScreen: React.FC = () => {
                 <Text style={styles.devButtonText}>Skip Login (Dev Mode)</Text>
               </TouchableOpacity>
               <Text style={styles.devHint}>
-                GraphQL is disabled. Use this to test with the local REST API.
+                GraphQL is disabled. Use this to test with mock data.
               </Text>
             </>
           )}

@@ -4,593 +4,401 @@ import {
   Text,
   ScrollView,
   StyleSheet,
-  TextInput,
   TouchableOpacity,
+  TextInput,
   Alert,
-  ActivityIndicator,
   Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useWindowDimensions } from 'react-native';
 import { usePillStore } from '@store/pillStore';
-import { useHardwareStore } from '@store/hardwareStore';
-import { hardwareDispatcher } from '@device/hardwareDispatcher';
 import { colors, shadows } from '@theme/colors';
-import { fetchDimensionsByNdc, DailyMedDimensions } from '@services/dailymed';
-import { seed } from '@data/seed';
-import { isGraphQLAvailable } from '@/config/env';
+import type { Pill } from '@types';
 
-const DEFAULT_NEW_MEDICATION = {
-  name: '',
-  color: '#6b7280',
-  shape: 'round',
-  cartridgeIndex: '0',
-  stockCount: '30',
-  lowStockThreshold: '5',
-  maxDailyDose: '1',
-};
+const SILO_COUNT = 3;
+
+const PRESET_COLORS = [
+  '#6EE7B7', '#FBBF24', '#93C5FD', '#F87171',
+  '#A78BFA', '#FB923C', '#34D399', '#F472B6',
+];
 
 export const HardwareMappingScreen: React.FC = () => {
-  const { pills, loadPills, addPill } = usePillStore();
-  const { profiles, loadProfiles, saveProfile } = useHardwareStore();
-  const [selectedPillId, setSelectedPillId] = useState<string | null>(null);
-  const [form, setForm] = useState({
-    serialNumber: '',
-    manufacturer: '',
-    formFactor: 'tablet',
-    siloSlot: '',
-    trapdoorOpenMs: '1200',
-    trapdoorHoldMs: '800',
-    diameterMm: '',
-    lengthMm: '',
-    widthMm: '',
-    heightMm: '',
-    weightMg: '',
-  });
-  const [isAutoFilling, setIsAutoFilling] = useState(false);
-  const [autoFillData, setAutoFillData] = useState<DailyMedDimensions | null>(null);
-  const { width: screenWidth } = useWindowDimensions();
-  const isCompact = screenWidth < 900;
-  const isMobile = screenWidth < 600;
-  const isSmallMobile = screenWidth < 400;
-  const selectedPill = selectedPillId ? pills.get(selectedPillId) : null;
-  const selectedProfile = selectedPillId ? profiles[selectedPillId] : null;
-  const [isSeeding, setIsSeeding] = useState(false);
-  const [isAddModalVisible, setIsAddModalVisible] = useState(false);
-  const [isSavingMedication, setIsSavingMedication] = useState(false);
-  const [newMedicationForm, setNewMedicationForm] = useState({ ...DEFAULT_NEW_MEDICATION });
-  const isGraphQLEnabled = isGraphQLAvailable;
+  const { pills, loadPills, addPill, updatePill, deletePill } = usePillStore();
+  const [selectedSilo, setSelectedSilo] = useState<number | null>(null);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [newMedName, setNewMedName] = useState('');
+  const [newMedColor, setNewMedColor] = useState(PRESET_COLORS[0]);
+  const [newMedStock, setNewMedStock] = useState('30');
+  const [newMedMaxDose, setNewMedMaxDose] = useState('2');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    const bootstrap = async () => {
-      await Promise.all([loadPills(), loadProfiles()]);
-    };
-    bootstrap();
-  }, [loadPills, loadProfiles]);
+    loadPills();
+  }, [loadPills]);
 
-  useEffect(() => {
-    if (!selectedPillId && pills.size > 0) {
-      const first = pills.values().next().value;
-      if (first?.id) {
-        setSelectedPillId(first.id);
-      }
-    }
-  }, [pills, selectedPillId]);
-
-  useEffect(() => {
-    if (!selectedPillId) return;
-    const profile = profiles[selectedPillId];
-    if (profile) {
-      setForm({
-        serialNumber: profile.serialNumber,
-        manufacturer: profile.manufacturer || '',
-        formFactor: profile.formFactor || 'tablet',
-        siloSlot: profile.siloSlot?.toString() || '',
-        trapdoorOpenMs: (profile.trapdoorOpenMs ?? 1200).toString(),
-        trapdoorHoldMs: (profile.trapdoorHoldMs ?? 800).toString(),
-        diameterMm: profile.diameterMm?.toString() || '',
-        lengthMm: profile.lengthMm?.toString() || '',
-        widthMm: profile.widthMm?.toString() || '',
-        heightMm: profile.heightMm?.toString() || '',
-        weightMg: profile.weightMg?.toString() || '',
-      });
-      setAutoFillData(null);
-    } else {
-      setForm({
-        serialNumber: '',
-        manufacturer: '',
-        formFactor: 'tablet',
-        siloSlot: '',
-        trapdoorOpenMs: '1200',
-        trapdoorHoldMs: '800',
-        diameterMm: '',
-        lengthMm: '',
-        widthMm: '',
-        heightMm: '',
-        weightMg: '',
-      });
-      setAutoFillData(null);
-    }
-  }, [selectedPillId, profiles]);
-
-  const handleSelectPill = (pillId: string) => {
-    setSelectedPillId(pillId);
+  const pillForSilo = (index: number): Pill | undefined => {
+    return Array.from(pills.values()).find((p) => p.cartridgeIndex === index);
   };
 
-  const handleInputChange = (key: keyof typeof form, value: string) => {
-    setForm((prev) => ({ ...prev, [key]: value }));
-  };
-
-  const handleSeed = async () => {
-    if (isGraphQLEnabled) {
-      Alert.alert('Seed unavailable', 'Seeding sample data is only available in local/offline mode.');
-      return;
-    }
-    try {
-      setIsSeeding(true);
-      await seed();
-      await Promise.all([loadPills(), loadProfiles()]);
-      Alert.alert('Seeded', 'Sample medications and mappings have been installed.');
-    } catch (error: any) {
-      Alert.alert('Seed failed', error?.message || 'Unable to seed database');
-    } finally {
-      setIsSeeding(false);
-    }
-  };
-
-  const handleSave = async () => {
-    if (!selectedPillId) return;
-    if (!form.serialNumber || !form.siloSlot) {
-      Alert.alert('Missing fields', 'Serial number and silo slot are required');
-      return;
-    }
-
-    await saveProfile({
-      pillId: selectedPillId,
-      serialNumber: form.serialNumber,
-      manufacturer: form.manufacturer,
-      formFactor: form.formFactor,
-      siloSlot: Number(form.siloSlot),
-      trapdoorOpenMs: Number(form.trapdoorOpenMs),
-      trapdoorHoldMs: Number(form.trapdoorHoldMs),
-      diameterMm: form.diameterMm ? Number(form.diameterMm) : null,
-      lengthMm: form.lengthMm ? Number(form.lengthMm) : null,
-      widthMm: form.widthMm ? Number(form.widthMm) : null,
-      heightMm: form.heightMm ? Number(form.heightMm) : null,
-      weightMg: form.weightMg ? Number(form.weightMg) : null,
-    });
-
-    Alert.alert('Saved', 'Hardware profile saved successfully');
-  };
-
-  const handleSimulate = async () => {
-    if (!selectedPillId) return;
-    const profile = profiles[selectedPillId];
-    if (!profile) {
-      Alert.alert('Save first', 'Please save the hardware profile before simulating');
-      return;
-    }
-    const result = await hardwareDispatcher.previewCommand(profile);
-    Alert.alert(result.ok ? 'Simulation ok' : 'Simulation failed', result.message);
-  };
-
-  const handleAutoFill = async () => {
-    if (!form.serialNumber) {
-      Alert.alert('Enter Serial', 'Provide an NDC or serial number first');
-      return;
-    }
-    try {
-      setIsAutoFilling(true);
-      const autofill = await fetchDimensionsByNdc(form.serialNumber);
-      setForm((prev) => ({
-        ...prev,
-        formFactor: autofill.formFactor || prev.formFactor,
-        diameterMm: autofill.diameterMm?.toString() || prev.diameterMm,
-        lengthMm: autofill.lengthMm?.toString() || prev.lengthMm,
-      }));
-      setAutoFillData(autofill);
-      Alert.alert('Auto-fill complete', 'Dimensions imported from DailyMed');
-    } catch (error: any) {
-      Alert.alert('Auto-fill failed', error.message || 'Unable to fetch data');
-    } finally {
-      setIsAutoFilling(false);
-    }
-  };
-
-  const handleCreateMedication = async () => {
-    if (!newMedicationForm.name.trim()) {
-      Alert.alert('Missing name', 'Medication name is required.');
-      return;
-    }
-    try {
-      setIsSavingMedication(true);
-      const payload = {
-        name: newMedicationForm.name.trim(),
-        color: newMedicationForm.color.trim() || '#6b7280',
-        shape: newMedicationForm.shape.trim() || 'round',
-        cartridgeIndex: Number(newMedicationForm.cartridgeIndex) || 0,
-        stockCount: Number(newMedicationForm.stockCount) || 0,
-        lowStockThreshold: Number(newMedicationForm.lowStockThreshold) || 0,
-        maxDailyDose: Number(newMedicationForm.maxDailyDose) || 1,
-        metadata: {},
-      };
-      const created = await addPill(payload);
-      setNewMedicationForm({ ...DEFAULT_NEW_MEDICATION });
-      setIsAddModalVisible(false);
-      await Promise.all([loadPills(), loadProfiles()]);
-      setSelectedPillId(created.id);
-      Alert.alert('Medication added', `${created.name} has been added to the library.`);
-    } catch (error: any) {
-      Alert.alert('Create medication failed', error?.message || 'Unable to add medication');
-    } finally {
-      setIsSavingMedication(false);
-    }
-  };
-
-  const handleNewMedicationChange = (key: keyof typeof newMedicationForm, value: string) => {
-    setNewMedicationForm((prev) => ({ ...prev, [key]: value }));
-  };
-
-  const layout = (
-    <View style={[styles.content, isCompact && styles.contentStack]}>
-        <View style={[styles.sidebar, isCompact && styles.sidebarCompact, isMobile && styles.sidebarMobile]}>
-          <Text style={[styles.sidebarTitle, isSmallMobile && styles.sidebarTitleSmall]}>Pill Library</Text>
-          <TouchableOpacity style={styles.newMedButton} onPress={() => setIsAddModalVisible(true)}>
-            <Text style={styles.newMedButtonText}>Add Medication</Text>
-          </TouchableOpacity>
-          {isGraphQLEnabled && (
-            <Text style={styles.graphqlBanner}>Connected to backend GraphQL.</Text>
-          )}
-          <ScrollView>
-            {Array.from(pills.values()).length === 0 ? (
-              <View style={styles.emptyLibrary}>
-                <Text style={styles.emptyLibraryText}>
-                  {isGraphQLEnabled
-                    ? 'No medications yet. Use “Add Medication” to create one in the backend.'
-                    : 'No pills found. Seed the database or add medications first.'}
-                </Text>
-                {isGraphQLEnabled ? (
-                  <Text style={styles.graphqlBannerSmall}>Changes are saved directly to GraphQL.</Text>
-                ) : (
-                  <TouchableOpacity
-                    style={styles.seedButton}
-                    onPress={handleSeed}
-                    disabled={isSeeding}
-                  >
-                    <Text style={styles.seedButtonText}>
-                      {isSeeding ? 'Seeding…' : 'Seed Sample Data'}
-                    </Text>
-                  </TouchableOpacity>
-                )}
-              </View>
-            ) : (
-              Array.from(pills.values()).map((pill) => {
-                const isActive = selectedPillId === pill.id;
-                const mapped = Boolean(profiles[pill.id]);
-                return (
-                  <TouchableOpacity
-                    key={pill.id}
-                    style={[styles.pillButton, isActive && styles.pillButtonActive]}
-                    onPress={() => handleSelectPill(pill.id)}
-                  >
-                    <View style={styles.pillButtonRow}>
-                      <Text style={styles.pillButtonName}>{pill.name}</Text>
-                      {mapped && <Text style={styles.badge}>Mapped</Text>}
-                    </View>
-                    <Text style={styles.pillButtonMeta}>Cartridge #{pill.cartridgeIndex}</Text>
-                  </TouchableOpacity>
-                );
-              })
-            )}
-          </ScrollView>
-        </View>
-
-        <View style={[styles.formArea, isCompact && styles.formAreaCompact, isMobile && styles.formAreaMobile]}>
-          {selectedPillId ? (
-            <>
-              <Text style={[styles.formTitle, isSmallMobile && styles.formTitleSmall]}>
-                Configure {pills.get(selectedPillId)?.name || 'Medication'}
-              </Text>
-              {selectedPill && (
-                <View style={styles.metaCard}>
-                  <Text style={styles.metaTitle}>{selectedPill.name}</Text>
-                  <Text style={styles.metaRow}>Cartridge #{selectedPill.cartridgeIndex}</Text>
-                  <Text style={styles.metaRow}>Shape: {selectedPill.shape}</Text>
-                  <Text style={styles.metaRow}>Color: {selectedPill.color}</Text>
-                  {autoFillData?.color && (
-                    <Text style={styles.metaRow}>Lookup Color: {autoFillData.color}</Text>
-                  )}
-                  {selectedProfile?.serialNumber && (
-                    <Text style={styles.metaRow}>Serial: {selectedProfile.serialNumber}</Text>
-                  )}
-                </View>
-              )}
-
-              <ScrollView>
-                <View style={styles.field}>
-                  <Text style={styles.label}>Drug Identification Number*</Text>
-                  <TextInput
-                    style={styles.input}
-                    value={form.serialNumber}
-                    onChangeText={(value) => handleInputChange('serialNumber', value)}
-                    placeholder="e.g., NDC-12345-6789"
-                  />
-                </View>
-
-                <View style={[styles.fieldRow, isMobile && styles.fieldRowMobile]}>
-                  <View style={[styles.fieldHalf, isMobile && styles.fieldHalfMobile]}>
-                    <Text style={styles.label}>Manufacturer</Text>
-                    <TextInput
-                      style={[styles.input, isSmallMobile && styles.inputSmall]}
-                      value={form.manufacturer}
-                      onChangeText={(value) => handleInputChange('manufacturer', value)}
-                      placeholder="Pfizer"
-                    />
-                  </View>
-                  <View style={[styles.fieldHalf, isMobile && styles.fieldHalfMobile]}>
-                    <Text style={styles.label}>Form Factor</Text>
-                    <TextInput
-                      style={[styles.input, isSmallMobile && styles.inputSmall]}
-                      value={form.formFactor}
-                      onChangeText={(value) => handleInputChange('formFactor', value)}
-                      placeholder="tablet / capsule"
-                    />
-                  </View>
-                </View>
-
-                <View style={styles.field}>
-                  <Text style={styles.label}>Silo Slot *</Text>
-                  <TextInput
-                    style={styles.input}
-                    value={form.siloSlot}
-                    onChangeText={(value) => handleInputChange('siloSlot', value)}
-                    keyboardType="numeric"
-                    placeholder="0-31"
-                  />
-                </View>
-
-                <View style={[styles.fieldRow, isMobile && styles.fieldRowMobile]}>
-                  <View style={[styles.fieldHalf, isMobile && styles.fieldHalfMobile]}>
-                    <Text style={styles.label}>Trapdoor Open (ms)</Text>
-                    <TextInput
-                      style={[styles.input, isSmallMobile && styles.inputSmall]}
-                      value={form.trapdoorOpenMs}
-                      onChangeText={(value) => handleInputChange('trapdoorOpenMs', value)}
-                      keyboardType="numeric"
-                    />
-                  </View>
-                  <View style={[styles.fieldHalf, isMobile && styles.fieldHalfMobile]}>
-                    <Text style={styles.label}>Hold Duration (ms)</Text>
-                    <TextInput
-                      style={[styles.input, isSmallMobile && styles.inputSmall]}
-                      value={form.trapdoorHoldMs}
-                      onChangeText={(value) => handleInputChange('trapdoorHoldMs', value)}
-                      keyboardType="numeric"
-                    />
-                  </View>
-                </View>
-                <View style={[styles.fieldRow, isMobile && styles.fieldRowMobile]}>
-                  <View style={[styles.fieldHalf, isMobile && styles.fieldHalfMobile]}>
-                    <Text style={styles.label}>Diameter (mm)</Text>
-                    <TextInput
-                      style={[styles.input, isSmallMobile && styles.inputSmall]}
-                      value={form.diameterMm}
-                      onChangeText={(value) => handleInputChange('diameterMm', value)}
-                      keyboardType="numeric"
-                    />
-                  </View>
-                  <View style={[styles.fieldHalf, isMobile && styles.fieldHalfMobile]}>
-                    <Text style={styles.label}>Length (mm)</Text>
-                    <TextInput
-                      style={[styles.input, isSmallMobile && styles.inputSmall]}
-                      value={form.lengthMm}
-                      onChangeText={(value) => handleInputChange('lengthMm', value)}
-                      keyboardType="numeric"
-                    />
-                  </View>
-                </View>
-
-                <View style={[styles.fieldRow, isMobile && styles.fieldRowMobile]}>
-                  <View style={[styles.fieldHalf, isMobile && styles.fieldHalfMobile]}>
-                    <Text style={styles.label}>Width (mm)</Text>
-                    <TextInput
-                      style={[styles.input, isSmallMobile && styles.inputSmall]}
-                      value={form.widthMm}
-                      onChangeText={(value) => handleInputChange('widthMm', value)}
-                      keyboardType="numeric"
-                    />
-                  </View>
-                  <View style={[styles.fieldHalf, isMobile && styles.fieldHalfMobile]}>
-                    <Text style={styles.label}>Height (mm)</Text>
-                    <TextInput
-                      style={[styles.input, isSmallMobile && styles.inputSmall]}
-                      value={form.heightMm}
-                      onChangeText={(value) => handleInputChange('heightMm', value)}
-                      keyboardType="numeric"
-                    />
-                  </View>
-                </View>
-
-                <View style={styles.field}>
-                  <Text style={styles.label}>Weight (mg)</Text>
-                  <TextInput
-                    style={styles.input}
-                    value={form.weightMg}
-                    onChangeText={(value) => handleInputChange('weightMg', value)}
-                    keyboardType="numeric"
-                  />
-                </View>
-
-                {autoFillData && (
-                  <View style={styles.autoFillPreview}>
-                    <Text style={styles.autoFillTitle}>Last lookup</Text>
-                    <View style={styles.autoFillRow}>
-                      <Text style={styles.autoFillLabel}>Shape</Text>
-                      <Text style={styles.autoFillValue}>
-                        {autoFillData.formFactor ?? 'Unknown'}
-                      </Text>
-                    </View>
-                    <View style={styles.autoFillRow}>
-                      <Text style={styles.autoFillLabel}>Diameter</Text>
-                      <Text style={styles.autoFillValue}>
-                        {autoFillData.diameterMm ? `${autoFillData.diameterMm} mm` : '—'}
-                      </Text>
-                    </View>
-                    <View style={styles.autoFillRow}>
-                      <Text style={styles.autoFillLabel}>Length</Text>
-                      <Text style={styles.autoFillValue}>
-                        {autoFillData.lengthMm ? `${autoFillData.lengthMm} mm` : '—'}
-                      </Text>
-                    </View>
-                  </View>
-                )}
-              </ScrollView>
-
-              <View style={[styles.formFooter, isMobile && styles.formFooterMobile]}>
-                <TouchableOpacity style={[styles.secondaryButton, isSmallMobile && styles.buttonSmall]} onPress={handleSimulate}>
-                  <Text style={[styles.secondaryButtonText, isSmallMobile && styles.buttonTextSmall]}>Simulate</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={[styles.primaryButton, isSmallMobile && styles.buttonSmall]} onPress={handleSave}>
-                  <Text style={[styles.primaryButtonText, isSmallMobile && styles.buttonTextSmall]}>Save Mapping</Text>
-                </TouchableOpacity>
-              </View>
-            </>
-          ) : (
-            <View style={styles.emptyForm}>
-              <Text style={styles.emptyFormTitle}>Select a pill to configure</Text>
-              <Text style={styles.emptyFormText}>
-                Choose a medication from the list to create a hardware mapping.
-              </Text>
-            </View>
-          )}
-        </View>
-    </View>
+  const unassignedPills = Array.from(pills.values()).filter(
+    (p) => p.cartridgeIndex == null || p.cartridgeIndex < 0 || p.cartridgeIndex >= SILO_COUNT
   );
+
+  const allPillsList = Array.from(pills.values());
+
+  const handleAssign = async (pill: Pill) => {
+    if (selectedSilo === null) return;
+
+    const current = pillForSilo(selectedSilo);
+    if (current && current.id !== pill.id) {
+      await updatePill(current.id, { cartridgeIndex: null });
+    }
+
+    await updatePill(pill.id, { cartridgeIndex: selectedSilo });
+    await loadPills();
+    setSelectedSilo(null);
+    Alert.alert('Assigned', `${pill.name} is now in Silo ${selectedSilo}.`);
+  };
+
+  const handleUnassign = async (pill: Pill) => {
+    await updatePill(pill.id, { cartridgeIndex: null });
+    await loadPills();
+    Alert.alert('Unassigned', `${pill.name} has been removed from its silo.`);
+  };
+
+  const handleDelete = (pill: Pill) => {
+    Alert.alert(
+      'Delete Medication',
+      `Are you sure you want to delete ${pill.name}?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            await deletePill(pill.id);
+            await loadPills();
+          },
+        },
+      ]
+    );
+  };
+
+  const resetAddForm = () => {
+    setNewMedName('');
+    setNewMedColor(PRESET_COLORS[0]);
+    setNewMedStock('30');
+    setNewMedMaxDose('2');
+  };
+
+  const handleAddMedication = async () => {
+    const name = newMedName.trim();
+    if (!name) {
+      Alert.alert('Name required', 'Enter a medication name.');
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      await addPill({
+        name,
+        color: newMedColor,
+        cartridgeIndex: null,
+        stockCount: parseInt(newMedStock, 10) || 30,
+        lowStockThreshold: 5,
+        maxDailyDose: parseInt(newMedMaxDose, 10) || 2,
+      });
+      await loadPills();
+      resetAddForm();
+      setShowAddModal(false);
+      Alert.alert('Added', `${name} has been created. Assign it to a silo.`);
+    } catch (error: any) {
+      Alert.alert('Failed', error?.message || 'Unable to create medication.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <View style={[styles.header, isMobile && styles.headerMobile]}>
-        <Text style={[styles.title, isSmallMobile && styles.titleSmall]}>Hardware Mapping</Text>
-        <Text style={[styles.subtitle, isSmallMobile && styles.subtitleSmall]}>Link medications to silo trapdoors</Text>
+      <View style={styles.header}>
+        <View style={styles.headerRow}>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.title}>Silo Mapping</Text>
+            <Text style={styles.subtitle}>
+              Assign medications to the 3 dispenser silos
+            </Text>
+          </View>
+          <TouchableOpacity
+            style={styles.addButton}
+            onPress={() => setShowAddModal(true)}
+          >
+            <Text style={styles.addButtonText}>+ Add Med</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
-      {isCompact ? (
-        <ScrollView contentContainerStyle={styles.compactScroll}>{layout}</ScrollView>
-      ) : (
-        layout
-      )}
+      <ScrollView contentContainerStyle={styles.content}>
+        {/* ---- Silo slots ---- */}
+        {Array.from({ length: SILO_COUNT }, (_, i) => {
+          const pill = pillForSilo(i);
+          const isSelected = selectedSilo === i;
+          return (
+            <View
+              key={i}
+              style={[styles.siloCard, isSelected && styles.siloCardActive]}
+            >
+              <View style={styles.siloHeader}>
+                <Text style={styles.siloLabel}>Silo {i}</Text>
+                {pill ? (
+                  <View style={styles.assignedRow}>
+                    <View
+                      style={[styles.colorDot, { backgroundColor: pill.color }]}
+                    />
+                    <Text style={styles.pillName}>{pill.name}</Text>
+                    <Text style={styles.stockText}>
+                      {pill.stockCount} pills
+                    </Text>
+                  </View>
+                ) : (
+                  <Text style={styles.emptyText}>Empty</Text>
+                )}
+              </View>
+
+              <View style={styles.siloActions}>
+                {pill ? (
+                  <>
+                    <TouchableOpacity
+                      style={styles.deleteButton}
+                      onPress={() => handleDelete(pill)}
+                    >
+                      <Text style={styles.deleteButtonText}>Delete</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={styles.removeButton}
+                      onPress={() => handleUnassign(pill)}
+                    >
+                      <Text style={styles.removeButtonText}>Remove</Text>
+                    </TouchableOpacity>
+                  </>
+                ) : null}
+
+                <TouchableOpacity
+                  style={[
+                    styles.assignButton,
+                    isSelected && styles.assignButtonActive,
+                  ]}
+                  onPress={() => setSelectedSilo(isSelected ? null : i)}
+                >
+                  <Text
+                    style={[
+                      styles.assignButtonText,
+                      isSelected && styles.assignButtonTextActive,
+                    ]}
+                  >
+                    {isSelected ? 'Cancel' : pill ? 'Change' : 'Assign'}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          );
+        })}
+
+        {/* ---- Medication picker (shown when a silo is selected) ---- */}
+        {selectedSilo !== null && (
+          <View style={styles.pickerCard}>
+            <Text style={styles.pickerTitle}>
+              Select a medication for Silo {selectedSilo}
+            </Text>
+
+            {unassignedPills.length === 0 &&
+            allPillsList.filter(
+              (p) =>
+                p.cartridgeIndex != null &&
+                p.cartridgeIndex >= 0 &&
+                p.cartridgeIndex < SILO_COUNT &&
+                p.cartridgeIndex !== selectedSilo
+            ).length === 0 ? (
+              <View>
+                <Text style={styles.emptyText}>
+                  No medications available. Add one first.
+                </Text>
+                <TouchableOpacity
+                  style={[styles.addButton, { marginTop: 10, alignSelf: 'flex-start' }]}
+                  onPress={() => {
+                    setSelectedSilo(null);
+                    setShowAddModal(true);
+                  }}
+                >
+                  <Text style={styles.addButtonText}>+ Add Medication</Text>
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <>
+                {unassignedPills.map((pill) => (
+                  <TouchableOpacity
+                    key={pill.id}
+                    style={styles.pickerRow}
+                    onPress={() => handleAssign(pill)}
+                  >
+                    <View
+                      style={[styles.colorDot, { backgroundColor: pill.color }]}
+                    />
+                    <Text style={styles.pickerRowText}>{pill.name}</Text>
+                  </TouchableOpacity>
+                ))}
+
+                {allPillsList
+                  .filter(
+                    (p) =>
+                      p.cartridgeIndex != null &&
+                      p.cartridgeIndex >= 0 &&
+                      p.cartridgeIndex < SILO_COUNT &&
+                      p.cartridgeIndex !== selectedSilo
+                  )
+                  .map((pill) => (
+                    <TouchableOpacity
+                      key={pill.id}
+                      style={[styles.pickerRow, styles.pickerRowReassign]}
+                      onPress={() => handleAssign(pill)}
+                    >
+                      <View
+                        style={[
+                          styles.colorDot,
+                          { backgroundColor: pill.color },
+                        ]}
+                      />
+                      <Text style={styles.pickerRowText}>
+                        {pill.name}{' '}
+                        <Text style={styles.pickerRowHint}>
+                          (currently Silo {pill.cartridgeIndex})
+                        </Text>
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+              </>
+            )}
+          </View>
+        )}
+
+        {/* ---- All medications list ---- */}
+        {allPillsList.length > 0 && (
+          <View style={styles.medListCard}>
+            <Text style={styles.medListTitle}>All Medications</Text>
+            {allPillsList.map((pill) => (
+              <View key={pill.id} style={styles.medListRow}>
+                <View style={[styles.colorDot, { backgroundColor: pill.color }]} />
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.medListName}>{pill.name}</Text>
+                  <Text style={styles.medListMeta}>
+                    {pill.cartridgeIndex != null && pill.cartridgeIndex >= 0 && pill.cartridgeIndex < SILO_COUNT
+                      ? `Silo ${pill.cartridgeIndex}`
+                      : 'Unassigned'}
+                    {' · '}{pill.stockCount} pills · Max {pill.maxDailyDose}/day
+                  </Text>
+                </View>
+                <TouchableOpacity onPress={() => handleDelete(pill)}>
+                  <Text style={styles.deleteButtonText}>Delete</Text>
+                </TouchableOpacity>
+              </View>
+            ))}
+          </View>
+        )}
+      </ScrollView>
+
+      {/* ---- Add Medication Modal ---- */}
       <Modal
-        visible={isAddModalVisible}
-        animationType="fade"
-        transparent
-        onRequestClose={() => setIsAddModalVisible(false)}
+        visible={showAddModal}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setShowAddModal(false)}
       >
-        <View style={styles.modalBackdrop}>
-          <View style={styles.modalCard}>
+        <SafeAreaView style={styles.modalContainer}>
+          <View style={styles.modalHeader}>
+            <TouchableOpacity onPress={() => { resetAddForm(); setShowAddModal(false); }}>
+              <Text style={styles.modalCancel}>Cancel</Text>
+            </TouchableOpacity>
             <Text style={styles.modalTitle}>Add Medication</Text>
-            <ScrollView>
-              <View style={styles.field}>
-                <Text style={styles.label}>Name *</Text>
+            <TouchableOpacity onPress={handleAddMedication} disabled={isSubmitting}>
+              <Text style={[styles.modalSave, isSubmitting && { opacity: 0.5 }]}>
+                {isSubmitting ? 'Saving...' : 'Save'}
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          <ScrollView contentContainerStyle={styles.modalContent}>
+            <View style={styles.field}>
+              <Text style={styles.fieldLabel}>Medication Name *</Text>
+              <TextInput
+                style={styles.fieldInput}
+                placeholder="e.g. Metformin"
+                placeholderTextColor={colors.textSecondary}
+                value={newMedName}
+                onChangeText={setNewMedName}
+                autoFocus
+              />
+            </View>
+
+            <View style={styles.field}>
+              <Text style={styles.fieldLabel}>Color</Text>
+              <View style={styles.colorRow}>
+                {PRESET_COLORS.map((c) => (
+                  <TouchableOpacity
+                    key={c}
+                    style={[
+                      styles.colorOption,
+                      { backgroundColor: c },
+                      newMedColor === c && styles.colorOptionSelected,
+                    ]}
+                    onPress={() => setNewMedColor(c)}
+                  />
+                ))}
+              </View>
+            </View>
+
+            <View style={styles.fieldRow}>
+              <View style={[styles.field, { flex: 1 }]}>
+                <Text style={styles.fieldLabel}>Stock Count</Text>
                 <TextInput
-                  style={styles.input}
-                  value={newMedicationForm.name}
-                  onChangeText={(value) => handleNewMedicationChange('name', value)}
-                  placeholder="Metformin"
+                  style={styles.fieldInput}
+                  placeholder="30"
+                  placeholderTextColor={colors.textSecondary}
+                  value={newMedStock}
+                  onChangeText={setNewMedStock}
+                  keyboardType="number-pad"
                 />
               </View>
-              <View style={styles.fieldRow}>
-                <View style={styles.fieldHalf}>
-                  <Text style={styles.label}>Color</Text>
-                  <TextInput
-                    style={styles.input}
-                    value={newMedicationForm.color}
-                    onChangeText={(value) => handleNewMedicationChange('color', value)}
-                    placeholder="#6b7280"
-                  />
-                </View>
-                <View style={styles.fieldHalf}>
-                  <Text style={styles.label}>Shape</Text>
-                  <TextInput
-                    style={styles.input}
-                    value={newMedicationForm.shape}
-                    onChangeText={(value) => handleNewMedicationChange('shape', value)}
-                    placeholder="round / capsule"
-                  />
-                </View>
+              <View style={[styles.field, { flex: 1 }]}>
+                <Text style={styles.fieldLabel}>Max Daily Dose</Text>
+                <TextInput
+                  style={styles.fieldInput}
+                  placeholder="2"
+                  placeholderTextColor={colors.textSecondary}
+                  value={newMedMaxDose}
+                  onChangeText={setNewMedMaxDose}
+                  keyboardType="number-pad"
+                />
               </View>
-              <View style={styles.fieldRow}>
-                <View style={styles.fieldHalf}>
-                  <Text style={styles.label}>Cartridge Index</Text>
-                  <TextInput
-                    style={styles.input}
-                    keyboardType="numeric"
-                    value={newMedicationForm.cartridgeIndex}
-                    onChangeText={(value) => handleNewMedicationChange('cartridgeIndex', value)}
-                  />
-                </View>
-                <View style={styles.fieldHalf}>
-                  <Text style={styles.label}>Max Daily Dose</Text>
-                  <TextInput
-                    style={styles.input}
-                    keyboardType="numeric"
-                    value={newMedicationForm.maxDailyDose}
-                    onChangeText={(value) => handleNewMedicationChange('maxDailyDose', value)}
-                  />
-                </View>
-              </View>
-              <View style={styles.fieldRow}>
-                <View style={styles.fieldHalf}>
-                  <Text style={styles.label}>Stock Count</Text>
-                  <TextInput
-                    style={styles.input}
-                    keyboardType="numeric"
-                    value={newMedicationForm.stockCount}
-                    onChangeText={(value) => handleNewMedicationChange('stockCount', value)}
-                  />
-                </View>
-                <View style={styles.fieldHalf}>
-                  <Text style={styles.label}>Low Stock Threshold</Text>
-                  <TextInput
-                    style={styles.input}
-                    keyboardType="numeric"
-                    value={newMedicationForm.lowStockThreshold}
-                    onChangeText={(value) => handleNewMedicationChange('lowStockThreshold', value)}
-                  />
-                </View>
-              </View>
-            </ScrollView>
-            <View style={styles.modalActions}>
-              <TouchableOpacity
-                style={styles.secondaryButton}
-                onPress={() => {
-                  setIsAddModalVisible(false);
-                  setNewMedicationForm({ ...DEFAULT_NEW_MEDICATION });
-                }}
-              >
-                <Text style={styles.secondaryButtonText}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.primaryButton, isSavingMedication && styles.disabledButton]}
-                onPress={handleCreateMedication}
-                disabled={isSavingMedication}
-              >
-                <Text style={styles.primaryButtonText}>
-                  {isSavingMedication ? 'Saving…' : 'Create'}
-                </Text>
-              </TouchableOpacity>
             </View>
-          </View>
-        </View>
+
+            <View style={styles.previewCard}>
+              <Text style={styles.previewLabel}>Preview</Text>
+              <View style={styles.assignedRow}>
+                <View style={[styles.colorDot, { backgroundColor: newMedColor, width: 20, height: 20, borderRadius: 10 }]} />
+                <Text style={styles.pillName}>{newMedName || 'Medication Name'}</Text>
+              </View>
+              <Text style={styles.medListMeta}>
+                {newMedStock || '0'} pills · Max {newMedMaxDose || '0'}/day
+              </Text>
+            </View>
+          </ScrollView>
+        </SafeAreaView>
       </Modal>
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
+  container: { flex: 1, backgroundColor: colors.background },
   header: {
     paddingHorizontal: 20,
     paddingVertical: 16,
@@ -598,349 +406,168 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
   },
-  headerMobile: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  title: {
-    fontSize: 26,
-    fontWeight: 'bold',
-    color: colors.textPrimary,
-  },
-  titleSmall: {
-    fontSize: 22,
-  },
-  subtitle: {
-    fontSize: 15,
-    color: colors.textSecondary,
-    marginTop: 4,
-  },
-  subtitleSmall: {
-    fontSize: 13,
-    marginTop: 2,
-  },
-  content: {
-    flex: 1,
+  headerRow: {
     flexDirection: 'row',
-  },
-  contentStack: {
-    flexDirection: 'column',
-  },
-  sidebar: {
-    width: 260,
-    backgroundColor: colors.surfaceAlt,
-    borderRightWidth: 1,
-    borderRightColor: colors.border,
-    padding: 16,
-  },
-  sidebarCompact: {
-    width: '100%',
-    borderRightWidth: 0,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-    marginBottom: 12,
-  },
-  sidebarMobile: {
-    padding: 12,
-    marginBottom: 8,
-  },
-  compactScroll: {
-    paddingBottom: 32,
-  },
-  sidebarTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 12,
-    color: colors.textPrimary,
-  },
-  sidebarTitleSmall: {
-    fontSize: 14,
-    marginBottom: 10,
-  },
-  newMedButton: {
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    borderRadius: 10,
-    backgroundColor: colors.accent,
     alignItems: 'center',
-    marginBottom: 12,
-  },
-  newMedButtonText: {
-    color: '#fff',
-    fontWeight: '600',
-  },
-  graphqlBanner: {
-    color: colors.textSecondary,
-    fontSize: 12,
-    marginBottom: 12,
-  },
-  graphqlBannerSmall: {
-    color: colors.textSecondary,
-    fontSize: 12,
-    textAlign: 'center',
-  },
-  pillButton: {
-    padding: 12,
-    borderRadius: 10,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.card,
-  },
-  pillButtonActive: {
-    borderColor: colors.accent,
-    backgroundColor: colors.surface,
-  },
-  pillButtonRow: {
-    flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
   },
-  badge: {
-    backgroundColor: colors.accentSoft,
-    color: colors.textPrimary,
-    fontSize: 12,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 6,
-  },
-  pillButtonName: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.textPrimary,
-  },
-  pillButtonMeta: {
-    fontSize: 12,
-    color: colors.textSecondary,
-    marginTop: 4,
-  },
-  formArea: {
-    flex: 1,
-    padding: 20,
-  },
-  formAreaCompact: {
-    width: '100%',
-  },
-  formAreaMobile: {
-    padding: 16,
-  },
-  formTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    marginBottom: 16,
-    color: colors.textPrimary,
-  },
-  formTitleSmall: {
-    fontSize: 18,
-    marginBottom: 12,
-  },
-  field: {
-    marginBottom: 16,
-  },
-  fieldRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: 12,
-    marginBottom: 12,
-  },
-  fieldRowMobile: {
-    flexDirection: 'column',
-    gap: 0,
-  },
-  fieldHalf: {
-    flex: 1,
-  },
-  fieldHalfMobile: {
-    flex: undefined,
-    marginBottom: 12,
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: '600',
-    marginBottom: 6,
-    color: colors.textSecondary,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 16,
-    backgroundColor: colors.surfaceAlt,
-    color: colors.textPrimary,
-  },
-  inputSmall: {
-    padding: 10,
-    fontSize: 14,
-  },
-  formFooter: {
-    flexDirection: 'row',
-    gap: 12,
-    marginTop: 16,
-  },
-  formFooterMobile: {
-    gap: 8,
-    marginTop: 12,
-  },
-  buttonSmall: {
-    paddingVertical: 12,
-  },
-  buttonTextSmall: {
-    fontSize: 14,
-  },
-  secondaryButton: {
-    flex: 1,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 8,
-    paddingVertical: 14,
-    alignItems: 'center',
-    backgroundColor: colors.surfaceAlt,
-  },
-  secondaryButtonText: {
-    fontSize: 16,
-    color: colors.textPrimary,
-    fontWeight: '600',
-  },
-  primaryButton: {
-    flex: 1,
-    borderRadius: 8,
-    paddingVertical: 14,
-    alignItems: 'center',
+  title: { fontSize: 26, fontWeight: 'bold', color: colors.textPrimary },
+  subtitle: { fontSize: 15, color: colors.textSecondary, marginTop: 4 },
+  content: { padding: 20, gap: 16, paddingBottom: 40 },
+
+  addButton: {
     backgroundColor: colors.accent,
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderRadius: 8,
   },
-  primaryButtonText: {
-    fontSize: 16,
-    color: '#fff',
-    fontWeight: '600',
-  },
-  emptyForm: {
-    flex: 1,
+  addButtonText: { color: '#fff', fontWeight: '600', fontSize: 14 },
+
+  /* Silo card */
+  siloCard: {
     backgroundColor: colors.card,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  emptyFormTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: colors.textPrimary,
-    marginBottom: 8,
-  },
-  emptyFormText: {
-    fontSize: 16,
-    color: colors.textSecondary,
-    textAlign: 'center',
-    paddingHorizontal: 16,
-  },
-  emptyLibrary: {
-    padding: 16,
-    borderRadius: 12,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    gap: 12,
-    alignItems: 'center',
-  },
-  emptyLibraryText: {
-    color: colors.textSecondary,
-    textAlign: 'center',
-  },
-  seedButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 999,
-    backgroundColor: colors.accent,
-  },
-  seedButtonText: {
-    color: '#fff',
-    fontWeight: '600',
-  },
-  modalBackdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.4)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  modalCard: {
-    width: '100%',
-    maxWidth: 420,
-    backgroundColor: colors.surface,
-    borderRadius: 20,
-    padding: 20,
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: colors.textPrimary,
-    marginBottom: 12,
-  },
-  modalActions: {
-    flexDirection: 'row',
-    gap: 12,
-    marginTop: 16,
-  },
-  disabledButton: {
-    opacity: 0.7,
-  },
-  metaCard: {
-    backgroundColor: colors.surfaceAlt,
     borderRadius: 16,
     padding: 16,
     borderWidth: 1,
     borderColor: colors.border,
-    marginBottom: 16,
+    ...shadows.card,
   },
-  metaTitle: {
-    color: colors.textPrimary,
-    fontSize: 18,
-    fontWeight: '700',
-    marginBottom: 6,
-  },
-  metaRow: {
-    color: colors.textSecondary,
+  siloCardActive: { borderColor: colors.accent },
+  siloHeader: { gap: 8, marginBottom: 12 },
+  siloLabel: {
     fontSize: 14,
+    fontWeight: '600',
+    color: colors.textSecondary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
   },
-  autoFillButton: {
-    marginTop: 10,
-    paddingVertical: 10,
+  assignedRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  colorDot: { width: 14, height: 14, borderRadius: 7 },
+  pillName: { fontSize: 18, fontWeight: '600', color: colors.textPrimary },
+  stockText: { fontSize: 13, color: colors.textSecondary },
+  emptyText: { color: colors.textSecondary, fontSize: 14 },
+  siloActions: { flexDirection: 'row', gap: 10, justifyContent: 'flex-end' },
+  removeButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 14,
     borderRadius: 8,
     backgroundColor: colors.surfaceAlt,
     borderWidth: 1,
     borderColor: colors.border,
+  },
+  removeButtonText: { color: colors.textSecondary, fontWeight: '600' },
+  deleteButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderRadius: 8,
+  },
+  deleteButtonText: { color: '#F87171', fontWeight: '600', fontSize: 13 },
+  assignButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderRadius: 8,
+    backgroundColor: colors.accent,
+  },
+  assignButtonActive: { backgroundColor: colors.surfaceAlt, borderWidth: 1, borderColor: colors.border },
+  assignButtonText: { color: '#fff', fontWeight: '600' },
+  assignButtonTextActive: { color: colors.textPrimary },
+
+  /* Picker */
+  pickerCard: {
+    backgroundColor: colors.card,
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: colors.accent,
+    gap: 10,
+    ...shadows.card,
+  },
+  pickerTitle: { fontSize: 16, fontWeight: '600', color: colors.textPrimary },
+  pickerRow: {
+    flexDirection: 'row',
     alignItems: 'center',
-  },
-  autoFillText: {
-    color: colors.textPrimary,
-    fontWeight: '600',
-  },
-  autoFillPreview: {
-    marginTop: 12,
-    padding: 14,
-    borderRadius: 12,
-    backgroundColor: colors.surface,
+    gap: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+    backgroundColor: colors.surfaceAlt,
     borderWidth: 1,
     borderColor: colors.border,
-    gap: 6,
   },
-  autoFillTitle: {
-    color: colors.textSecondary,
-    textTransform: 'uppercase',
-    fontSize: 12,
-    letterSpacing: 0.8,
+  pickerRowReassign: { opacity: 0.7 },
+  pickerRowText: { fontSize: 15, color: colors.textPrimary, fontWeight: '500' },
+  pickerRowHint: { fontSize: 12, color: colors.textSecondary },
+
+  /* All medications list */
+  medListCard: {
+    backgroundColor: colors.card,
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: colors.border,
+    gap: 12,
+    ...shadows.card,
   },
-  autoFillRow: {
+  medListTitle: { fontSize: 16, fontWeight: '600', color: colors.textPrimary },
+  medListRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  medListName: { fontSize: 15, fontWeight: '600', color: colors.textPrimary },
+  medListMeta: { fontSize: 13, color: colors.textSecondary, marginTop: 2 },
+
+  /* Modal */
+  modalContainer: { flex: 1, backgroundColor: colors.background },
+  modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 14,
+    backgroundColor: colors.surface,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
   },
-  autoFillLabel: {
-    color: colors.textSecondary,
-    fontSize: 13,
-  },
-  autoFillValue: {
-    color: colors.textPrimary,
-    fontWeight: '600',
-  },
-});
+  modalCancel: { color: colors.textSecondary, fontSize: 16 },
+  modalTitle: { fontSize: 18, fontWeight: '700', color: colors.textPrimary },
+  modalSave: { color: colors.accent, fontSize: 16, fontWeight: '600' },
+  modalContent: { padding: 20, gap: 20 },
 
+  field: { gap: 6 },
+  fieldLabel: { color: colors.textSecondary, fontWeight: '600', fontSize: 14 },
+  fieldInput: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 16,
+    color: colors.textPrimary,
+    backgroundColor: colors.surfaceAlt,
+  },
+  fieldRow: { flexDirection: 'row', gap: 12 },
+
+  colorRow: { flexDirection: 'row', gap: 10, flexWrap: 'wrap' },
+  colorOption: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  colorOptionSelected: { borderColor: colors.textPrimary, borderWidth: 3 },
+
+  previewCard: {
+    backgroundColor: colors.card,
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: colors.border,
+    gap: 8,
+  },
+  previewLabel: { fontSize: 12, fontWeight: '600', color: colors.textSecondary, textTransform: 'uppercase' },
+});
