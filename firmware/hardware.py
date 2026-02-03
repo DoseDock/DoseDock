@@ -11,7 +11,7 @@ from config import (
     PILL_SETTLE_MS
 )
 
-# ============ PIN INITIALIZATION ============
+# PIN INITIALIZATION
 
 # Status LED
 led = Pin(LED_PIN, Pin.OUT)
@@ -25,7 +25,7 @@ beam_sensors = [Pin(pin, Pin.IN, Pin.PULL_UP) for pin in BEAM_SENSOR_PINS]
 NUM_SILOS = len(VIBRATION_MOTOR_PINS)
 
 
-# ============ LED STATUS ============
+# LED STATUS
 
 def led_on():
     """Turn status LED on."""
@@ -46,7 +46,7 @@ def led_blink(times=3, interval_ms=200):
         sleep_ms(interval_ms)
 
 
-# ============ VIBRATION MOTOR CONTROL ============
+# VIBRATION MOTOR
 
 def motor_on(silo_slot):
     """Start vibration motor for a specific silo."""
@@ -84,7 +84,7 @@ def motor_pulse(duration_ms=500, silo_slot=None):
             vibration_motors[i].off()
 
 
-# ============ BEAM BREAK SENSOR ============
+# BEAM BREAK
 
 def pill_detected(silo_slot):
     """
@@ -94,7 +94,8 @@ def pill_detected(silo_slot):
     if silo_slot < 0 or silo_slot >= NUM_SILOS:
         print(f"Invalid silo slot: {silo_slot}")
         return False
-    return beam_sensors[silo_slot].value() == 0
+    # .value() returns 1 (HIGH) or 0 (LOW). When a pill is detected, the pin reads LOW
+    return beam_sensors[silo_slot].value() == 0 # if pin low and pill detected, then == 0
 
 
 def wait_for_pill(silo_slot, timeout_ms=None):
@@ -123,7 +124,7 @@ def wait_for_pill(silo_slot, timeout_ms=None):
     return False
 
 
-# ============ DISPENSING ============
+# DISPENSING
 
 def dispense_from_silo(silo_slot, qty):
     """
@@ -177,7 +178,7 @@ def dispense_from_silo(silo_slot, qty):
     return success, pills_dispensed
 
 
-# ============ INITIALIZATION ============
+# INITIALIZATION
 
 def init_hardware():
     """Initialize all hardware to safe state."""
