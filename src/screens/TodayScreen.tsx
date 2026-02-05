@@ -107,8 +107,8 @@ export const TodayScreen: React.FC = () => {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
-  content: { padding: 20, gap: 20 },
-  contentMobile: { padding: 16, gap: 16 },
+  content: { paddingHorizontal: 24, paddingVertical: 24, gap: 20 },
+  contentMobile: { paddingHorizontal: 16, paddingVertical: 16, gap: 16 },
   card: {
     backgroundColor: colors.card,
     borderRadius: 24,

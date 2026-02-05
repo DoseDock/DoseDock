@@ -120,24 +120,23 @@ export const HardwareMappingScreen: React.FC = () => {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <View style={styles.header}>
-        <View style={styles.headerRow}>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.title}>Silo Mapping</Text>
-            <Text style={styles.subtitle}>
-              Assign medications to the 3 dispenser silos
-            </Text>
-          </View>
-          <TouchableOpacity
-            style={styles.addButton}
-            onPress={() => setShowAddModal(true)}
-          >
-            <Text style={styles.addButtonText}>+ Add Med</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-
       <ScrollView contentContainerStyle={styles.content}>
+        <View style={styles.headerCard}>
+          <View style={styles.headerRow}>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.title}>Silo Mapping</Text>
+              <Text style={styles.subtitle}>
+                Assign medications to the 3 dispenser silos
+              </Text>
+            </View>
+            <TouchableOpacity
+              style={styles.addButton}
+              onPress={() => setShowAddModal(true)}
+            >
+              <Text style={styles.addButtonText}>+ Add Med</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
         {/* ---- Silo slots ---- */}
         {Array.from({ length: SILO_COUNT }, (_, i) => {
           const pill = pillForSilo(i);
@@ -399,21 +398,20 @@ export const HardwareMappingScreen: React.FC = () => {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
-  header: {
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    backgroundColor: colors.surface,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+  headerCard: {
+    padding: 24,
+    backgroundColor: colors.card,
+    borderRadius: 24,
+    ...shadows.card,
   },
   headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  title: { fontSize: 26, fontWeight: 'bold', color: colors.textPrimary },
-  subtitle: { fontSize: 15, color: colors.textSecondary, marginTop: 4 },
-  content: { padding: 20, gap: 16, paddingBottom: 40 },
+  title: { fontSize: 22, fontWeight: '700', color: colors.textPrimary },
+  subtitle: { fontSize: 12, color: colors.textSecondary, marginTop: 4 },
+  content: { paddingHorizontal: 24, paddingVertical: 24, gap: 20, paddingBottom: 40 },
 
   addButton: {
     backgroundColor: colors.accent,
