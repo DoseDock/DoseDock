@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, ScrollView, Text, StyleSheet, TouchableOpacity, Modal, Alert, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
-import { colors } from '@theme/colors';
+import { colors, shadows } from '@theme/colors';
 import { useSessionStore } from '@store/sessionStore';
 
 export const SettingsScreen: React.FC = () => {
@@ -27,10 +27,11 @@ export const SettingsScreen: React.FC = () => {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <View style={[styles.header, isMobile && styles.headerMobile]}>
-        <Text style={[styles.title, isSmallMobile && styles.titleSmall]}>Settings</Text>
-      </View>
-      <ScrollView style={[styles.content, isMobile && styles.contentMobile]}>
+      <ScrollView contentContainerStyle={[styles.content, isMobile && styles.contentMobile]}>
+        <View style={[styles.headerCard, isMobile && styles.headerCardMobile]}>
+          <Text style={[styles.title, isSmallMobile && styles.titleSmall]}>Settings</Text>
+          <Text style={styles.subTitle}>Manage your account and preferences</Text>
+        </View>
         {user && (
           <View style={[styles.card, isMobile && styles.cardMobile]}>
             <Text style={[styles.cardTitle, isSmallMobile && styles.cardTitleSmall]}>Account</Text>
@@ -95,44 +96,47 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
   },
-  header: {
-    backgroundColor: colors.surface,
-    paddingHorizontal: 16,
-    paddingVertical: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+  headerCard: {
+    padding: 24,
+    backgroundColor: colors.card,
+    borderRadius: 24,
+    gap: 8,
+    ...shadows.card,
   },
-  headerMobile: {
-    paddingHorizontal: 14,
-    paddingVertical: 16,
+  headerCardMobile: {
+    padding: 16,
+    gap: 6,
   },
   title: {
     fontSize: 28,
-    fontWeight: 'bold',
+    fontWeight: '700',
     color: colors.textPrimary,
   },
   titleSmall: {
-    fontSize: 24,
+    fontSize: 22,
+  },
+  subTitle: {
+    color: colors.textSecondary,
   },
   content: {
-    flex: 1,
-    paddingHorizontal: 16,
-    paddingTop: 16,
+    paddingHorizontal: 24,
+    paddingVertical: 24,
+    gap: 20,
   },
   contentMobile: {
-    paddingHorizontal: 12,
-    paddingTop: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    gap: 16,
   },
   card: {
     backgroundColor: colors.card,
-    borderRadius: 12,
+    borderRadius: 20,
     padding: 20,
-    marginBottom: 16,
+    ...shadows.card,
   },
   cardMobile: {
     padding: 16,
-    borderRadius: 10,
-    marginBottom: 12,
+    borderRadius: 16,
   },
   cardTitle: {
     fontSize: 20,
@@ -165,17 +169,14 @@ const styles = StyleSheet.create({
   },
   logoutButton: {
     backgroundColor: colors.danger,
-    borderRadius: 12,
+    borderRadius: 16,
     paddingVertical: 16,
     paddingHorizontal: 20,
     alignItems: 'center',
-    marginTop: 8,
-    marginBottom: 32,
   },
   logoutButtonMobile: {
     paddingVertical: 14,
-    borderRadius: 10,
-    marginBottom: 24,
+    borderRadius: 12,
   },
   logoutButtonText: {
     color: '#fff',

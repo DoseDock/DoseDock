@@ -275,12 +275,12 @@ export const ScheduleScreen: React.FC = () => {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
-  content: { paddingHorizontal: 24, paddingVertical: 28, gap: 24 },
-  contentCompact: { paddingHorizontal: 16, paddingVertical: 20, gap: 16 },
+  content: { paddingHorizontal: 24, paddingVertical: 24, gap: 20 },
+  contentCompact: { paddingHorizontal: 16, paddingVertical: 16, gap: 16 },
   card: {
     backgroundColor: colors.card,
-    borderRadius: 28,
-    padding: 28,
+    borderRadius: 24,
+    padding: 24,
     ...shadows.card,
   },
   hero: {
@@ -292,7 +292,6 @@ const styles = StyleSheet.create({
   heroCompact: {
     flexDirection: 'column',
     alignItems: 'flex-start',
-    gap: 20,
     padding: 20,
     borderRadius: 20,
   },
