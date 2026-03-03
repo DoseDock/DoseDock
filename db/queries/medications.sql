@@ -1,21 +1,21 @@
 -- name: ListMedicationsByPatient :many
 SELECT * FROM medications
 WHERE patient_id = ?
-ORDER BY name;
+ORDER BY cartridge_index;
 
 -- name: GetMedication :one
 SELECT * FROM medications
 WHERE id = ?;
 
 -- name: CreateMedication :one
-INSERT INTO medications (id, patient_id, name, color, stock_count, low_stock_threshold, cartridge_index, max_daily_dose)
+INSERT INTO medications (id, patient_id, label, color, stock_count, low_stock_threshold, cartridge_index, max_daily_dose)
 VALUES (?, ?, ?, ?, ?, ?, ?, ?)
 RETURNING *;
 
 -- name: UpdateMedication :one
 UPDATE medications
 SET
-  name = ?,
+  label = ?,
   color = ?,
   stock_count = ?,
   low_stock_threshold = ?,

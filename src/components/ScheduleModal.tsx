@@ -4,7 +4,7 @@ import { colors } from '@theme/colors';
 
 type PillOption = {
   id: string;
-  name: string;
+  label: string;
 };
 
 export type ScheduleFrequency = 'once' | 'daily' | 'weekly';
@@ -50,14 +50,14 @@ export const ScheduleModal: React.FC<ScheduleModalProps> = ({
     if (pillId) {
       const selectedPill = pillOptions.find((p) => p.id === pillId);
       if (selectedPill) {
-        setSearch(selectedPill.name);
+        setSearch(selectedPill.label);
       }
     }
   }, [pillId, pillOptions]);
 
   const filteredOptions = useMemo(() => {
     const query = search.toLowerCase().trim();
-    return pillOptions.filter((pill) => pill.name.toLowerCase().includes(query));
+    return pillOptions.filter((pill) => pill.label.toLowerCase().includes(query));
   }, [pillOptions, search]);
 
   // Auto-select medication when search exactly matches a medication name (case-insensitive)
@@ -65,7 +65,7 @@ export const ScheduleModal: React.FC<ScheduleModalProps> = ({
     const trimmedSearch = search.trim();
     if (trimmedSearch && !pillId) {
       const exactMatch = pillOptions.find(
-        (pill) => pill.name.toLowerCase().trim() === trimmedSearch.toLowerCase()
+        (pill) => pill.label.toLowerCase().trim() === trimmedSearch.toLowerCase()
       );
       if (exactMatch) {
         setPillId(exactMatch.id);
@@ -148,7 +148,7 @@ export const ScheduleModal: React.FC<ScheduleModalProps> = ({
                   // Clear selection if user is typing and the selected pill is no longer in filtered results
                   if (pillId) {
                     const selectedPill = pillOptions.find((p) => p.id === pillId);
-                    if (!selectedPill || !selectedPill.name.toLowerCase().includes(text.toLowerCase())) {
+                    if (!selectedPill || !selectedPill.label.toLowerCase().includes(text.toLowerCase())) {
                       setPillId('');
                     }
                   }
@@ -166,7 +166,7 @@ export const ScheduleModal: React.FC<ScheduleModalProps> = ({
                     ]}
                     onPress={() => {
                       setPillId(pill.id);
-                      setSearch(pill.name);
+                      setSearch(pill.label);
                     }}
                   >
                     <Text
@@ -175,14 +175,14 @@ export const ScheduleModal: React.FC<ScheduleModalProps> = ({
                         pillId === pill.id && styles.optionTextActive,
                       ]}
                     >
-                      {pill.name}
+                      {pill.label}
                     </Text>
                   </TouchableOpacity>
                 ))}
                 {filteredOptions.length === 0 && (
                   <Text style={styles.emptyText}>
                     {search.trim()
-                      ? `"${search}" not found. Only medications assigned to silos can be scheduled.${pillOptions.length > 0 ? ` Available: ${pillOptions.map(p => p.name).join(', ')}` : ''}`
+                      ? `"${search}" not found. Only medications assigned to silos can be scheduled.${pillOptions.length > 0 ? ` Available: ${pillOptions.map(p => p.label).join(', ')}` : ''}`
                       : pillOptions.length === 0
                       ? 'No medications assigned to silos. Please assign medications to silos first in the Device screen.'
                       : 'No medications match your search.'}

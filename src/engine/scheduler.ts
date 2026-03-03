@@ -54,7 +54,7 @@ export function buildGroupLabel(items: DosePill[], pillLookup: Map<string, Pill>
   for (const item of items) {
     const pill = pillLookup.get(item.pillId);
     if (pill) {
-      parts.push(`${item.qty}× ${pill.name}`);
+      parts.push(`${item.qty}× ${pill.label}`);
     }
   }
   
@@ -129,7 +129,7 @@ export function detectConflicts(
         );
         conflicts.push({
           type: 'dailyLimit',
-          message: `${pill.name} daily limit exceeded on ${dayKey}: ${qty} pills (max ${pill.maxDailyDose})`,
+          message: `${pill.label} daily limit exceeded on ${dayKey}: ${qty} pills (max ${pill.maxDailyDose})`,
           scheduleIds: affectedSchedules.map((s) => s.id),
         });
       }
@@ -157,7 +157,7 @@ export function plainLanguageSummary(schedule: Schedule, pillLookup: Map<string,
   const pillNames = schedule.items
     .map((item) => {
       const pill = pillLookup.get(item.pillId);
-      return pill ? `${item.qty} ${pill.name}` : null;
+      return pill ? `${item.qty} ${pill.label}` : null;
     })
     .filter(Boolean);
   

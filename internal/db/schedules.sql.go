@@ -158,7 +158,7 @@ SELECT
   si.qty,
   m.id AS medication_id,
   m.patient_id AS medication_patient_id,
-  m.name AS medication_name,
+  m.label AS medication_label,
   m.color AS medication_color,
   m.stock_count AS medication_stock_count,
   m.low_stock_threshold AS medication_low_stock_threshold,
@@ -169,7 +169,7 @@ SELECT
 FROM schedule_items si
 JOIN medications m ON m.id = si.medication_id
 WHERE si.schedule_id = ?
-ORDER BY m.name
+ORDER BY m.cartridge_index
 `
 
 type ListScheduleItemsByScheduleRow struct {
@@ -179,7 +179,7 @@ type ListScheduleItemsByScheduleRow struct {
 	Qty                         int64          `json:"qty"`
 	MedicationID                string         `json:"medication_id"`
 	MedicationPatientID         string         `json:"medication_patient_id"`
-	MedicationName              string         `json:"medication_name"`
+	MedicationLabel             string         `json:"medication_label"`
 	MedicationColor             sql.NullString `json:"medication_color"`
 	MedicationStockCount        int64          `json:"medication_stock_count"`
 	MedicationLowStockThreshold int64          `json:"medication_low_stock_threshold"`
@@ -205,7 +205,7 @@ func (q *Queries) ListScheduleItemsBySchedule(ctx context.Context, scheduleID st
 			&i.Qty,
 			&i.MedicationID,
 			&i.MedicationPatientID,
-			&i.MedicationName,
+			&i.MedicationLabel,
 			&i.MedicationColor,
 			&i.MedicationStockCount,
 			&i.MedicationLowStockThreshold,

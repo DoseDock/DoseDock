@@ -41,7 +41,7 @@ type Patient {
 type Medication {
   id: ID!
   patientId: ID!
-  name: String!
+  label: String
   color: String
   stockCount: Int!
   lowStockThreshold: Int!
@@ -121,7 +121,7 @@ input PatientInput {
 input MedicationInput {
   id: ID
   patientId: ID!
-  name: String!
+  label: String
   color: String
   stockCount: Int
   lowStockThreshold: Int

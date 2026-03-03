@@ -3,7 +3,7 @@
 export type Pill = {
   id: string;
   patientId?: string;
-  name: string;
+  label: string;
   color: string;
   cartridgeIndex: number | null; // 0, 1, 2, or null (unassigned)
   maxDailyDose: number;

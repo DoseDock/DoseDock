@@ -14,7 +14,7 @@ export const PillCard: React.FC<PillCardProps> = ({ pill, onPress }) => {
     <TouchableOpacity
       onPress={onPress}
       className="bg-white rounded-lg p-4 mb-3 shadow-sm border border-gray-200"
-      accessibilityLabel={`${pill.name} pill, ${pill.stockCount} pills in stock${isLowStock ? ', low stock' : ''}`}
+      accessibilityLabel={`${pill.label} pill, ${pill.stockCount} pills in stock${isLowStock ? ', low stock' : ''}`}
       accessibilityRole="button"
     >
       <View className="flex-row items-start justify-between">
@@ -26,7 +26,7 @@ export const PillCard: React.FC<PillCardProps> = ({ pill, onPress }) => {
               accessibilityLabel={`${pill.color} pill`}
             />
             <View className="flex-1">
-              <Text className="text-lg font-semibold">{pill.name}</Text>
+              <Text className="text-lg font-semibold">{pill.label}</Text>
               <Text className="text-sm text-gray-600">Cartridge {pill.cartridgeIndex}</Text>
             </View>
           </View>

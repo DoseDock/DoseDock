@@ -11,15 +11,15 @@ import (
 )
 
 const createMedication = `-- name: CreateMedication :one
-INSERT INTO medications (id, patient_id, name, color, stock_count, low_stock_threshold, cartridge_index, max_daily_dose)
+INSERT INTO medications (id, patient_id, label, color, stock_count, low_stock_threshold, cartridge_index, max_daily_dose)
 VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-RETURNING id, patient_id, name, color, stock_count, low_stock_threshold, cartridge_index, max_daily_dose, created_at, updated_at
+RETURNING id, patient_id, label, color, stock_count, low_stock_threshold, cartridge_index, max_daily_dose, created_at, updated_at
 `
 
 type CreateMedicationParams struct {
 	ID                string         `json:"id"`
 	PatientID         string         `json:"patient_id"`
-	Name              string         `json:"name"`
+	Label             string         `json:"label"`
 	Color             sql.NullString `json:"color"`
 	StockCount        int64          `json:"stock_count"`
 	LowStockThreshold int64          `json:"low_stock_threshold"`
@@ -31,7 +31,7 @@ func (q *Queries) CreateMedication(ctx context.Context, arg CreateMedicationPara
 	row := q.queryRow(ctx, q.createMedicationStmt, createMedication,
 		arg.ID,
 		arg.PatientID,
-		arg.Name,
+		arg.Label,
 		arg.Color,
 		arg.StockCount,
 		arg.LowStockThreshold,
@@ -42,7 +42,7 @@ func (q *Queries) CreateMedication(ctx context.Context, arg CreateMedicationPara
 	err := row.Scan(
 		&i.ID,
 		&i.PatientID,
-		&i.Name,
+		&i.Label,
 		&i.Color,
 		&i.StockCount,
 		&i.LowStockThreshold,
@@ -65,7 +65,7 @@ func (q *Queries) DeleteMedication(ctx context.Context, id string) error {
 }
 
 const getMedication = `-- name: GetMedication :one
-SELECT id, patient_id, name, color, stock_count, low_stock_threshold, cartridge_index, max_daily_dose, created_at, updated_at FROM medications
+SELECT id, patient_id, label, color, stock_count, low_stock_threshold, cartridge_index, max_daily_dose, created_at, updated_at FROM medications
 WHERE id = ?
 `
 
@@ -75,7 +75,7 @@ func (q *Queries) GetMedication(ctx context.Context, id string) (Medication, err
 	err := row.Scan(
 		&i.ID,
 		&i.PatientID,
-		&i.Name,
+		&i.Label,
 		&i.Color,
 		&i.StockCount,
 		&i.LowStockThreshold,
@@ -88,9 +88,9 @@ func (q *Queries) GetMedication(ctx context.Context, id string) (Medication, err
 }
 
 const listMedicationsByPatient = `-- name: ListMedicationsByPatient :many
-SELECT id, patient_id, name, color, stock_count, low_stock_threshold, cartridge_index, max_daily_dose, created_at, updated_at FROM medications
+SELECT id, patient_id, label, color, stock_count, low_stock_threshold, cartridge_index, max_daily_dose, created_at, updated_at FROM medications
 WHERE patient_id = ?
-ORDER BY name
+ORDER BY cartridge_index
 `
 
 func (q *Queries) ListMedicationsByPatient(ctx context.Context, patientID string) ([]Medication, error) {
@@ -105,7 +105,7 @@ func (q *Queries) ListMedicationsByPatient(ctx context.Context, patientID string
 		if err := rows.Scan(
 			&i.ID,
 			&i.PatientID,
-			&i.Name,
+			&i.Label,
 			&i.Color,
 			&i.StockCount,
 			&i.LowStockThreshold,
@@ -130,7 +130,7 @@ func (q *Queries) ListMedicationsByPatient(ctx context.Context, patientID string
 const updateMedication = `-- name: UpdateMedication :one
 UPDATE medications
 SET
-  name = ?,
+  label = ?,
   color = ?,
   stock_count = ?,
   low_stock_threshold = ?,
@@ -138,11 +138,11 @@ SET
   max_daily_dose = ?,
   updated_at = datetime('now')
 WHERE id = ?
-RETURNING id, patient_id, name, color, stock_count, low_stock_threshold, cartridge_index, max_daily_dose, created_at, updated_at
+RETURNING id, patient_id, label, color, stock_count, low_stock_threshold, cartridge_index, max_daily_dose, created_at, updated_at
 `
 
 type UpdateMedicationParams struct {
-	Name              string         `json:"name"`
+	Label             string         `json:"label"`
 	Color             sql.NullString `json:"color"`
 	StockCount        int64          `json:"stock_count"`
 	LowStockThreshold int64          `json:"low_stock_threshold"`
@@ -153,7 +153,7 @@ type UpdateMedicationParams struct {
 
 func (q *Queries) UpdateMedication(ctx context.Context, arg UpdateMedicationParams) (Medication, error) {
 	row := q.queryRow(ctx, q.updateMedicationStmt, updateMedication,
-		arg.Name,
+		arg.Label,
 		arg.Color,
 		arg.StockCount,
 		arg.LowStockThreshold,
@@ -165,7 +165,7 @@ func (q *Queries) UpdateMedication(ctx context.Context, arg UpdateMedicationPara
 	err := row.Scan(
 		&i.ID,
 		&i.PatientID,
-		&i.Name,
+		&i.Label,
 		&i.Color,
 		&i.StockCount,
 		&i.LowStockThreshold,

@@ -139,7 +139,7 @@ export async function refreshAllNotifications(
     const groupLabel = schedule.items
       .map((item) => {
         const pill = pillLookup.get(item.pillId);
-        return pill ? `${item.qty}× ${pill.name}` : '';
+        return pill ? `${item.qty}× ${pill.label}` : '';
       })
       .filter(Boolean)
       .join(' + ');

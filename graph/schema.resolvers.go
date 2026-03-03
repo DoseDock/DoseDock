@@ -151,10 +151,14 @@ func (r *mutationResolver) UpsertMedication(ctx context.Context, input model.Med
 			lowStock = int64(*input.LowStockThreshold)
 		}
 
+		label := ""
+		if input.Label != nil {
+			label = *input.Label
+		}
 		record, err := r.Queries.CreateMedication(ctx, db.CreateMedicationParams{
 			ID:                uuid.NewString(),
 			PatientID:         input.PatientID,
-			Name:              input.Name,
+			Label:             label,
 			Color:             nullStringFromPtr(input.Color),
 			StockCount:        stock,
 			LowStockThreshold: lowStock,
@@ -172,8 +176,12 @@ func (r *mutationResolver) UpsertMedication(ctx context.Context, input model.Med
 		return nil, fmt.Errorf("load medication %s: %w", *input.ID, err)
 	}
 
+	label := existing.Label
+	if input.Label != nil {
+		label = *input.Label
+	}
 	record, err := r.Queries.UpdateMedication(ctx, db.UpdateMedicationParams{
-		Name:              input.Name,
+		Label:             label,
 		Color:             nullStringFromPtr(input.Color),
 		StockCount:        defaultStock(existing.StockCount),
 		LowStockThreshold: defaultLowStock(existing.LowStockThreshold),

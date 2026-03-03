@@ -41,7 +41,7 @@ const SCHEDULE_FIELDS = `
     scheduleId
     medication {
       id
-      name
+      label
     }
     qty
   }
@@ -50,7 +50,7 @@ const SCHEDULE_FIELDS = `
 type ScheduleItemGQL = {
   id: string;
   scheduleId: string;
-  medication: { id: string; name: string };
+  medication: { id: string; label: string };
   qty: number;
 };
 

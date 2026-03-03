@@ -53,7 +53,7 @@ SELECT
   si.qty,
   m.id AS medication_id,
   m.patient_id AS medication_patient_id,
-  m.name AS medication_name,
+  m.label AS medication_label,
   m.color AS medication_color,
   m.stock_count AS medication_stock_count,
   m.low_stock_threshold AS medication_low_stock_threshold,
@@ -64,4 +64,4 @@ SELECT
 FROM schedule_items si
 JOIN medications m ON m.id = si.medication_id
 WHERE si.schedule_id = ?
-ORDER BY m.name;
+ORDER BY m.cartridge_index;

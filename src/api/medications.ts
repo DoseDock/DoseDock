@@ -4,7 +4,7 @@ import type { Pill } from '@types';
 const MEDICATION_FIELDS = `
   id
   patientId
-  name
+  label
   color
   stockCount
   lowStockThreshold
@@ -17,7 +17,7 @@ const MEDICATION_FIELDS = `
 export type MedicationGraphQL = {
   id: string;
   patientId: string;
-  name: string;
+  label?: string | null;
   color?: string | null;
   stockCount: number;
   lowStockThreshold: number;
@@ -30,7 +30,7 @@ export type MedicationGraphQL = {
 export type MedicationInput = {
   id?: string;
   patientId: string;
-  name: string;
+  label?: string | null;
   color?: string | null;
   stockCount?: number;
   lowStockThreshold?: number;
@@ -42,7 +42,7 @@ export const mapMedicationToPill = (medication: MedicationGraphQL): Pill => {
   return {
     id: medication.id,
     patientId: medication.patientId,
-    name: medication.name,
+    label: medication.label || '',
     color: medication.color || '#9ca3af',
     cartridgeIndex: medication.cartridgeIndex ?? null,
     maxDailyDose: medication.maxDailyDose || 1,

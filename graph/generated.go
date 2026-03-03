@@ -76,9 +76,9 @@ type ComplexityRoot struct {
 		Color             func(childComplexity int) int
 		CreatedAt         func(childComplexity int) int
 		ID                func(childComplexity int) int
+		Label             func(childComplexity int) int
 		LowStockThreshold func(childComplexity int) int
 		MaxDailyDose      func(childComplexity int) int
-		Name              func(childComplexity int) int
 		PatientID         func(childComplexity int) int
 		StockCount        func(childComplexity int) int
 		UpdatedAt         func(childComplexity int) int
@@ -316,6 +316,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Medication.ID(childComplexity), true
+	case "Medication.label":
+		if e.complexity.Medication.Label == nil {
+			break
+		}
+
+		return e.complexity.Medication.Label(childComplexity), true
 	case "Medication.lowStockThreshold":
 		if e.complexity.Medication.LowStockThreshold == nil {
 			break
@@ -328,12 +334,6 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Medication.MaxDailyDose(childComplexity), true
-	case "Medication.name":
-		if e.complexity.Medication.Name == nil {
-			break
-		}
-
-		return e.complexity.Medication.Name(childComplexity), true
 	case "Medication.patientId":
 		if e.complexity.Medication.PatientID == nil {
 			break
@@ -1490,8 +1490,8 @@ func (ec *executionContext) fieldContext_DueMedication_medication(_ context.Cont
 				return ec.fieldContext_Medication_id(ctx, field)
 			case "patientId":
 				return ec.fieldContext_Medication_patientId(ctx, field)
-			case "name":
-				return ec.fieldContext_Medication_name(ctx, field)
+			case "label":
+				return ec.fieldContext_Medication_label(ctx, field)
 			case "color":
 				return ec.fieldContext_Medication_color(ctx, field)
 			case "stockCount":
@@ -1750,23 +1750,23 @@ func (ec *executionContext) fieldContext_Medication_patientId(_ context.Context,
 	return fc, nil
 }
 
-func (ec *executionContext) _Medication_name(ctx context.Context, field graphql.CollectedField, obj *model.Medication) (ret graphql.Marshaler) {
+func (ec *executionContext) _Medication_label(ctx context.Context, field graphql.CollectedField, obj *model.Medication) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
 		ec.OperationContext,
 		field,
-		ec.fieldContext_Medication_name,
+		ec.fieldContext_Medication_label,
 		func(ctx context.Context) (any, error) {
-			return obj.Name, nil
+			return obj.Label, nil
 		},
 		nil,
-		ec.marshalNString2string,
+		ec.marshalOString2ᚖstring,
 		true,
-		true,
+		false,
 	)
 }
 
-func (ec *executionContext) fieldContext_Medication_name(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Medication_label(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Medication",
 		Field:      field,
@@ -2255,8 +2255,8 @@ func (ec *executionContext) fieldContext_Mutation_upsertMedication(ctx context.C
 				return ec.fieldContext_Medication_id(ctx, field)
 			case "patientId":
 				return ec.fieldContext_Medication_patientId(ctx, field)
-			case "name":
-				return ec.fieldContext_Medication_name(ctx, field)
+			case "label":
+				return ec.fieldContext_Medication_label(ctx, field)
 			case "color":
 				return ec.fieldContext_Medication_color(ctx, field)
 			case "stockCount":
@@ -2821,8 +2821,8 @@ func (ec *executionContext) fieldContext_Patient_medications(_ context.Context, 
 				return ec.fieldContext_Medication_id(ctx, field)
 			case "patientId":
 				return ec.fieldContext_Medication_patientId(ctx, field)
-			case "name":
-				return ec.fieldContext_Medication_name(ctx, field)
+			case "label":
+				return ec.fieldContext_Medication_label(ctx, field)
 			case "color":
 				return ec.fieldContext_Medication_color(ctx, field)
 			case "stockCount":
@@ -3295,8 +3295,8 @@ func (ec *executionContext) fieldContext_Query_medications(ctx context.Context, 
 				return ec.fieldContext_Medication_id(ctx, field)
 			case "patientId":
 				return ec.fieldContext_Medication_patientId(ctx, field)
-			case "name":
-				return ec.fieldContext_Medication_name(ctx, field)
+			case "label":
+				return ec.fieldContext_Medication_label(ctx, field)
 			case "color":
 				return ec.fieldContext_Medication_color(ctx, field)
 			case "stockCount":
@@ -3358,8 +3358,8 @@ func (ec *executionContext) fieldContext_Query_medication(ctx context.Context, f
 				return ec.fieldContext_Medication_id(ctx, field)
 			case "patientId":
 				return ec.fieldContext_Medication_patientId(ctx, field)
-			case "name":
-				return ec.fieldContext_Medication_name(ctx, field)
+			case "label":
+				return ec.fieldContext_Medication_label(ctx, field)
 			case "color":
 				return ec.fieldContext_Medication_color(ctx, field)
 			case "stockCount":
@@ -4186,8 +4186,8 @@ func (ec *executionContext) fieldContext_ScheduleItem_medication(_ context.Conte
 				return ec.fieldContext_Medication_id(ctx, field)
 			case "patientId":
 				return ec.fieldContext_Medication_patientId(ctx, field)
-			case "name":
-				return ec.fieldContext_Medication_name(ctx, field)
+			case "label":
+				return ec.fieldContext_Medication_label(ctx, field)
 			case "color":
 				return ec.fieldContext_Medication_color(ctx, field)
 			case "stockCount":
@@ -6082,7 +6082,7 @@ func (ec *executionContext) unmarshalInputMedicationInput(ctx context.Context, o
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"id", "patientId", "name", "color", "stockCount", "lowStockThreshold", "cartridgeIndex", "maxDailyDose"}
+	fieldsInOrder := [...]string{"id", "patientId", "label", "color", "stockCount", "lowStockThreshold", "cartridgeIndex", "maxDailyDose"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -6103,13 +6103,13 @@ func (ec *executionContext) unmarshalInputMedicationInput(ctx context.Context, o
 				return it, err
 			}
 			it.PatientID = data
-		case "name":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
-			data, err := ec.unmarshalNString2string(ctx, v)
+		case "label":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("label"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.Name = data
+			it.Label = data
 		case "color":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("color"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
@@ -6581,11 +6581,8 @@ func (ec *executionContext) _Medication(ctx context.Context, sel ast.SelectionSe
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "name":
-			out.Values[i] = ec._Medication_name(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
+		case "label":
+			out.Values[i] = ec._Medication_label(ctx, field, obj)
 		case "color":
 			out.Values[i] = ec._Medication_color(ctx, field, obj)
 		case "stockCount":

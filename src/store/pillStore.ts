@@ -64,7 +64,7 @@ export const usePillStore = create<PillStore>((set, get) => ({
       const patientId = pillData.patientId || ensurePatientId();
       const medication = await upsertMedication({
         patientId,
-        name: pillData.name,
+        label: pillData.label,
         color: pillData.color,
         cartridgeIndex: pillData.cartridgeIndex,
         stockCount: pillData.stockCount,
@@ -95,7 +95,7 @@ export const usePillStore = create<PillStore>((set, get) => ({
       const medication = await upsertMedication({
         id,
         patientId: existing.patientId || ensurePatientId(),
-        name: updates.name ?? existing.name,
+        label: updates.label ?? existing.label,
         color: updates.color ?? existing.color,
         cartridgeIndex: updates.cartridgeIndex ?? existing.cartridgeIndex,
         stockCount: updates.stockCount ?? existing.stockCount,
@@ -141,7 +141,7 @@ export const usePillStore = create<PillStore>((set, get) => ({
       const medication = await upsertMedication({
         id,
         patientId: existing.patientId || ensurePatientId(),
-        name: existing.name,
+        label: existing.label,
         color: existing.color,
         cartridgeIndex: existing.cartridgeIndex,
         stockCount: nextStock,

@@ -22,7 +22,7 @@ export const scheduleSchema = z.object({
 
 // Validation schema for pill
 export const pillSchema = z.object({
-  name: z.string().min(1, 'Name is required').max(100),
+  label: z.string().max(100).optional(),
   color: z.string().regex(/^#[0-9A-Fa-f]{6}$/, 'Invalid color format'),
   shape: z.enum(['round', 'oval', 'oblong', 'capsule', 'square']),
   cartridgeIndex: z.number().min(0).max(9),

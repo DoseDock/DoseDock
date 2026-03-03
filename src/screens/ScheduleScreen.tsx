@@ -7,13 +7,17 @@ import { DateTime } from 'luxon';
 import { rrulestr } from 'rrule';
 import { usePillStore } from '@store/pillStore';
 import { useScheduleStore } from '@store/scheduleStore';
+import { useTodayStore } from '@store/todayStore';
 import type { ScheduleItem } from '@types';
+
+type DoseStatus = 'SCHEDULED' | 'TAKEN' | 'MISSED' | 'SKIPPED';
 
 type ScheduledDose = {
   scheduleId: string;
   title: string;
   time: DateTime;
   items: ScheduleItem[];
+  status: DoseStatus;
 };
 
 export const ScheduleScreen: React.FC = () => {
@@ -27,25 +31,36 @@ export const ScheduleScreen: React.FC = () => {
 
   const { pills, loadPills } = usePillStore();
   const { schedules, loadSchedules, addSchedule, archiveSchedule } = useScheduleStore();
+  const { historyEvents, loadHistoryEvents } = useTodayStore();
 
   useEffect(() => {
     loadPills();
     loadSchedules();
-  }, [loadPills, loadSchedules]);
+    loadHistoryEvents(730); // Load all history to check for taken/missed
+  }, [loadPills, loadSchedules, loadHistoryEvents]);
 
   /** Build pill options: all pills with a valid cartridge index (0-2) */
   const pillOptions = useMemo(() => {
     return Array.from(pills.values())
       .filter((pill) => pill.cartridgeIndex != null && pill.cartridgeIndex >= 0 && pill.cartridgeIndex < 3)
-      .map((pill) => ({ id: pill.id, name: pill.name }))
-      .sort((a, b) => a.name.localeCompare(b.name));
+      .map((pill) => ({ id: pill.id, label: pill.label }))
+      .sort((a, b) => a.label.localeCompare(b.label));
   }, [pills]);
 
   /** Compute scheduled doses for the selected date from RRULE expansion */
   const scheduledDoses = useMemo(() => {
     const dayStart = DateTime.fromISO(selectedDate).startOf('day');
     const dayEnd = DateTime.fromISO(selectedDate).endOf('day');
+    const now = DateTime.now();
     const doses: ScheduledDose[] = [];
+
+    // Create a lookup for recorded events by scheduleId + time
+    const eventLookup = new Map<string, string>();
+    for (const event of historyEvents) {
+      const eventTime = DateTime.fromISO(event.dueAtISO);
+      const key = `${event.scheduleId}|${eventTime.toFormat('yyyy-MM-dd HH:mm')}`;
+      eventLookup.set(key, event.status);
+    }
 
     for (const schedule of schedules) {
       if (schedule.status !== 'ACTIVE') continue;
@@ -54,11 +69,27 @@ export const ScheduleScreen: React.FC = () => {
         const rule = rrulestr(schedule.rrule, { dtstart });
         const occurrences = rule.between(dayStart.toJSDate(), dayEnd.toJSDate(), true);
         for (const occ of occurrences) {
+          const doseTime = DateTime.fromJSDate(occ);
+          const eventKey = `${schedule.id}|${doseTime.toFormat('yyyy-MM-dd HH:mm')}`;
+          const recordedStatus = eventLookup.get(eventKey);
+
+          let status: DoseStatus;
+          if (recordedStatus === 'TAKEN') {
+            status = 'TAKEN';
+          } else if (recordedStatus === 'SKIPPED') {
+            status = 'SKIPPED';
+          } else if (doseTime < now) {
+            status = 'MISSED';
+          } else {
+            status = 'SCHEDULED';
+          }
+
           doses.push({
             scheduleId: schedule.id,
             title: schedule.title || 'Medication',
-            time: DateTime.fromJSDate(occ),
+            time: doseTime,
             items: schedule.items,
+            status,
           });
         }
       } catch {
@@ -67,7 +98,7 @@ export const ScheduleScreen: React.FC = () => {
     }
 
     return doses.sort((a, b) => a.time.toMillis() - b.time.toMillis());
-  }, [schedules, selectedDate]);
+  }, [schedules, selectedDate, historyEvents]);
 
   const weekDays = useMemo(
     () => Array.from({ length: 7 }, (_, idx) => currentWeekStart.plus({ days: idx })),
@@ -89,7 +120,7 @@ export const ScheduleScreen: React.FC = () => {
   const handleSave = async (payload: { pillId: string; time: string; frequency: 'once' | 'daily' | 'weekly' }) => {
     try {
       const pill = pills.get(payload.pillId);
-      const pillName = pill?.name || 'Medication';
+      const pillName = pill?.label || 'Medication';
       const startISO = `${selectedDate}T${payload.time}:00`;
       const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
 
@@ -138,7 +169,7 @@ export const ScheduleScreen: React.FC = () => {
     return items
       .map((item) => {
         const pill = pills.get(item.pillId);
-        return pill ? `${item.qty}x ${pill.name}` : `${item.qty}x medication`;
+        return pill ? `${item.qty}x ${pill.label}` : `${item.qty}x medication`;
       })
       .join(', ');
   };
@@ -245,10 +276,15 @@ export const ScheduleScreen: React.FC = () => {
                       style={[
                         styles.doseStatus,
                         isMobile && styles.doseStatusMobile,
-                        { backgroundColor: 'rgba(251, 191, 36, 0.15)', color: '#facc15' },
+                        dose.status === 'TAKEN' && { backgroundColor: 'rgba(74, 222, 128, 0.15)', color: '#4ade80' },
+                        dose.status === 'MISSED' && { backgroundColor: 'rgba(248, 113, 113, 0.15)', color: '#f87171' },
+                        dose.status === 'SKIPPED' && { backgroundColor: 'rgba(161, 161, 170, 0.15)', color: '#a1a1aa' },
+                        dose.status === 'SCHEDULED' && { backgroundColor: 'rgba(251, 191, 36, 0.15)', color: '#facc15' },
                       ]}
                     >
-                      Scheduled
+                      {dose.status === 'TAKEN' ? 'Taken' :
+                       dose.status === 'MISSED' ? 'Missed' :
+                       dose.status === 'SKIPPED' ? 'Skipped' : 'Scheduled'}
                     </Text>
                   </View>
                 </TouchableOpacity>

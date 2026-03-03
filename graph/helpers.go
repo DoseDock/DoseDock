@@ -69,6 +69,13 @@ func ptrFromNullString(ns sql.NullString) *string {
 	return nil
 }
 
+func ptrString(s string) *string {
+	if s == "" {
+		return nil
+	}
+	return &s
+}
+
 func nullIntFromPtr(val *int) sql.NullInt64 {
 	if val == nil {
 		return sql.NullInt64{}

@@ -25,7 +25,7 @@ export const HardwareMappingScreen: React.FC = () => {
   const { pills, loadPills, addPill, updatePill, deletePill } = usePillStore();
   const [selectedSilo, setSelectedSilo] = useState<number | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
-  const [newMedName, setNewMedName] = useState('');
+  const [newMedLabel, setNewMedLabel] = useState('');
   const [newMedColor, setNewMedColor] = useState(PRESET_COLORS[0]);
   const [newMedStock, setNewMedStock] = useState('30');
   const [newMedMaxDose, setNewMedMaxDose] = useState('2');
@@ -56,19 +56,19 @@ export const HardwareMappingScreen: React.FC = () => {
     await updatePill(pill.id, { cartridgeIndex: selectedSilo });
     await loadPills();
     setSelectedSilo(null);
-    Alert.alert('Assigned', `${pill.name} is now in Silo ${selectedSilo}.`);
+    Alert.alert('Assigned', `${pill.label} is now in Silo ${selectedSilo}.`);
   };
 
   const handleUnassign = async (pill: Pill) => {
     await updatePill(pill.id, { cartridgeIndex: null });
     await loadPills();
-    Alert.alert('Unassigned', `${pill.name} has been removed from its silo.`);
+    Alert.alert('Unassigned', `${pill.label} has been removed from its silo.`);
   };
 
   const handleDelete = (pill: Pill) => {
     Alert.alert(
       'Delete Medication',
-      `Are you sure you want to delete ${pill.name}?`,
+      `Are you sure you want to delete ${pill.label}?`,
       [
         { text: 'Cancel', style: 'cancel' },
         {
@@ -84,23 +84,23 @@ export const HardwareMappingScreen: React.FC = () => {
   };
 
   const resetAddForm = () => {
-    setNewMedName('');
+    setNewMedLabel('');
     setNewMedColor(PRESET_COLORS[0]);
     setNewMedStock('30');
     setNewMedMaxDose('2');
   };
 
   const handleAddMedication = async () => {
-    const name = newMedName.trim();
-    if (!name) {
-      Alert.alert('Name required', 'Enter a medication name.');
+    const label = newMedLabel.trim();
+    if (!label) {
+      Alert.alert('Label required', 'Enter a medication label.');
       return;
     }
 
     setIsSubmitting(true);
     try {
       await addPill({
-        name,
+        label,
         color: newMedColor,
         cartridgeIndex: null,
         stockCount: parseInt(newMedStock, 10) || 30,
@@ -110,7 +110,7 @@ export const HardwareMappingScreen: React.FC = () => {
       await loadPills();
       resetAddForm();
       setShowAddModal(false);
-      Alert.alert('Added', `${name} has been created. Assign it to a silo.`);
+      Alert.alert('Added', `${label} has been created. Assign it to a silo.`);
     } catch (error: any) {
       Alert.alert('Failed', error?.message || 'Unable to create medication.');
     } finally {
@@ -153,7 +153,7 @@ export const HardwareMappingScreen: React.FC = () => {
                     <View
                       style={[styles.colorDot, { backgroundColor: pill.color }]}
                     />
-                    <Text style={styles.pillName}>{pill.name}</Text>
+                    <Text style={styles.pillName}>{pill.label}</Text>
                     <Text style={styles.stockText}>
                       {pill.stockCount} pills
                     </Text>
@@ -242,7 +242,7 @@ export const HardwareMappingScreen: React.FC = () => {
                     <View
                       style={[styles.colorDot, { backgroundColor: pill.color }]}
                     />
-                    <Text style={styles.pickerRowText}>{pill.name}</Text>
+                    <Text style={styles.pickerRowText}>{pill.label}</Text>
                   </TouchableOpacity>
                 ))}
 
@@ -267,7 +267,7 @@ export const HardwareMappingScreen: React.FC = () => {
                         ]}
                       />
                       <Text style={styles.pickerRowText}>
-                        {pill.name}{' '}
+                        {pill.label}{' '}
                         <Text style={styles.pickerRowHint}>
                           (currently Silo {pill.cartridgeIndex})
                         </Text>
@@ -287,7 +287,7 @@ export const HardwareMappingScreen: React.FC = () => {
               <View key={pill.id} style={styles.medListRow}>
                 <View style={[styles.colorDot, { backgroundColor: pill.color }]} />
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.medListName}>{pill.name}</Text>
+                  <Text style={styles.medListName}>{pill.label}</Text>
                   <Text style={styles.medListMeta}>
                     {pill.cartridgeIndex != null && pill.cartridgeIndex >= 0 && pill.cartridgeIndex < SILO_COUNT
                       ? `Silo ${pill.cartridgeIndex}`
@@ -326,13 +326,13 @@ export const HardwareMappingScreen: React.FC = () => {
 
           <ScrollView contentContainerStyle={styles.modalContent}>
             <View style={styles.field}>
-              <Text style={styles.fieldLabel}>Medication Name *</Text>
+              <Text style={styles.fieldLabel}>Medication Label *</Text>
               <TextInput
                 style={styles.fieldInput}
-                placeholder="e.g. Metformin"
+                placeholder="e.g. Morning Blue Pill"
                 placeholderTextColor={colors.textSecondary}
-                value={newMedName}
-                onChangeText={setNewMedName}
+                value={newMedLabel}
+                onChangeText={setNewMedLabel}
                 autoFocus
               />
             </View>
@@ -383,7 +383,7 @@ export const HardwareMappingScreen: React.FC = () => {
               <Text style={styles.previewLabel}>Preview</Text>
               <View style={styles.assignedRow}>
                 <View style={[styles.colorDot, { backgroundColor: newMedColor, width: 20, height: 20, borderRadius: 10 }]} />
-                <Text style={styles.pillName}>{newMedName || 'Medication Name'}</Text>
+                <Text style={styles.pillName}>{newMedLabel || 'Medication Name'}</Text>
               </View>
               <Text style={styles.medListMeta}>
                 {newMedStock || '0'} pills · Max {newMedMaxDose || '0'}/day

@@ -114,7 +114,7 @@ func buildMedicationModel(row db.Medication) (*model.Medication, error) {
 	return &model.Medication{
 		ID:                row.ID,
 		PatientID:         row.PatientID,
-		Name:              row.Name,
+		Label:             ptrString(row.Label),
 		Color:             ptrFromNullString(row.Color),
 		StockCount:        int(row.StockCount),
 		LowStockThreshold: int(row.LowStockThreshold),
@@ -170,7 +170,7 @@ func (r *Resolver) buildScheduleModel(ctx context.Context, record db.Schedule) (
 		med, err := buildMedicationModel(db.Medication{
 			ID:                row.MedicationID,
 			PatientID:         row.MedicationPatientID,
-			Name:              row.MedicationName,
+			Label:             row.MedicationLabel,
 			Color:             row.MedicationColor,
 			StockCount:        row.MedicationStockCount,
 			LowStockThreshold: row.MedicationLowStockThreshold,

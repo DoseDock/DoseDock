@@ -25,7 +25,7 @@ export const PillChip: React.FC<PillChipProps> = ({ pill, quantity, size = 'md' 
     <View
       className={`flex-row items-center rounded-full ${sizeClasses[size]}`}
       style={{ backgroundColor: pill.color + '20', borderColor: pill.color, borderWidth: 1 }}
-      accessibilityLabel={`${quantity ? quantity + ' ' : ''}${pill.name} pill${quantity && quantity > 1 ? 's' : ''}`}
+      accessibilityLabel={`${quantity ? quantity + ' ' : ''}${pill.label} pill${quantity && quantity > 1 ? 's' : ''}`}
     >
       <View
         className="w-3 h-3 rounded-full mr-2"
@@ -33,7 +33,7 @@ export const PillChip: React.FC<PillChipProps> = ({ pill, quantity, size = 'md' 
         accessibilityLabel={`${pill.color} pill`}
       />
       {quantity && <Text className={`font-semibold mr-1 ${textSizeClasses[size]}`}>{quantity}×</Text>}
-      <Text className={`font-medium ${textSizeClasses[size]}`}>{pill.name}</Text>
+      <Text className={`font-medium ${textSizeClasses[size]}`}>{pill.label}</Text>
     </View>
   );
 };

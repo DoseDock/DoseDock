@@ -10,11 +10,11 @@ VALUES
   ('patient_demo_001', 'user_demo_caregiver', 'Ava', 'Stone', 'America/New_York'),
   ('patient_demo_002', 'user_demo_patient', 'Leo', 'Nguyen', 'America/Chicago');
 
-INSERT INTO medications (id, patient_id, name, color, stock_count, low_stock_threshold, cartridge_index, max_daily_dose)
+INSERT INTO medications (id, patient_id, label, color, stock_count, low_stock_threshold, cartridge_index, max_daily_dose)
 VALUES
-  ('med_demo_metformin', 'patient_demo_001', 'Metformin', '#6EE7B7', 60, 10, 0, 2),
-  ('med_demo_atorvastatin', 'patient_demo_001', 'Atorvastatin', '#FBBF24', 90, 15, 1, 1),
-  ('med_demo_lisinopril', 'patient_demo_002', 'Lisinopril', '#93C5FD', 45, 10, 2, 1);
+  ('med_demo_metformin', 'patient_demo_001', 'Silo 1 - Green', '#6EE7B7', 60, 10, 0, 2),
+  ('med_demo_atorvastatin', 'patient_demo_001', 'Silo 2 - Amber', '#FBBF24', 90, 15, 1, 1),
+  ('med_demo_lisinopril', 'patient_demo_002', 'Silo 3 - Blue', '#93C5FD', 45, 10, 2, 1);
 
 INSERT INTO schedules (id, patient_id, title, timezone, rrule, start_date_iso, end_date_iso, lockout_minutes, status)
 VALUES

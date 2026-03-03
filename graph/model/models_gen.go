@@ -56,7 +56,7 @@ type LoginInput struct {
 type Medication struct {
 	ID                string    `json:"id"`
 	PatientID         string    `json:"patientId"`
-	Name              string    `json:"name"`
+	Label             *string   `json:"label,omitempty"`
 	Color             *string   `json:"color,omitempty"`
 	StockCount        int       `json:"stockCount"`
 	LowStockThreshold int       `json:"lowStockThreshold"`
@@ -69,7 +69,7 @@ type Medication struct {
 type MedicationInput struct {
 	ID                *string `json:"id,omitempty"`
 	PatientID         string  `json:"patientId"`
-	Name              string  `json:"name"`
+	Label             *string `json:"label,omitempty"`
 	Color             *string `json:"color,omitempty"`
 	StockCount        *int    `json:"stockCount,omitempty"`
 	LowStockThreshold *int    `json:"lowStockThreshold,omitempty"`

@@ -22,7 +22,7 @@ type DispenseEvent struct {
 type Medication struct {
 	ID                string         `json:"id"`
 	PatientID         string         `json:"patient_id"`
-	Name              string         `json:"name"`
+	Label             string         `json:"label"`
 	Color             sql.NullString `json:"color"`
 	StockCount        int64          `json:"stock_count"`
 	LowStockThreshold int64          `json:"low_stock_threshold"`

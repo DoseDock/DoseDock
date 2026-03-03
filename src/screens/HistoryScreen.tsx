@@ -18,9 +18,10 @@ import { useTodayStore } from '@store/todayStore';
 import type { EventLog, EventStatus } from '@types';
 
 const presets = [
-  { label: '3 days', days: 3 },
   { label: '7 days', days: 7 },
-  { label: '14 days', days: 14 },
+  { label: '30 days', days: 30 },
+  { label: '90 days', days: 90 },
+  { label: 'All', days: 730 },
 ];
 
 const statusOptions: Array<{ label: string; value: string }> = [
@@ -36,22 +37,23 @@ export const HistoryScreen: React.FC = () => {
   const isMobile = width < 600;
   const isSmallMobile = width < 400;
   const { pills, loadPills } = usePillStore();
-  const { events, loadTodayEvents } = useTodayStore();
-  const [isLoading, setIsLoading] = useState(false);
+  const { historyEvents, loadHistoryEvents, isLoading } = useTodayStore();
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [daysBack, setDaysBack] = useState(730);
 
   useEffect(() => {
     loadPills();
-    loadTodayEvents();
-  }, [loadPills, loadTodayEvents]);
+    loadHistoryEvents(daysBack);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [daysBack]);
 
   /** Group events by day */
   const orderedHistory = useMemo(() => {
     const grouped: Record<string, EventLog[]> = {};
     const filtered =
       statusFilter === 'all'
-        ? events
-        : events.filter((e) => e.status === statusFilter);
+        ? historyEvents
+        : historyEvents.filter((e) => e.status === statusFilter);
 
     filtered.forEach((event) => {
       const day = DateTime.fromISO(event.dueAtISO).toISODate();
@@ -66,7 +68,7 @@ export const HistoryScreen: React.FC = () => {
         date,
         entries: entries.sort((a, b) => a.dueAtISO.localeCompare(b.dueAtISO)),
       }));
-  }, [events, statusFilter]);
+  }, [historyEvents, statusFilter]);
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -74,6 +76,34 @@ export const HistoryScreen: React.FC = () => {
         <View style={[styles.card, styles.headerCard, isMobile && styles.headerCardMobile]}>
           <Text style={[styles.title, isSmallMobile && styles.titleSmall]}>History</Text>
           <Text style={styles.subTitle}>Review past doses</Text>
+
+          {/* Date range filter */}
+          <View style={[styles.filtersRow, isMobile && styles.filtersRowMobile]}>
+            <View style={[styles.inputStub, isMobile && styles.inputStubMobile]}>
+              <Text style={styles.stubLabel}>Date Range</Text>
+              <View style={styles.filterChipRow}>
+                {presets.map((preset) => (
+                  <TouchableOpacity
+                    key={preset.days}
+                    style={[
+                      styles.filterChip,
+                      daysBack === preset.days && styles.filterChipActive,
+                    ]}
+                    onPress={() => setDaysBack(preset.days)}
+                  >
+                    <Text
+                      style={[
+                        styles.filterChipText,
+                        daysBack === preset.days && styles.filterChipTextActive,
+                      ]}
+                    >
+                      {preset.label}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+          </View>
 
           {/* Status filter */}
           <View style={[styles.filtersRow, isMobile && styles.filtersRowMobile]}>
@@ -103,6 +133,13 @@ export const HistoryScreen: React.FC = () => {
             </View>
           </View>
         </View>
+
+        {isLoading && (
+          <View style={styles.emptyState}>
+            <ActivityIndicator size="large" color={colors.accent} />
+            <Text style={styles.emptyStateSubtext}>Loading history...</Text>
+          </View>
+        )}
 
         {orderedHistory.length === 0 && !isLoading && (
           <View style={styles.emptyState}>

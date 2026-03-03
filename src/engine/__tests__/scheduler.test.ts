@@ -13,7 +13,7 @@ import type { Schedule, Pill, DosePill } from '@types';
 describe('Scheduler Engine', () => {
   const mockPill1: Pill = {
     id: 'pill-1',
-    name: 'Metformin',
+    label: 'Metformin',
     color: '#3b82f6',
     cartridgeIndex: 0,
     maxDailyDose: 4,
@@ -24,7 +24,7 @@ describe('Scheduler Engine', () => {
 
   const mockPill2: Pill = {
     id: 'pill-2',
-    name: 'Atorvastatin',
+    label: 'Atorvastatin',
     color: '#ef4444',
     cartridgeIndex: 1,
     maxDailyDose: 2,
