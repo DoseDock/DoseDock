@@ -343,6 +343,13 @@ func (r *mutationResolver) RecordDispenseAction(ctx context.Context, input model
 	return buildDispenseEvent(record)
 }
 
+// RequestDispense is the resolver for the requestDispense field.
+// Creates a pending dispense request that the firmware will pick up.
+func (r *mutationResolver) RequestDispense(ctx context.Context, input model.DispenseRequestInput) (*model.DispenseRequest, error) {
+	req := pendingDispenseStore.Add(input.PatientID, input.Silo, input.Qty)
+	return req, nil
+}
+
 // Ping is the resolver for the ping field.
 func (r *queryResolver) Ping(ctx context.Context) (string, error) {
 	return "pong", nil
@@ -543,6 +550,14 @@ func (r *queryResolver) DueNow(ctx context.Context, patientID string, windowMinu
 	}
 
 	return result, nil
+}
+
+// PendingDispense is the resolver for the pendingDispense field.
+// Returns and clears any pending dispense request for the patient.
+// The firmware should poll this endpoint to check for manual dispense requests.
+func (r *queryResolver) PendingDispense(ctx context.Context, patientID string) (*model.DispenseRequest, error) {
+	req := pendingDispenseStore.Pop(patientID)
+	return req, nil
 }
 
 // Mutation returns MutationResolver implementation.

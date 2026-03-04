@@ -38,6 +38,16 @@ mutation RecordDispense($input: DispenseActionInput!) {
 
 PING_QUERY = "query { ping }"
 
+PENDING_DISPENSE_QUERY = """
+query PendingDispense($patientId: ID!) {
+  pendingDispense(patientId: $patientId) {
+    id
+    silo
+    qty
+  }
+}
+"""
+
 
 # GRAPHQL CLIENT
 
@@ -106,3 +116,14 @@ def record_dispense(schedule_id, due_at_iso, acted_at_iso, status):
     if result:
         print(f"Recorded dispense: {status}")
     return result
+
+
+def get_pending_dispense():
+    """Check for pending manual dispense requests."""
+    data = graphql_request(PENDING_DISPENSE_QUERY, {
+        "patientId": PATIENT_ID
+    })
+
+    if data and data.get("pendingDispense"):
+        return data["pendingDispense"]
+    return None

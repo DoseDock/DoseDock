@@ -16,6 +16,7 @@ import { ScheduleScreen } from '@screens/ScheduleScreen';
 import { HistoryScreen } from '@screens/HistoryScreen';
 import { SettingsScreen } from '@screens/SettingsScreen';
 import { HardwareMappingScreen } from '@screens/HardwareMappingScreen';
+import { DemoScreen } from '@screens/DemoScreen';
 import { colors } from '@theme/colors';
 import { SignupScreen } from '@screens/SignupScreen';
 import { useSessionStore } from '@store/sessionStore';
@@ -81,6 +82,7 @@ function TabNavigator() {
       <Tab.Screen name="Schedule" component={ScheduleScreen} options={{ tabBarLabel: 'Schedule' }} />
       <Tab.Screen name="History" component={HistoryScreen} options={{ tabBarLabel: 'History' }} />
       <Tab.Screen name="Hardware" component={HardwareMappingScreen} options={{ tabBarLabel: 'Device' }} />
+      <Tab.Screen name="Demo" component={DemoScreen} options={{ tabBarLabel: 'Demo' }} />
       <Tab.Screen name="Settings" component={SettingsScreen} options={{ tabBarLabel: 'Settings' }} />
     </Tab.Navigator>
   );

@@ -97,6 +97,15 @@ type DueSchedule {
   medications: [DueMedication!]!
 }
 
+# Demo dispense request (for manual triggering)
+type DispenseRequest {
+  id: ID!
+  patientId: ID!
+  silo: Int!
+  qty: Int!
+  createdAt: DateTime!
+}
+
 input UserInput {
   id: ID
   email: String!
@@ -162,6 +171,12 @@ input DateRangeInput {
   end: DateTime!
 }
 
+input DispenseRequestInput {
+  patientId: ID!
+  silo: Int!
+  qty: Int!
+}
+
 type Query {
   ping: String!
   users: [User!]!
@@ -175,6 +190,7 @@ type Query {
   schedule(id: ID!): Schedule
   dispenseEvents(patientId: ID!, range: DateRangeInput): [DispenseEvent!]!
   dueNow(patientId: ID!, windowMinutes: Int): [DueSchedule!]!
+  pendingDispense(patientId: ID!): DispenseRequest
 }
 
 type Mutation {
@@ -188,4 +204,5 @@ type Mutation {
   updateSchedule(id: ID!, input: ScheduleInput!): Schedule!
   archiveSchedule(id: ID!): Schedule!
   recordDispenseAction(input: DispenseActionInput!): DispenseEvent!
+  requestDispense(input: DispenseRequestInput!): DispenseRequest!
 }

@@ -59,6 +59,14 @@ type ComplexityRoot struct {
 		Status       func(childComplexity int) int
 	}
 
+	DispenseRequest struct {
+		CreatedAt func(childComplexity int) int
+		ID        func(childComplexity int) int
+		PatientID func(childComplexity int) int
+		Qty       func(childComplexity int) int
+		Silo      func(childComplexity int) int
+	}
+
 	DueMedication struct {
 		Medication func(childComplexity int) int
 		Qty        func(childComplexity int) int
@@ -91,6 +99,7 @@ type ComplexityRoot struct {
 		DeleteMedication     func(childComplexity int, id string) int
 		Login                func(childComplexity int, input model.LoginInput) int
 		RecordDispenseAction func(childComplexity int, input model.DispenseActionInput) int
+		RequestDispense      func(childComplexity int, input model.DispenseRequestInput) int
 		UpdatePatient        func(childComplexity int, id string, input model.PatientInput) int
 		UpdateSchedule       func(childComplexity int, id string, input model.ScheduleInput) int
 		UpsertMedication     func(childComplexity int, input model.MedicationInput) int
@@ -111,18 +120,19 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		DispenseEvents func(childComplexity int, patientID string, rangeArg *model.DateRangeInput) int
-		DueNow         func(childComplexity int, patientID string, windowMinutes *int) int
-		Medication     func(childComplexity int, id string) int
-		Medications    func(childComplexity int, patientID string) int
-		Patient        func(childComplexity int, id string) int
-		Patients       func(childComplexity int, userID *string) int
-		Ping           func(childComplexity int) int
-		Schedule       func(childComplexity int, id string) int
-		Schedules      func(childComplexity int, patientID string) int
-		User           func(childComplexity int, id string) int
-		UserByEmail    func(childComplexity int, email string) int
-		Users          func(childComplexity int) int
+		DispenseEvents  func(childComplexity int, patientID string, rangeArg *model.DateRangeInput) int
+		DueNow          func(childComplexity int, patientID string, windowMinutes *int) int
+		Medication      func(childComplexity int, id string) int
+		Medications     func(childComplexity int, patientID string) int
+		Patient         func(childComplexity int, id string) int
+		Patients        func(childComplexity int, userID *string) int
+		PendingDispense func(childComplexity int, patientID string) int
+		Ping            func(childComplexity int) int
+		Schedule        func(childComplexity int, id string) int
+		Schedules       func(childComplexity int, patientID string) int
+		User            func(childComplexity int, id string) int
+		UserByEmail     func(childComplexity int, email string) int
+		Users           func(childComplexity int) int
 	}
 
 	Schedule struct {
@@ -170,6 +180,7 @@ type MutationResolver interface {
 	UpdateSchedule(ctx context.Context, id string, input model.ScheduleInput) (*model.Schedule, error)
 	ArchiveSchedule(ctx context.Context, id string) (*model.Schedule, error)
 	RecordDispenseAction(ctx context.Context, input model.DispenseActionInput) (*model.DispenseEvent, error)
+	RequestDispense(ctx context.Context, input model.DispenseRequestInput) (*model.DispenseRequest, error)
 }
 type QueryResolver interface {
 	Ping(ctx context.Context) (string, error)
@@ -184,6 +195,7 @@ type QueryResolver interface {
 	Schedule(ctx context.Context, id string) (*model.Schedule, error)
 	DispenseEvents(ctx context.Context, patientID string, rangeArg *model.DateRangeInput) ([]*model.DispenseEvent, error)
 	DueNow(ctx context.Context, patientID string, windowMinutes *int) ([]*model.DueSchedule, error)
+	PendingDispense(ctx context.Context, patientID string) (*model.DispenseRequest, error)
 }
 
 type executableSchema struct {
@@ -253,6 +265,37 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.DispenseEvent.Status(childComplexity), true
+
+	case "DispenseRequest.createdAt":
+		if e.complexity.DispenseRequest.CreatedAt == nil {
+			break
+		}
+
+		return e.complexity.DispenseRequest.CreatedAt(childComplexity), true
+	case "DispenseRequest.id":
+		if e.complexity.DispenseRequest.ID == nil {
+			break
+		}
+
+		return e.complexity.DispenseRequest.ID(childComplexity), true
+	case "DispenseRequest.patientId":
+		if e.complexity.DispenseRequest.PatientID == nil {
+			break
+		}
+
+		return e.complexity.DispenseRequest.PatientID(childComplexity), true
+	case "DispenseRequest.qty":
+		if e.complexity.DispenseRequest.Qty == nil {
+			break
+		}
+
+		return e.complexity.DispenseRequest.Qty(childComplexity), true
+	case "DispenseRequest.silo":
+		if e.complexity.DispenseRequest.Silo == nil {
+			break
+		}
+
+		return e.complexity.DispenseRequest.Silo(childComplexity), true
 
 	case "DueMedication.medication":
 		if e.complexity.DueMedication.Medication == nil {
@@ -419,6 +462,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Mutation.RecordDispenseAction(childComplexity, args["input"].(model.DispenseActionInput)), true
+	case "Mutation.requestDispense":
+		if e.complexity.Mutation.RequestDispense == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_requestDispense_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.RequestDispense(childComplexity, args["input"].(model.DispenseRequestInput)), true
 	case "Mutation.updatePatient":
 		if e.complexity.Mutation.UpdatePatient == nil {
 			break
@@ -591,6 +645,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Query.Patients(childComplexity, args["userId"].(*string)), true
+	case "Query.pendingDispense":
+		if e.complexity.Query.PendingDispense == nil {
+			break
+		}
+
+		args, err := ec.field_Query_pendingDispense_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.PendingDispense(childComplexity, args["patientId"].(string)), true
 	case "Query.ping":
 		if e.complexity.Query.Ping == nil {
 			break
@@ -805,6 +870,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 	inputUnmarshalMap := graphql.BuildUnmarshalerMap(
 		ec.unmarshalInputDateRangeInput,
 		ec.unmarshalInputDispenseActionInput,
+		ec.unmarshalInputDispenseRequestInput,
 		ec.unmarshalInputLoginInput,
 		ec.unmarshalInputMedicationInput,
 		ec.unmarshalInputPatientInput,
@@ -993,6 +1059,17 @@ func (ec *executionContext) field_Mutation_recordDispenseAction_args(ctx context
 	return args, nil
 }
 
+func (ec *executionContext) field_Mutation_requestDispense_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "input", ec.unmarshalNDispenseRequestInput2pillboxᚋgraphᚋmodelᚐDispenseRequestInput)
+	if err != nil {
+		return nil, err
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_Mutation_updatePatient_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
@@ -1131,6 +1208,17 @@ func (ec *executionContext) field_Query_patients_args(ctx context.Context, rawAr
 		return nil, err
 	}
 	args["userId"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_pendingDispense_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "patientId", ec.unmarshalNID2string)
+	if err != nil {
+		return nil, err
+	}
+	args["patientId"] = arg0
 	return args, nil
 }
 
@@ -1452,6 +1540,151 @@ func (ec *executionContext) _DispenseEvent_createdAt(ctx context.Context, field 
 func (ec *executionContext) fieldContext_DispenseEvent_createdAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "DispenseEvent",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type DateTime does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _DispenseRequest_id(ctx context.Context, field graphql.CollectedField, obj *model.DispenseRequest) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_DispenseRequest_id,
+		func(ctx context.Context) (any, error) {
+			return obj.ID, nil
+		},
+		nil,
+		ec.marshalNID2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_DispenseRequest_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "DispenseRequest",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _DispenseRequest_patientId(ctx context.Context, field graphql.CollectedField, obj *model.DispenseRequest) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_DispenseRequest_patientId,
+		func(ctx context.Context) (any, error) {
+			return obj.PatientID, nil
+		},
+		nil,
+		ec.marshalNID2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_DispenseRequest_patientId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "DispenseRequest",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _DispenseRequest_silo(ctx context.Context, field graphql.CollectedField, obj *model.DispenseRequest) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_DispenseRequest_silo,
+		func(ctx context.Context) (any, error) {
+			return obj.Silo, nil
+		},
+		nil,
+		ec.marshalNInt2int,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_DispenseRequest_silo(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "DispenseRequest",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _DispenseRequest_qty(ctx context.Context, field graphql.CollectedField, obj *model.DispenseRequest) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_DispenseRequest_qty,
+		func(ctx context.Context) (any, error) {
+			return obj.Qty, nil
+		},
+		nil,
+		ec.marshalNInt2int,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_DispenseRequest_qty(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "DispenseRequest",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _DispenseRequest_createdAt(ctx context.Context, field graphql.CollectedField, obj *model.DispenseRequest) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_DispenseRequest_createdAt,
+		func(ctx context.Context) (any, error) {
+			return obj.CreatedAt, nil
+		},
+		nil,
+		ec.marshalNDateTime2timeᚐTime,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_DispenseRequest_createdAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "DispenseRequest",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
@@ -2590,6 +2823,59 @@ func (ec *executionContext) fieldContext_Mutation_recordDispenseAction(ctx conte
 	return fc, nil
 }
 
+func (ec *executionContext) _Mutation_requestDispense(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Mutation_requestDispense,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.resolvers.Mutation().RequestDispense(ctx, fc.Args["input"].(model.DispenseRequestInput))
+		},
+		nil,
+		ec.marshalNDispenseRequest2ᚖpillboxᚋgraphᚋmodelᚐDispenseRequest,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Mutation_requestDispense(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_DispenseRequest_id(ctx, field)
+			case "patientId":
+				return ec.fieldContext_DispenseRequest_patientId(ctx, field)
+			case "silo":
+				return ec.fieldContext_DispenseRequest_silo(ctx, field)
+			case "qty":
+				return ec.fieldContext_DispenseRequest_qty(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_DispenseRequest_createdAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type DispenseRequest", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_requestDispense_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Patient_id(ctx context.Context, field graphql.CollectedField, obj *model.Patient) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -3628,6 +3914,59 @@ func (ec *executionContext) fieldContext_Query_dueNow(ctx context.Context, field
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Query_dueNow_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_pendingDispense(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Query_pendingDispense,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.resolvers.Query().PendingDispense(ctx, fc.Args["patientId"].(string))
+		},
+		nil,
+		ec.marshalODispenseRequest2ᚖpillboxᚋgraphᚋmodelᚐDispenseRequest,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_Query_pendingDispense(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_DispenseRequest_id(ctx, field)
+			case "patientId":
+				return ec.fieldContext_DispenseRequest_patientId(ctx, field)
+			case "silo":
+				return ec.fieldContext_DispenseRequest_silo(ctx, field)
+			case "qty":
+				return ec.fieldContext_DispenseRequest_qty(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_DispenseRequest_createdAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type DispenseRequest", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_pendingDispense_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -6041,6 +6380,47 @@ func (ec *executionContext) unmarshalInputDispenseActionInput(ctx context.Contex
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputDispenseRequestInput(ctx context.Context, obj any) (model.DispenseRequestInput, error) {
+	var it model.DispenseRequestInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"patientId", "silo", "qty"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "patientId":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("patientId"))
+			data, err := ec.unmarshalNID2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.PatientID = data
+		case "silo":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("silo"))
+			data, err := ec.unmarshalNInt2int(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Silo = data
+		case "qty":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("qty"))
+			data, err := ec.unmarshalNInt2int(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Qty = data
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputLoginInput(ctx context.Context, obj any) (model.LoginInput, error) {
 	var it model.LoginInput
 	asMap := map[string]any{}
@@ -6465,6 +6845,65 @@ func (ec *executionContext) _DispenseEvent(ctx context.Context, sel ast.Selectio
 	return out
 }
 
+var dispenseRequestImplementors = []string{"DispenseRequest"}
+
+func (ec *executionContext) _DispenseRequest(ctx context.Context, sel ast.SelectionSet, obj *model.DispenseRequest) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, dispenseRequestImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("DispenseRequest")
+		case "id":
+			out.Values[i] = ec._DispenseRequest_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "patientId":
+			out.Values[i] = ec._DispenseRequest_patientId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "silo":
+			out.Values[i] = ec._DispenseRequest_silo(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "qty":
+			out.Values[i] = ec._DispenseRequest_qty(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "createdAt":
+			out.Values[i] = ec._DispenseRequest_createdAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var dueMedicationImplementors = []string{"DueMedication"}
 
 func (ec *executionContext) _DueMedication(ctx context.Context, sel ast.SelectionSet, obj *model.DueMedication) graphql.Marshaler {
@@ -6720,6 +7159,13 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		case "recordDispenseAction":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_recordDispenseAction(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "requestDispense":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_requestDispense(ctx, field)
 			})
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
@@ -7087,6 +7533,25 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "pendingDispense":
+			field := field
+
+			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_pendingDispense(ctx, field)
 				return res
 			}
 
@@ -7764,6 +8229,25 @@ func (ec *executionContext) marshalNDispenseEvent2ᚖpillboxᚋgraphᚋmodelᚐD
 		return graphql.Null
 	}
 	return ec._DispenseEvent(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNDispenseRequest2pillboxᚋgraphᚋmodelᚐDispenseRequest(ctx context.Context, sel ast.SelectionSet, v model.DispenseRequest) graphql.Marshaler {
+	return ec._DispenseRequest(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNDispenseRequest2ᚖpillboxᚋgraphᚋmodelᚐDispenseRequest(ctx context.Context, sel ast.SelectionSet, v *model.DispenseRequest) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._DispenseRequest(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNDispenseRequestInput2pillboxᚋgraphᚋmodelᚐDispenseRequestInput(ctx context.Context, v any) (model.DispenseRequestInput, error) {
+	res, err := ec.unmarshalInputDispenseRequestInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) unmarshalNDispenseStatus2pillboxᚋgraphᚋmodelᚐDispenseStatus(ctx context.Context, v any) (model.DispenseStatus, error) {
@@ -8577,6 +9061,13 @@ func (ec *executionContext) marshalODateTime2ᚖtimeᚐTime(ctx context.Context,
 		return graphql.Null
 	}
 	return ec._DateTime(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalODispenseRequest2ᚖpillboxᚋgraphᚋmodelᚐDispenseRequest(ctx context.Context, sel ast.SelectionSet, v *model.DispenseRequest) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._DispenseRequest(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalOID2ᚖstring(ctx context.Context, v any) (*string, error) {

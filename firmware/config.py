@@ -5,7 +5,7 @@ WIFI_SSID = 'Foosball'
 WIFI_PASSWORD = 'Foos123!'
 
 # Backend Settings
-# BACKEND_URL = 'http://IP:8081/query'  # GraphQL endpoint
+BACKEND_URL = 'http://172.20.10.3:8081/query'  # GraphQL endpoint - UPDATE THIS to your server IP
 PATIENT_ID = '627987c9-b849-4fbc-bec2-0794aac86816'  # Your patient ID from the database
 
 # Polling Settings

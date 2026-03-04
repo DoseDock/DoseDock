@@ -36,6 +36,20 @@ type DispenseEvent struct {
 	CreatedAt    time.Time      `json:"createdAt"`
 }
 
+type DispenseRequest struct {
+	ID        string    `json:"id"`
+	PatientID string    `json:"patientId"`
+	Silo      int       `json:"silo"`
+	Qty       int       `json:"qty"`
+	CreatedAt time.Time `json:"createdAt"`
+}
+
+type DispenseRequestInput struct {
+	PatientID string `json:"patientId"`
+	Silo      int    `json:"silo"`
+	Qty       int    `json:"qty"`
+}
+
 type DueMedication struct {
 	Medication *Medication `json:"medication"`
 	Qty        int         `json:"qty"`

@@ -9,7 +9,7 @@ from config import (
     WIFI_TIMEOUT_SEC,
     POLL_INTERVAL_MS
 )
-from graphql import ping_backend, get_due_medications, record_dispense
+from graphql import ping_backend, get_due_medications, record_dispense, get_pending_dispense
 from hardware import (
     init_hardware,
     test_hardware,
@@ -161,20 +161,42 @@ def main():
     print("\n[3/3] Hardware check...")
     test_hardware()
 
-    print(f"\nEntering main loop (polling every {POLL_INTERVAL_MS // 1000}s)...")
+    print(f"\nEntering main loop (polling every {POLL_INTERVAL_MS // 1000}s for schedules, 2s for manual requests)...")
     print("-" * 40)
+
+    schedule_check_counter = 0
+    schedule_check_interval = POLL_INTERVAL_MS // 2000  # Check schedules every POLL_INTERVAL_MS
 
     while True:
         try:
-            timestamp = get_iso_timestamp()
-            print(f"\n[{timestamp}] Checking for due medications...")
-            process_due_medications()
+            # Check for pending manual dispense requests (every 2 seconds for responsiveness)
+            pending = get_pending_dispense()
+            if pending:
+                silo = pending.get("silo", 0)
+                qty = pending.get("qty", 1)
+                print(f"\n[Manual Dispense] Received request: silo={silo}, qty={qty}")
+                motor_pulse(300)
+                success, dispensed = dispense_from_silo(silo, qty)
+                if success:
+                    print(f"[Manual Dispense] Success: dispensed {dispensed} pill(s)")
+                    led_blink(3, 200)
+                else:
+                    print(f"[Manual Dispense] Failed: only dispensed {dispensed}/{qty}")
+                    led_blink(6, 100)
+
+            # Check for scheduled medications less frequently
+            schedule_check_counter += 1
+            if schedule_check_counter >= schedule_check_interval:
+                schedule_check_counter = 0
+                timestamp = get_iso_timestamp()
+                print(f"\n[{timestamp}] Checking for due medications...")
+                process_due_medications()
 
         except Exception as e:
             print(f"Error in main loop: {e}")
             led_blink(5, 100)
 
-        sleep(POLL_INTERVAL_MS // 1000)
+        sleep(2)  # Poll every 2 seconds for manual dispense responsiveness
 
 
 if __name__ == "__main__":
