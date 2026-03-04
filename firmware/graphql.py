@@ -18,7 +18,7 @@ query DueNow($patientId: ID!, $windowMinutes: Int) {
     medications {
       medication {
         id
-        name
+        label
       }
       qty
       siloSlot

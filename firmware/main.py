@@ -99,7 +99,7 @@ def process_due_medications():
 
         for med in medications:
             med_info = med.get("medication", {})
-            med_name = med_info.get("name", "Unknown")
+            med_name = med_info.get("label", "Unknown")
             silo_slot = med.get("siloSlot", 0)
             qty = med.get("qty", 1)
 
