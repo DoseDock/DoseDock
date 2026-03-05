@@ -12,6 +12,11 @@ slave_address = 0x08
 led = Pin('LED', Pin.OUT)
 led.value(1)
 
+# Hardware button for immediate dispense
+BUTTON_PIN = 6
+button = Pin(BUTTON_PIN, Pin.IN, Pin.PULL_UP)
+last_button_press = 0
+
 SSID = 'Aaron iPhone'
 PASSWORD = '12345678'
 
@@ -137,6 +142,16 @@ def dispense_pill(silo_slot):
         return False
 
 
+def button_pressed(pin):
+    """Interrupt handler for immediate dispense button."""
+    global last_button_press
+    now = utime.ticks_ms()
+    if utime.ticks_diff(now, last_button_press) > 500:  # 500ms debounce
+        last_button_press = now
+        print("Button pressed - dispensing 1 pill from silo 0")
+        dispense_pill(0)
+
+
 def api_call():
     """Query for medications due now."""
     try:
@@ -158,6 +173,11 @@ def api_call():
 wifi_connect()
 #test_http()
 led.value(1)
+
+# Set up button interrupt for immediate dispense
+button.irq(trigger=Pin.IRQ_FALLING, handler=button_pressed)
+print("Button interrupt enabled on GPIO", BUTTON_PIN)
+
 while True:
     data = api_call()
     if data:
