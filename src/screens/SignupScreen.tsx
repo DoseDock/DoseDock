@@ -38,13 +38,14 @@ export const SignupScreen: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
+  const [phone, setPhone] = useState ('');
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [timezone, setTimezone] = useState(DEFAULT_TIMEZONE);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoadingPatients, setIsLoadingPatients] = useState(false);
   const [patients, setPatients] = useState<GraphQLPatient[]>([]);
-  const [currentUser, setCurrentUser] = useState<{ id: string; email: string; fullName: string } | null>(null);
+  const [currentUser, setCurrentUser] = useState<SessionUser | null>(null);
 
   const setUser = useSessionStore((state) => state.setUser);
   const setPatient = useSessionStore((state) => state.setPatient);
@@ -74,6 +75,7 @@ export const SignupScreen: React.FC = () => {
         id: user.id,
         email: user.email,
         fullName: user.fullName,
+        phone: user.phone,
         timezone: user.timezone,
       };
       setUser(sessionUser);
@@ -102,6 +104,7 @@ export const SignupScreen: React.FC = () => {
     const normalizedEmail = email.trim().toLowerCase();
     const trimmedPassword = password.trim();
     const trimmedFullName = fullName.trim();
+    const trimmedPhone = phone.trim();
     const trimmedFirstName = firstName.trim();
     const trimmedLastName = lastName.trim();
 
@@ -121,6 +124,10 @@ export const SignupScreen: React.FC = () => {
       Alert.alert('Name required', 'Enter your full name.');
       return;
     }
+    if (!trimmedPhone) {
+      Alert.alert('Phone number required', 'Enter your phone number.');
+      return;
+    }
     if (!trimmedFirstName || !trimmedLastName) {
       Alert.alert('Patient name required', 'Enter the patient\'s first and last name.');
       return;
@@ -135,18 +142,27 @@ export const SignupScreen: React.FC = () => {
           'An account with this email already exists. Please log in instead.',
           [{ text: 'OK', onPress: () => setMode('login') }]
         );
-        setIsSubmitting(false);
         return;
       }
 
       user = await upsertUserProfile({
         email: normalizedEmail,
         fullName: trimmedFullName,
+        phone: trimmedPhone,
         timezone: timezone || DEFAULT_TIMEZONE,
         password: trimmedPassword,
       });
-      setUser(user);
-      setCurrentUser(user);
+
+      const sessionUser: SessionUser = {
+        id: user.id,
+        email: user.email,
+        fullName: user.fullName,
+        phone: user.phone,
+        timezone: user.timezone,
+      };
+
+      setUser(sessionUser);
+      setCurrentUser(sessionUser);
 
       const patient = await createPatientForUser({
         userId: user.id,
@@ -162,10 +178,10 @@ export const SignupScreen: React.FC = () => {
         timezone: patient.timezone,
       };
       setPatient(sessionPatient);
-      setIsSubmitting(false);
     } catch (error: any) {
       console.error('Signup error:', error);
       Alert.alert('Signup failed', error?.message || 'Unable to create account. Please try again.');
+    } finally {
       setIsSubmitting(false);
     }
   };
@@ -221,6 +237,7 @@ export const SignupScreen: React.FC = () => {
     setEmail('');
     setPassword('');
     setFullName('');
+    setPhone('');
     setFirstName('');
     setLastName('');
     setTimezone(DEFAULT_TIMEZONE);
@@ -385,6 +402,19 @@ export const SignupScreen: React.FC = () => {
                   onChangeText={setFullName}
                   editable={!isSubmitting}
                 />
+              </View>
+              <View style={styles.field}>
+                <Text style={styles.label}>Caregiver Phone *</Text>
+                <TextInput
+                  nativeID="signup-phone"
+                  keyboardType="phone-pad"
+                  placeholder="+14165551234"
+                  style={styles.input}
+                  value={phone}
+                  onChangeText={setPhone}
+                  editable={!isSubmitting}
+                />
+                <Text style={styles.hint}>Use full international format for SMS delivery.</Text>
               </View>
 
               <View style={styles.divider} />
