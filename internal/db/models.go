@@ -32,6 +32,21 @@ type Medication struct {
 	UpdatedAt         string         `json:"updated_at"`
 }
 
+type NotificationEvent struct {
+	ID                string         `json:"id"`
+	PatientID         string         `json:"patient_id"`
+	ScheduleID        string         `json:"schedule_id"`
+	UserID            sql.NullString `json:"user_id"`
+	DueAtIso          string         `json:"due_at_iso"`
+	Channel           string         `json:"channel"`
+	Destination       string         `json:"destination"`
+	Message           string         `json:"message"`
+	Status            string         `json:"status"`
+	ProviderMessageID sql.NullString `json:"provider_message_id"`
+	ErrorMessage      sql.NullString `json:"error_message"`
+	CreatedAt         string         `json:"created_at"`
+}
+
 type Patient struct {
 	ID        string         `json:"id"`
 	UserID    sql.NullString `json:"user_id"`

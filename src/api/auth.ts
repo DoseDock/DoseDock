@@ -18,6 +18,7 @@ export type GraphQLUser = {
   id: string;
   email: string;
   fullName: string;
+  phone?: string;
   timezone: string;
 };
 

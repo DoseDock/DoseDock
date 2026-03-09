@@ -8,18 +8,22 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/playground"
 	_ "github.com/glebarez/sqlite"
+	"github.com/joho/godotenv"
 	"github.com/rs/cors"
 
 	"pillbox/graph"
 	"pillbox/internal/db"
+	"pillbox/internal/notifications"
 )
 
 func main() {
+	_ = godotenv.Load(".env")
 	port := envOrDefault("PORT", "8081")
 	dbPath := envOrDefault("DB_PATH", "./db/backend.db")
 
@@ -46,6 +50,18 @@ func main() {
 	resolver := &graph.Resolver{
 		DB:      conn,
 		Queries: db.New(conn),
+	}
+
+	notificationsEnabled := envOrDefault("NOTIFICATIONS_ENABLED", "true")
+	if strings.EqualFold(notificationsEnabled, "true") {
+		sender, err := notifications.NewTwilioSenderFromEnv()
+		if err != nil {
+			log.Fatalf("init twilio sender: %v", err)
+		}
+
+		worker := notifications.NewWorker(resolver.Queries, sender)
+		go worker.Start(context.Background())
+		log.Printf("notification worker started")
 	}
 
 	srv := handler.NewDefaultServer(graph.NewExecutableSchema(graph.Config{Resolvers: resolver}))

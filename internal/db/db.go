@@ -33,6 +33,9 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	if q.createMedicationStmt, err = db.PrepareContext(ctx, createMedication); err != nil {
 		return nil, fmt.Errorf("error preparing query CreateMedication: %w", err)
 	}
+	if q.createNotificationEventStmt, err = db.PrepareContext(ctx, createNotificationEvent); err != nil {
+		return nil, fmt.Errorf("error preparing query CreateNotificationEvent: %w", err)
+	}
 	if q.createPatientStmt, err = db.PrepareContext(ctx, createPatient); err != nil {
 		return nil, fmt.Errorf("error preparing query CreatePatient: %w", err)
 	}
@@ -57,6 +60,9 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	if q.getMedicationStmt, err = db.PrepareContext(ctx, getMedication); err != nil {
 		return nil, fmt.Errorf("error preparing query GetMedication: %w", err)
 	}
+	if q.getNotificationEventByOccurrenceStmt, err = db.PrepareContext(ctx, getNotificationEventByOccurrence); err != nil {
+		return nil, fmt.Errorf("error preparing query GetNotificationEventByOccurrence: %w", err)
+	}
 	if q.getPatientStmt, err = db.PrepareContext(ctx, getPatient); err != nil {
 		return nil, fmt.Errorf("error preparing query GetPatient: %w", err)
 	}
@@ -74,6 +80,9 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	}
 	if q.listMedicationsByPatientStmt, err = db.PrepareContext(ctx, listMedicationsByPatient); err != nil {
 		return nil, fmt.Errorf("error preparing query ListMedicationsByPatient: %w", err)
+	}
+	if q.listNotificationEventsByPatientStmt, err = db.PrepareContext(ctx, listNotificationEventsByPatient); err != nil {
+		return nil, fmt.Errorf("error preparing query ListNotificationEventsByPatient: %w", err)
 	}
 	if q.listPatientsStmt, err = db.PrepareContext(ctx, listPatients); err != nil {
 		return nil, fmt.Errorf("error preparing query ListPatients: %w", err)
@@ -125,6 +134,11 @@ func (q *Queries) Close() error {
 			err = fmt.Errorf("error closing createMedicationStmt: %w", cerr)
 		}
 	}
+	if q.createNotificationEventStmt != nil {
+		if cerr := q.createNotificationEventStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing createNotificationEventStmt: %w", cerr)
+		}
+	}
 	if q.createPatientStmt != nil {
 		if cerr := q.createPatientStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing createPatientStmt: %w", cerr)
@@ -165,6 +179,11 @@ func (q *Queries) Close() error {
 			err = fmt.Errorf("error closing getMedicationStmt: %w", cerr)
 		}
 	}
+	if q.getNotificationEventByOccurrenceStmt != nil {
+		if cerr := q.getNotificationEventByOccurrenceStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing getNotificationEventByOccurrenceStmt: %w", cerr)
+		}
+	}
 	if q.getPatientStmt != nil {
 		if cerr := q.getPatientStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing getPatientStmt: %w", cerr)
@@ -193,6 +212,11 @@ func (q *Queries) Close() error {
 	if q.listMedicationsByPatientStmt != nil {
 		if cerr := q.listMedicationsByPatientStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing listMedicationsByPatientStmt: %w", cerr)
+		}
+	}
+	if q.listNotificationEventsByPatientStmt != nil {
+		if cerr := q.listNotificationEventsByPatientStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing listNotificationEventsByPatientStmt: %w", cerr)
 		}
 	}
 	if q.listPatientsStmt != nil {
@@ -282,67 +306,73 @@ func (q *Queries) queryRow(ctx context.Context, stmt *sql.Stmt, query string, ar
 }
 
 type Queries struct {
-	db                                DBTX
-	tx                                *sql.Tx
-	archiveScheduleStmt               *sql.Stmt
-	createDispenseEventStmt           *sql.Stmt
-	createMedicationStmt              *sql.Stmt
-	createPatientStmt                 *sql.Stmt
-	createScheduleStmt                *sql.Stmt
-	createScheduleItemStmt            *sql.Stmt
-	createUserStmt                    *sql.Stmt
-	deleteMedicationStmt              *sql.Stmt
-	deleteScheduleItemsByScheduleStmt *sql.Stmt
-	getDispenseEventStmt              *sql.Stmt
-	getMedicationStmt                 *sql.Stmt
-	getPatientStmt                    *sql.Stmt
-	getScheduleStmt                   *sql.Stmt
-	getUserStmt                       *sql.Stmt
-	getUserByEmailStmt                *sql.Stmt
-	listDispenseEventsByPatientStmt   *sql.Stmt
-	listMedicationsByPatientStmt      *sql.Stmt
-	listPatientsStmt                  *sql.Stmt
-	listPatientsByUserStmt            *sql.Stmt
-	listScheduleItemsByScheduleStmt   *sql.Stmt
-	listSchedulesByPatientStmt        *sql.Stmt
-	listUsersStmt                     *sql.Stmt
-	updateDispenseEventStmt           *sql.Stmt
-	updateMedicationStmt              *sql.Stmt
-	updatePatientStmt                 *sql.Stmt
-	updateScheduleStmt                *sql.Stmt
-	updateUserStmt                    *sql.Stmt
+	db                                   DBTX
+	tx                                   *sql.Tx
+	archiveScheduleStmt                  *sql.Stmt
+	createDispenseEventStmt              *sql.Stmt
+	createMedicationStmt                 *sql.Stmt
+	createNotificationEventStmt          *sql.Stmt
+	createPatientStmt                    *sql.Stmt
+	createScheduleStmt                   *sql.Stmt
+	createScheduleItemStmt               *sql.Stmt
+	createUserStmt                       *sql.Stmt
+	deleteMedicationStmt                 *sql.Stmt
+	deleteScheduleItemsByScheduleStmt    *sql.Stmt
+	getDispenseEventStmt                 *sql.Stmt
+	getMedicationStmt                    *sql.Stmt
+	getNotificationEventByOccurrenceStmt *sql.Stmt
+	getPatientStmt                       *sql.Stmt
+	getScheduleStmt                      *sql.Stmt
+	getUserStmt                          *sql.Stmt
+	getUserByEmailStmt                   *sql.Stmt
+	listDispenseEventsByPatientStmt      *sql.Stmt
+	listMedicationsByPatientStmt         *sql.Stmt
+	listNotificationEventsByPatientStmt  *sql.Stmt
+	listPatientsStmt                     *sql.Stmt
+	listPatientsByUserStmt               *sql.Stmt
+	listScheduleItemsByScheduleStmt      *sql.Stmt
+	listSchedulesByPatientStmt           *sql.Stmt
+	listUsersStmt                        *sql.Stmt
+	updateDispenseEventStmt              *sql.Stmt
+	updateMedicationStmt                 *sql.Stmt
+	updatePatientStmt                    *sql.Stmt
+	updateScheduleStmt                   *sql.Stmt
+	updateUserStmt                       *sql.Stmt
 }
 
 func (q *Queries) WithTx(tx *sql.Tx) *Queries {
 	return &Queries{
-		db:                                tx,
-		tx:                                tx,
-		archiveScheduleStmt:               q.archiveScheduleStmt,
-		createDispenseEventStmt:           q.createDispenseEventStmt,
-		createMedicationStmt:              q.createMedicationStmt,
-		createPatientStmt:                 q.createPatientStmt,
-		createScheduleStmt:                q.createScheduleStmt,
-		createScheduleItemStmt:            q.createScheduleItemStmt,
-		createUserStmt:                    q.createUserStmt,
-		deleteMedicationStmt:              q.deleteMedicationStmt,
-		deleteScheduleItemsByScheduleStmt: q.deleteScheduleItemsByScheduleStmt,
-		getDispenseEventStmt:              q.getDispenseEventStmt,
-		getMedicationStmt:                 q.getMedicationStmt,
-		getPatientStmt:                    q.getPatientStmt,
-		getScheduleStmt:                   q.getScheduleStmt,
-		getUserStmt:                       q.getUserStmt,
-		getUserByEmailStmt:                q.getUserByEmailStmt,
-		listDispenseEventsByPatientStmt:   q.listDispenseEventsByPatientStmt,
-		listMedicationsByPatientStmt:      q.listMedicationsByPatientStmt,
-		listPatientsStmt:                  q.listPatientsStmt,
-		listPatientsByUserStmt:            q.listPatientsByUserStmt,
-		listScheduleItemsByScheduleStmt:   q.listScheduleItemsByScheduleStmt,
-		listSchedulesByPatientStmt:        q.listSchedulesByPatientStmt,
-		listUsersStmt:                     q.listUsersStmt,
-		updateDispenseEventStmt:           q.updateDispenseEventStmt,
-		updateMedicationStmt:              q.updateMedicationStmt,
-		updatePatientStmt:                 q.updatePatientStmt,
-		updateScheduleStmt:                q.updateScheduleStmt,
-		updateUserStmt:                    q.updateUserStmt,
+		db:                                   tx,
+		tx:                                   tx,
+		archiveScheduleStmt:                  q.archiveScheduleStmt,
+		createDispenseEventStmt:              q.createDispenseEventStmt,
+		createMedicationStmt:                 q.createMedicationStmt,
+		createNotificationEventStmt:          q.createNotificationEventStmt,
+		createPatientStmt:                    q.createPatientStmt,
+		createScheduleStmt:                   q.createScheduleStmt,
+		createScheduleItemStmt:               q.createScheduleItemStmt,
+		createUserStmt:                       q.createUserStmt,
+		deleteMedicationStmt:                 q.deleteMedicationStmt,
+		deleteScheduleItemsByScheduleStmt:    q.deleteScheduleItemsByScheduleStmt,
+		getDispenseEventStmt:                 q.getDispenseEventStmt,
+		getMedicationStmt:                    q.getMedicationStmt,
+		getNotificationEventByOccurrenceStmt: q.getNotificationEventByOccurrenceStmt,
+		getPatientStmt:                       q.getPatientStmt,
+		getScheduleStmt:                      q.getScheduleStmt,
+		getUserStmt:                          q.getUserStmt,
+		getUserByEmailStmt:                   q.getUserByEmailStmt,
+		listDispenseEventsByPatientStmt:      q.listDispenseEventsByPatientStmt,
+		listMedicationsByPatientStmt:         q.listMedicationsByPatientStmt,
+		listNotificationEventsByPatientStmt:  q.listNotificationEventsByPatientStmt,
+		listPatientsStmt:                     q.listPatientsStmt,
+		listPatientsByUserStmt:               q.listPatientsByUserStmt,
+		listScheduleItemsByScheduleStmt:      q.listScheduleItemsByScheduleStmt,
+		listSchedulesByPatientStmt:           q.listSchedulesByPatientStmt,
+		listUsersStmt:                        q.listUsersStmt,
+		updateDispenseEventStmt:              q.updateDispenseEventStmt,
+		updateMedicationStmt:                 q.updateMedicationStmt,
+		updatePatientStmt:                    q.updatePatientStmt,
+		updateScheduleStmt:                   q.updateScheduleStmt,
+		updateUserStmt:                       q.updateUserStmt,
 	}
 }
