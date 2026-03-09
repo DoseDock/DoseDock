@@ -125,9 +125,10 @@ func (w *Worker) runOnce(ctx context.Context) {
 			meds := strings.Join(medParts, ", ")
 			localDue := dueTime.In(time.Local).Format("3:04 PM")
 			message := fmt.Sprintf(
-				"DoseDock reminder: %s %s should take medication at %s.",
+				"DoseDock reminder: %s %s should take %s at %s.",
 				patient.FirstName,
 				patient.LastName,
+				meds,
 				localDue,
 			)
 
