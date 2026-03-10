@@ -17,12 +17,14 @@ import (
 type Worker struct {
 	queries *db.Queries
 	sender  *TwilioSender
+	ttsClient *GoogleTTSClient
 }
 
-func NewWorker(queries *db.Queries, sender *TwilioSender) *Worker {
+func NewWorker(queries *db.Queries, sender *TwilioSender, ttsClient *GoogleTTSClient) *Worker {
 	return &Worker{
 		queries: queries,
 		sender:  sender,
+		ttsClient: ttsClient,
 	}
 }
 
@@ -125,9 +127,8 @@ func (w *Worker) runOnce(ctx context.Context) {
 			meds := strings.Join(medParts, ", ")
 			localDue := dueTime.In(time.Local).Format("3:04 PM")
 			message := fmt.Sprintf(
-				"DoseDock reminder: %s %s should take %s at %s.",
+				"Hi %s, this is your DoseDock reminder to take your %s at %s.",
 				patient.FirstName,
-				patient.LastName,
 				meds,
 				localDue,
 			)
@@ -158,6 +159,19 @@ func (w *Worker) runOnce(ctx context.Context) {
 			})
 			if createErr != nil {
 				log.Printf("notification worker: create notification event failed: %v", createErr)
+			}
+			if w.ttsClient != nil {
+				audioResult, err := w.ttsClient.SynthesizeDefaultReminder(ctx, message)
+				if err != nil {
+					log.Printf("notification worker: tts failed for patient=%s schedule=%s: %v", patient.ID, schedule.ID, err)
+				} else {
+					audioPath, err := SaveReminderMP3(patient.ID, schedule.ID, formatDBTime(*dueTime), audioResult.AudioBytes)
+					if err != nil {
+						log.Printf("notification worker: save audio failed for patient=%s schedule=%s: %v", patient.ID, schedule.ID, err)
+					} else {
+						log.Printf("notification worker: saved reminder audio at %s", audioPath)
+					}
+				}
 			}
 		}
 	}

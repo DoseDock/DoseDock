@@ -59,7 +59,12 @@ func main() {
 			log.Fatalf("init twilio sender: %v", err)
 		}
 
-		worker := notifications.NewWorker(resolver.Queries, sender)
+		ttsClient, err := notifications.NewGoogleTTSClientFromEnv(context.Background())
+		if err != nil {
+			log.Fatalf("init google tts client: %v", err)
+		}
+
+		worker := notifications.NewWorker(resolver.Queries, sender, ttsClient)
 		go worker.Start(context.Background())
 		log.Printf("notification worker started")
 	}
