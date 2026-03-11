@@ -158,10 +158,10 @@ export const TodayScreen: React.FC = () => {
                   style={[
                     styles.statusBadge,
                     isCompact && styles.statusBadgeCompact,
-                    item.status === 'TAKEN' ? styles.statusGood : styles.statusPending,
+                    getTimelineStatusStyle(item.status),
                   ]}
                 >
-                  {item.status === 'TAKEN' ? 'Done' : item.status === 'SKIPPED' ? 'Skipped' : 'Pending'}
+                  {getTimelineStatusLabel(item.status)}
                 </Text>
               </View>
             ))
