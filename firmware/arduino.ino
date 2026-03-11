@@ -11,13 +11,16 @@
 int sensorState = 0, lastState = 0;
 volatile bool newCommand = false;
 volatile byte command = 0;
+volatile byte dispenseStatus = 0;   // 0 = idle, 1 = busy, 2 = success, 3 = error
 
 
 void setup() {
   Wire.begin(SLAVE_ADDRESS); // I2C as slave
   Wire.onReceive(receiveEvent);
+  Wire.onRequest(requestEvent);
   Serial.begin(9600);
   Serial.println("BEGIN RECEIVING");
+  
 
   pinMode(LEDPIN, OUTPUT);      
   pinMode(SENSORPIN, INPUT_PULLUP);
@@ -60,7 +63,17 @@ void receiveEvent(int bytes) {
   while (Wire.available()) {
     command = Wire.read();
     newCommand = true;
+    dispenseStatus = 1;   // busy
     Serial.println(command);
+  }
+}
+
+void requestEvent() {
+  Wire.write(dispenseStatus);
+
+  // If result was success or error, reset after sending
+  if (dispenseStatus == 2 || dispenseStatus == 3) {
+    dispenseStatus = 0;
   }
 }
 
@@ -68,9 +81,10 @@ void dispense(int vibrationPin) {
 
   Serial.println("Motor ON");
   digitalWrite(vibrationPin, HIGH);
+  unsigned long startTime = millis();
 
   lastState = digitalRead(SENSORPIN);
-  while (true) {
+  while (millis() - startTime < 10000) {
 
     sensorState = digitalRead(SENSORPIN);
 
@@ -80,11 +94,21 @@ void dispense(int vibrationPin) {
       digitalWrite(vibrationPin, LOW);
       Serial.println("Motor OFF");
 
+      dispenseStatus = 2; // return success byte
 
       delay(300);  // small debounce
-      break;
+      return;
     }
 
     lastState = sensorState;
   }
+
+  // Timeout reached
+  Serial.println("Dispense timeout");
+
+  digitalWrite(vibrationPin, LOW);
+  Serial.println("Motor OFF");
+
+  dispenseStatus = 3;   // error
+  
 }

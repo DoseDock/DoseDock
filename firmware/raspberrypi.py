@@ -128,13 +128,28 @@ def mutation_call(schedule_id, due_at_iso, status):
 
 
 def dispense_pill(silo_slot):
-    """Attempt to dispense a pill from the given silo. Returns True on success, False on failure."""
-    try:
-        i2c.writeto(slave_address, bytes([SILO_TO_ARDUINO_BYTE[silo_slot]]))
-        return True
-    except Exception as e:
-        print("Dispense FAILED for silo", silo_slot, ":", e)
-        return False
+    i2c.writeto(slave_address, bytes([silo_slot]))
+    # poll Arduino until result received
+    while True:
+
+        time.sleep(0.2)
+
+        resp = i2c.readfrom(slave_address, 1)
+        status = resp[0]
+        
+        if status == 1:
+            print("Arduino busy...")
+
+        elif status == 2:
+            print("SUCCESS")
+            return True
+        
+        elif status == 3:
+            print("FAILURE")
+            return False
+
+        else:
+            print("Idle")
 
 
 def api_call():
@@ -216,5 +231,5 @@ while True:
                     print(f"Dispense event recorded: id={dispense_data.get('id')}, status={dispense_data.get('status')}")
                 else:
                     print("Failed to record dispense event")
-
-    utime.sleep_ms(30000)
+    # run every minute
+    utime.sleep_ms(60000)
