@@ -21,14 +21,18 @@ export const TodayScreen: React.FC = () => {
 
   const stats = useMemo(() => {
     const total = events.length;
-    const taken = events.filter((e) => e.status === ('TAKEN' as EventStatus)).length;
-    const missed = events.filter(
-      (e) => e.status === ('MISSED' as EventStatus) || e.status === ('FAILED' as EventStatus)
+    const taken = events.filter((e) => e.status === 'TAKEN').length;
+    const issues = events.filter((e) =>
+      e.status === 'MISSED' ||
+      e.status === 'FAILED' ||
+      e.status === 'EMPTY_SILO' ||
+      e.status === 'CUP_ABSENT'
     ).length;
-    const upcoming = events.filter((e) => e.status === ('PENDING' as EventStatus)).length;
+    const upcoming = events.filter((e) => e.status === 'PENDING').length;
+
     return {
       adherence: total ? Math.round((taken / total) * 100) : 0,
-      missed,
+      issues,
       upcoming,
     };
   }, [events]);
@@ -49,6 +53,63 @@ export const TodayScreen: React.FC = () => {
       });
   }, [events]);
 
+  const getTimelineStatusLabel = (status: EventStatus) => {
+    switch (status) {
+      case 'TAKEN':
+        return 'Done';
+      case 'SKIPPED':
+        return 'Skipped';
+      case 'MISSED':
+        return 'Missed';
+      case 'FAILED':
+        return 'Failed';
+      case 'EMPTY_SILO':
+        return 'Empty silo';
+      case 'CUP_ABSENT':
+        return 'Cup absent';
+      default:
+        return 'Pending';
+    }
+  };
+
+  const getTimelineStatusStyle = (status: EventStatus) => {
+    switch (status) {
+      case 'TAKEN':
+        return styles.statusGood;
+      case 'SKIPPED':
+        return styles.statusNeutral;
+      case 'MISSED':
+        return styles.statusDanger;
+      case 'FAILED':
+        return styles.statusWarning;
+      case 'EMPTY_SILO':
+        return styles.statusDanger;
+      case 'CUP_ABSENT':
+        return styles.statusWarning;
+      default:
+        return styles.statusPending;
+    }
+  };
+
+  const getTimelineDotStyle = (status: EventStatus) => {
+    switch (status) {
+      case 'TAKEN':
+        return styles.timelineDotGood;
+      case 'SKIPPED':
+        return styles.timelineDotNeutral;
+      case 'MISSED':
+        return styles.timelineDotDanger;
+      case 'FAILED':
+        return styles.timelineDotWarning;
+      case 'EMPTY_SILO':
+        return styles.timelineDotDanger;
+      case 'CUP_ABSENT':
+        return styles.timelineDotWarning;
+      default:
+        return styles.timelineDotPending;
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <ScrollView contentContainerStyle={[styles.content, isMobile && styles.contentMobile]}>
@@ -67,9 +128,9 @@ export const TodayScreen: React.FC = () => {
               <Text style={[styles.metricValue, isCompact && styles.metricValueCompact]}>{stats.upcoming}</Text>
             </View>
             <View style={[styles.metric, isCompact && styles.metricCompact]}>
-              <Text style={styles.metricLabel}>Missed</Text>
-              <Text style={[styles.metricValue, isCompact && styles.metricValueCompact, stats.missed ? styles.metricDanger : null]}>
-                {stats.missed}
+              <Text style={styles.metricLabel}>Issues</Text>
+              <Text style={[styles.metricValue, isCompact && styles.metricValueCompact, stats.issues ? styles.metricDanger : null]}>
+                {stats.issues}
               </Text>
             </View>
           </View>
@@ -82,7 +143,13 @@ export const TodayScreen: React.FC = () => {
           ) : (
             timeline.map((item) => (
               <View key={item.id} style={[styles.timelineRow, isCompact && styles.timelineRowCompact]}>
-                <View style={[styles.timelineDot, isCompact && styles.timelineDotCompact]} />
+                <View
+                  style={[
+                    styles.timelineDot,
+                    isCompact && styles.timelineDotCompact,
+                    getTimelineDotStyle(item.status),
+                  ]}
+                />
                 <View style={styles.timelineInfo}>
                   <Text style={[styles.timelineTime, isCompact && styles.timelineTimeCompact]}>{item.time}</Text>
                   <Text style={[styles.timelineLabel, isCompact && styles.timelineLabelCompact]}>{item.label}</Text>
@@ -147,6 +214,14 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '600',
   },
+  timelineDotPending: { backgroundColor: colors.accent },
+  timelineDotGood: { backgroundColor: '#4ade80' },
+  timelineDotNeutral: { backgroundColor: '#a1a1aa' },
+  timelineDotWarning: { backgroundColor: '#facc15' },
+  timelineDotDanger: { backgroundColor: '#f87171' },
+  statusNeutral: { backgroundColor: 'rgba(161,161,170,0.15)', color: '#a1a1aa' },
+  statusWarning: { backgroundColor: 'rgba(251,191,36,0.15)', color: '#facc15' },
+  statusDanger: { backgroundColor: 'rgba(248,113,113,0.15)', color: '#f87171' },
   statusBadgeCompact: { paddingHorizontal: 8, paddingVertical: 3, fontSize: 11 },
   statusGood: { backgroundColor: 'rgba(34,197,94,0.15)', color: '#4ade80' },
   statusPending: { backgroundColor: 'rgba(251,191,36,0.15)', color: '#facc15' },

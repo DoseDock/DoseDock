@@ -6,12 +6,14 @@ require (
 	github.com/99designs/gqlgen v0.17.84
 	github.com/glebarez/sqlite v1.11.0
 	github.com/google/uuid v1.6.0
+	github.com/joho/godotenv v1.5.1
 	github.com/pressly/goose/v3 v3.26.0
 	github.com/rs/cors v1.11.1
 	github.com/sqlc-dev/sqlc v1.30.0
 	github.com/teambition/rrule-go v1.8.2
 	github.com/vektah/gqlparser/v2 v2.5.31
 	golang.org/x/crypto v0.44.0
+	golang.org/x/oauth2 v0.36.0
 )
 
 require (
@@ -49,7 +51,6 @@ require (
 	github.com/jackc/puddle/v2 v2.2.2 // indirect
 	github.com/jinzhu/inflection v1.0.0 // indirect
 	github.com/jinzhu/now v1.1.5 // indirect
-	github.com/joho/godotenv v1.5.1 // indirect
 	github.com/jonboulle/clockwork v0.5.0 // indirect
 	github.com/klauspost/compress v1.18.0 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
@@ -91,7 +92,6 @@ require (
 	golang.org/x/exp v0.0.0-20250620022241-b7579e27df2b // indirect
 	golang.org/x/mod v0.30.0 // indirect
 	golang.org/x/net v0.47.0 // indirect
-	golang.org/x/oauth2 v0.36.0 // indirect
 	golang.org/x/sync v0.18.0 // indirect
 	golang.org/x/sys v0.38.0 // indirect
 	golang.org/x/text v0.31.0 // indirect

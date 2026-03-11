@@ -180,11 +180,13 @@ type UserInput struct {
 type DispenseStatus string
 
 const (
-	DispenseStatusPending DispenseStatus = "PENDING"
-	DispenseStatusTaken   DispenseStatus = "TAKEN"
-	DispenseStatusSkipped DispenseStatus = "SKIPPED"
-	DispenseStatusFailed  DispenseStatus = "FAILED"
-	DispenseStatusMissed  DispenseStatus = "MISSED"
+	DispenseStatusPending   DispenseStatus = "PENDING"
+	DispenseStatusTaken     DispenseStatus = "TAKEN"
+	DispenseStatusSkipped   DispenseStatus = "SKIPPED"
+	DispenseStatusFailed    DispenseStatus = "FAILED"
+	DispenseStatusMissed    DispenseStatus = "MISSED"
+	DispenseStatusEmptySilo DispenseStatus = "EMPTY_SILO"
+	DispenseStatusCupAbsent DispenseStatus = "CUP_ABSENT"
 )
 
 var AllDispenseStatus = []DispenseStatus{
@@ -193,11 +195,13 @@ var AllDispenseStatus = []DispenseStatus{
 	DispenseStatusSkipped,
 	DispenseStatusFailed,
 	DispenseStatusMissed,
+	DispenseStatusEmptySilo,
+	DispenseStatusCupAbsent,
 }
 
 func (e DispenseStatus) IsValid() bool {
 	switch e {
-	case DispenseStatusPending, DispenseStatusTaken, DispenseStatusSkipped, DispenseStatusFailed, DispenseStatusMissed:
+	case DispenseStatusPending, DispenseStatusTaken, DispenseStatusSkipped, DispenseStatusFailed, DispenseStatusMissed, DispenseStatusEmptySilo, DispenseStatusCupAbsent:
 		return true
 	}
 	return false

@@ -30,6 +30,8 @@ const statusOptions: Array<{ label: string; value: string }> = [
   { label: 'Missed', value: 'MISSED' },
   { label: 'Pending', value: 'PENDING' },
   { label: 'Skipped', value: 'SKIPPED' },
+  { label: 'Empty silo', value: 'EMPTY_SILO' },
+  { label: 'Cup absent', value: 'CUP_ABSENT' },
 ];
 
 export const HistoryScreen: React.FC = () => {
@@ -160,13 +162,18 @@ export const HistoryScreen: React.FC = () => {
                 MISSED: { bg: 'rgba(248, 113, 113, 0.15)', text: '#f87171' },
                 FAILED: { bg: 'rgba(248, 113, 113, 0.15)', text: '#f87171' },
                 SKIPPED: { bg: 'rgba(161, 161, 170, 0.15)', text: '#a1a1aa' },
+                EMPTY_SILO: { bg: 'rgba(248, 113, 113, 0.15)', text: '#f87171' },
+                CUP_ABSENT: { bg: 'rgba(251, 191, 36, 0.15)', text: '#facc15' },
               };
               const statusStyle = statusColors[entry.status] || statusColors.PENDING;
               const statusLabel =
                 entry.status === 'TAKEN' ? 'Taken' :
                 entry.status === 'PENDING' ? 'Pending' :
                 entry.status === 'MISSED' ? 'Missed' :
-                entry.status === 'SKIPPED' ? 'Skipped' : 'Failed';
+                entry.status === 'SKIPPED' ? 'Skipped' :
+                entry.status === 'EMPTY_SILO' ? 'Empty silo' :
+                entry.status === 'CUP_ABSENT' ? 'Cup absent' :
+                'Failed';
 
               return (
                 <View
