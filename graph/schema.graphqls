@@ -12,6 +12,8 @@ enum DispenseStatus {
   SKIPPED
   FAILED
   MISSED
+  EMPTY_SILO
+  CUP_ABSENT
 }
 
 type User {

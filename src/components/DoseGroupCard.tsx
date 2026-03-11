@@ -23,6 +23,10 @@ export const DoseGroupCard: React.FC<DoseGroupCardProps> = ({
   const isTaken = card.status === ('TAKEN' as EventStatus);
   const isSkipped = card.status === ('SKIPPED' as EventStatus);
   const isFailed = card.status === ('FAILED' as EventStatus);
+  const isMissed = card.status === 'MISSED';
+  const isEmptySilo = card.status === 'EMPTY_SILO';
+  const isCupAbsent = card.status === 'CUP_ABSENT';
+  
 
   const getStatusColor = () => {
     switch (card.status as string) {
@@ -34,6 +38,11 @@ export const DoseGroupCard: React.FC<DoseGroupCardProps> = ({
         return 'bg-amber-50 border-amber-300';
       case 'MISSED':
         return 'bg-red-50 border-red-200';
+      case 'EMPTY_SILO':
+        return 'bg-red-50 border-red-300';
+      case 'CUP_ABSENT':
+        return 'bg-amber-50 border-amber-300';
+
       default:
         return 'bg-white border-blue-200';
     }
@@ -49,8 +58,27 @@ export const DoseGroupCard: React.FC<DoseGroupCardProps> = ({
         return 'Failed';
       case 'MISSED':
         return 'Missed';
+      case 'EMPTY_SILO':
+        return 'Empty silo';
+      case 'CUP_ABSENT':
+        return 'Cup absent';
       default:
         return card.time;
+    }
+  };
+
+  const getStatusDetail = () => {
+    switch (card.status) {
+      case 'EMPTY_SILO':
+        return 'The dispenser could not release the medication because the silo appears empty.';
+      case 'CUP_ABSENT':
+        return 'No cup was detected at dispense time.';
+      case 'FAILED':
+        return 'The dispenser could not complete this dose.';
+      case 'MISSED':
+        return 'This dose window passed without a recorded dispense.';
+      default:
+        return null;
     }
   };
 
@@ -70,6 +98,11 @@ export const DoseGroupCard: React.FC<DoseGroupCardProps> = ({
           </View>
         ))}
       </View>
+      {getStatusDetail() && (
+        <View className="mb-3">
+          <Text className="text-sm text-gray-600">{getStatusDetail()}</Text>
+        </View>
+      )}  
 
       {isPending && !isLocked && (
         <View className="flex-row space-x-2">
@@ -112,11 +145,10 @@ export const DoseGroupCard: React.FC<DoseGroupCardProps> = ({
         </TouchableOpacity>
       )}
 
-      {(isTaken || isSkipped) && (
+      {(isTaken || isSkipped || isMissed || isFailed || isEmptySilo || isCupAbsent) && (
         <View className="pt-2 border-t border-gray-200">
           <Text className="text-xs text-gray-500">
-            {card.status === 'TAKEN' ? 'Dispensed' : 'Skipped'} at{' '}
-            {DateTime.now().toFormat('h:mm a')}
+            {getStatusText()} at {DateTime.now().toFormat('h:mm a')}
           </Text>
         </View>
       )}

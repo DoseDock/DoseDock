@@ -38,7 +38,7 @@ export type ScheduleItem = {
   qty: number;
 };
 
-export type EventStatus = 'PENDING' | 'TAKEN' | 'SKIPPED' | 'FAILED' | 'MISSED';
+export type EventStatus = 'PENDING' | 'TAKEN' | 'SKIPPED' | 'FAILED' | 'MISSED' | 'EMPTY_SILO' | 'CUP_ABSENT';
 
 export type EventLog = {
   id: string;
