@@ -6,12 +6,15 @@
 #define VIBRATIONPIN2 3
 #define VIBRATIONPIN3 4
 
+#define FSR_PIN A0
+
 #define SLAVE_ADDRESS 0x08
 
 int sensorState = 0, lastState = 0;
 volatile bool newCommand = false;
 volatile byte command = 0;
-volatile byte dispenseStatus = 0;   // 0 = idle, 1 = busy, 2 = success, 3 = error
+volatile byte dispenseStatus = 0;   // 0 = idle, 1 = busy, 2 = success, 3 = error: jam, 4 = error: no cup
+int fsrValue = 0; // force exhibited on platform
 
 
 void setup() {
@@ -25,11 +28,9 @@ void setup() {
   pinMode(LEDPIN, OUTPUT);      
   pinMode(SENSORPIN, INPUT_PULLUP);
 
-  // digitalWrite(SENSORPIN, HIGH); // turn on the pullup
   pinMode(VIBRATIONPIN1, OUTPUT);
   pinMode(VIBRATIONPIN2, OUTPUT);
   pinMode(VIBRATIONPIN3, OUTPUT);
-  // digitalWrite(VIBRATIONPIN, HIGH);
 }
 
 void loop() {
@@ -72,19 +73,27 @@ void requestEvent() {
   Wire.write(dispenseStatus);
 
   // If result was success or error, reset after sending
-  if (dispenseStatus == 2 || dispenseStatus == 3) {
+  if (dispenseStatus == 2 || dispenseStatus == 3 || dispenseStatus == 4) {
     dispenseStatus = 0;
   }
 }
 
 void dispense(int vibrationPin) {
 
+  fsrValue = analogRead(FSR_PIN);
+  if (fsrValue == 0) {
+    Serial.println("Cup not on platform - dispense stopped");
+    dispenseStatus = 4;
+
+    return;
+  }
+
   Serial.println("Motor ON");
   digitalWrite(vibrationPin, HIGH);
   unsigned long startTime = millis();
 
   lastState = digitalRead(SENSORPIN);
-  while (millis() - startTime < 10000) {
+  while (millis() - startTime < 20000) {
 
     sensorState = digitalRead(SENSORPIN);
 
