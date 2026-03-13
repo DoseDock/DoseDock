@@ -145,7 +145,11 @@ def dispense_pill(silo_slot):
             return True
         
         elif status == 3:
-            print("FAILURE")
+            print("FAILURE - TIMEOUT")
+            return False
+        
+        elif status == 4:
+            print("FAILURE - CUP NOT IN PLACE")
             return False
 
         else:
