@@ -54,6 +54,9 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	if q.deleteScheduleItemsByScheduleStmt, err = db.PrepareContext(ctx, deleteScheduleItemsBySchedule); err != nil {
 		return nil, fmt.Errorf("error preparing query DeleteScheduleItemsBySchedule: %w", err)
 	}
+	if q.getActivePatientStmt, err = db.PrepareContext(ctx, getActivePatient); err != nil {
+		return nil, fmt.Errorf("error preparing query GetActivePatient: %w", err)
+	}
 	if q.getDispenseEventStmt, err = db.PrepareContext(ctx, getDispenseEvent); err != nil {
 		return nil, fmt.Errorf("error preparing query GetDispenseEvent: %w", err)
 	}
@@ -98,6 +101,9 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	}
 	if q.listUsersStmt, err = db.PrepareContext(ctx, listUsers); err != nil {
 		return nil, fmt.Errorf("error preparing query ListUsers: %w", err)
+	}
+	if q.setActivePatientStmt, err = db.PrepareContext(ctx, setActivePatient); err != nil {
+		return nil, fmt.Errorf("error preparing query SetActivePatient: %w", err)
 	}
 	if q.updateDispenseEventStmt, err = db.PrepareContext(ctx, updateDispenseEvent); err != nil {
 		return nil, fmt.Errorf("error preparing query UpdateDispenseEvent: %w", err)
@@ -167,6 +173,11 @@ func (q *Queries) Close() error {
 	if q.deleteScheduleItemsByScheduleStmt != nil {
 		if cerr := q.deleteScheduleItemsByScheduleStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing deleteScheduleItemsByScheduleStmt: %w", cerr)
+		}
+	}
+	if q.getActivePatientStmt != nil {
+		if cerr := q.getActivePatientStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing getActivePatientStmt: %w", cerr)
 		}
 	}
 	if q.getDispenseEventStmt != nil {
@@ -244,6 +255,11 @@ func (q *Queries) Close() error {
 			err = fmt.Errorf("error closing listUsersStmt: %w", cerr)
 		}
 	}
+	if q.setActivePatientStmt != nil {
+		if cerr := q.setActivePatientStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing setActivePatientStmt: %w", cerr)
+		}
+	}
 	if q.updateDispenseEventStmt != nil {
 		if cerr := q.updateDispenseEventStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing updateDispenseEventStmt: %w", cerr)
@@ -318,6 +334,7 @@ type Queries struct {
 	createUserStmt                       *sql.Stmt
 	deleteMedicationStmt                 *sql.Stmt
 	deleteScheduleItemsByScheduleStmt    *sql.Stmt
+	getActivePatientStmt                 *sql.Stmt
 	getDispenseEventStmt                 *sql.Stmt
 	getMedicationStmt                    *sql.Stmt
 	getNotificationEventByOccurrenceStmt *sql.Stmt
@@ -333,6 +350,7 @@ type Queries struct {
 	listScheduleItemsByScheduleStmt      *sql.Stmt
 	listSchedulesByPatientStmt           *sql.Stmt
 	listUsersStmt                        *sql.Stmt
+	setActivePatientStmt                 *sql.Stmt
 	updateDispenseEventStmt              *sql.Stmt
 	updateMedicationStmt                 *sql.Stmt
 	updatePatientStmt                    *sql.Stmt
@@ -354,6 +372,7 @@ func (q *Queries) WithTx(tx *sql.Tx) *Queries {
 		createUserStmt:                       q.createUserStmt,
 		deleteMedicationStmt:                 q.deleteMedicationStmt,
 		deleteScheduleItemsByScheduleStmt:    q.deleteScheduleItemsByScheduleStmt,
+		getActivePatientStmt:                 q.getActivePatientStmt,
 		getDispenseEventStmt:                 q.getDispenseEventStmt,
 		getMedicationStmt:                    q.getMedicationStmt,
 		getNotificationEventByOccurrenceStmt: q.getNotificationEventByOccurrenceStmt,
@@ -369,6 +388,7 @@ func (q *Queries) WithTx(tx *sql.Tx) *Queries {
 		listScheduleItemsByScheduleStmt:      q.listScheduleItemsByScheduleStmt,
 		listSchedulesByPatientStmt:           q.listSchedulesByPatientStmt,
 		listUsersStmt:                        q.listUsersStmt,
+		setActivePatientStmt:                 q.setActivePatientStmt,
 		updateDispenseEventStmt:              q.updateDispenseEventStmt,
 		updateMedicationStmt:                 q.updateMedicationStmt,
 		updatePatientStmt:                    q.updatePatientStmt,

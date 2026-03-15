@@ -26,10 +26,43 @@ HEADERS= {
 
 SILO_TO_ARDUINO_BYTE = {0: 1, 1: 2, 2: 3}
 
-QUERY = {
-    "query": '''
-query GetMedicationsDueNow {
-  dueNow(patientId: "627987c9-b849-4fbc-bec2-0794aac86816", windowMinutes: 1) {
+# Cached active patient ID (fetched dynamically from backend)
+PATIENT_ID = None
+
+def get_active_patient():
+    """Fetch the active patient ID from the backend."""
+    global PATIENT_ID
+    query = {
+        "query": '''
+query ActivePatient {
+  activePatient {
+    id
+  }
+}
+'''
+    }
+    try:
+        r = urequests.post(URL, headers=HEADERS, data=ujson.dumps(query))
+        text = r.text
+        r.close()
+        data = ujson.loads(text)
+        patient = data.get("data", {}).get("activePatient")
+        if patient:
+            PATIENT_ID = patient.get("id")
+            print(f"Active patient ID: {PATIENT_ID}")
+            return PATIENT_ID
+        print("No active patient set")
+        return None
+    except Exception as e:
+        print("Failed to get active patient:", e)
+        return None
+
+def build_due_now_query():
+    """Build the dueNow query with dynamic patient ID."""
+    return {
+        "query": '''
+query GetMedicationsDueNow($patientId: ID!, $windowMinutes: Int) {
+  dueNow(patientId: $patientId, windowMinutes: $windowMinutes) {
     schedule {
       id
       title
@@ -46,10 +79,12 @@ query GetMedicationsDueNow {
     }
   }
 }
-'''
-}
-
-PATIENT_ID = "627987c9-b849-4fbc-bec2-0794aac86816"
+''',
+        "variables": {
+            "patientId": PATIENT_ID,
+            "windowMinutes": 1
+        }
+    }
 
 def build_mutation(schedule_id, due_at_iso, acted_at_iso, status):
     """Build the recordDispenseAction mutation with dynamic parameters."""
@@ -158,11 +193,14 @@ def dispense_pill(silo_slot):
 
 def api_call():
     """Query for medications due now."""
+    if not PATIENT_ID:
+        print("No active patient ID - cannot query")
+        return None
     try:
         r = urequests.post(
             URL,
             headers=HEADERS,
-            data=ujson.dumps(QUERY)
+            data=ujson.dumps(build_due_now_query())
         )
         print("Query status code:", r.status_code)
         text = r.text        # read BEFORE closing
@@ -175,6 +213,8 @@ def api_call():
 
 
 wifi_connect()
+print("Fetching active patient...")
+get_active_patient()
 #test_http()
 led.value(1)
 while True:
