@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   View,
   ScrollView,
@@ -6,16 +6,15 @@ import {
   StyleSheet,
   TouchableOpacity,
   ActivityIndicator,
-  TextInput,
-  Alert,
   useWindowDimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors, shadows } from '@theme/colors';
 import { DateTime } from 'luxon';
 import { usePillStore } from '@store/pillStore';
+import { useScheduleStore } from '@store/scheduleStore';
 import { useTodayStore } from '@store/todayStore';
-import type { EventLog, EventStatus } from '@types';
+import type { EventLog } from '@types';
 
 const presets = [
   { label: '7 days', days: 7 },
@@ -39,15 +38,48 @@ export const HistoryScreen: React.FC = () => {
   const isMobile = width < 600;
   const isSmallMobile = width < 400;
   const { pills, loadPills } = usePillStore();
+  const { schedules, loadSchedules } = useScheduleStore();
   const { historyEvents, loadHistoryEvents, isLoading } = useTodayStore();
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [daysBack, setDaysBack] = useState(730);
 
   useEffect(() => {
     loadPills();
+    loadSchedules();
     loadHistoryEvents(daysBack);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [daysBack]);
+
+  // Create a lookup for schedule info
+  const scheduleMap = useMemo(() => {
+    const map = new Map<string, { title: string; medications: string[] }>();
+    for (const schedule of schedules) {
+      const medications = schedule.items.map((item) => {
+        const pill = pills.get(item.pillId);
+        return pill?.label || 'Medication';
+      });
+      map.set(schedule.id, {
+        title: schedule.title || 'Scheduled Dose',
+        medications,
+      });
+    }
+    return map;
+  }, [schedules, pills]);
+
+  // Get medication display for an event
+  const getMedicationInfo = (event: EventLog) => {
+    const info = scheduleMap.get(event.scheduleId);
+    if (info) {
+      return {
+        title: info.medications.join(', ') || 'Medication',
+        subtitle: info.title,
+      };
+    }
+    return {
+      title: 'Medication',
+      subtitle: 'Scheduled Dose',
+    };
+  };
 
   /** Group events by day */
   const orderedHistory = useMemo(() => {
@@ -175,6 +207,8 @@ export const HistoryScreen: React.FC = () => {
                 entry.status === 'CUP_ABSENT' ? 'Cup absent' :
                 'Failed';
 
+              const medInfo = getMedicationInfo(entry);
+
               return (
                 <View
                   key={entry.id}
@@ -182,8 +216,8 @@ export const HistoryScreen: React.FC = () => {
                 >
                   <View style={styles.entryHeader}>
                     <View style={styles.entryTitleRow}>
-                      <Text style={[styles.entryName, isSmallMobile && styles.entryNameSmall]}>
-                        Dose
+                      <Text style={[styles.entryName, isSmallMobile && styles.entryNameSmall]} numberOfLines={1}>
+                        {medInfo.title}
                       </Text>
                       <Text
                         style={[
@@ -198,19 +232,19 @@ export const HistoryScreen: React.FC = () => {
 
                   <View style={[styles.entryMeta, isMobile && styles.entryMetaMobile]}>
                     <Text style={[styles.metaLabel, isSmallMobile && styles.metaLabelSmall]}>
-                      Scheduled:{' '}
+                      Time:{' '}
                       <Text style={styles.metaValue}>
                         {DateTime.fromISO(entry.dueAtISO).toFormat('h:mm a')}
                       </Text>
                     </Text>
-                    <Text style={[styles.metaLabel, isSmallMobile && styles.metaLabelSmall]}>
-                      Acted:{' '}
-                      <Text style={styles.metaValue}>
-                        {entry.actedAtISO
-                          ? DateTime.fromISO(entry.actedAtISO).toFormat('h:mm a')
-                          : '--'}
+                    {entry.actedAtISO && (
+                      <Text style={[styles.metaLabel, isSmallMobile && styles.metaLabelSmall]}>
+                        Acted:{' '}
+                        <Text style={styles.metaValue}>
+                          {DateTime.fromISO(entry.actedAtISO).toFormat('h:mm a')}
+                        </Text>
                       </Text>
-                    </Text>
+                    )}
                   </View>
                 </View>
               );
