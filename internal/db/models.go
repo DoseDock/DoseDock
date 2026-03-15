@@ -8,6 +8,12 @@ import (
 	"database/sql"
 )
 
+type ActivePatient struct {
+	ID        int64  `json:"id"`
+	PatientID string `json:"patient_id"`
+	UpdatedAt string `json:"updated_at"`
+}
+
 type DispenseEvent struct {
 	ID           string         `json:"id"`
 	PatientID    string         `json:"patient_id"`

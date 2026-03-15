@@ -91,6 +91,12 @@ func (r *mutationResolver) CreatePatient(ctx context.Context, input model.Patien
 		return nil, fmt.Errorf("create patient: %w", err)
 	}
 
+	// Automatically set the newly created patient as the active patient
+	if err := r.Queries.SetActivePatient(ctx, record.ID); err != nil {
+		// Log error but don't fail the patient creation
+		fmt.Printf("warning: failed to set active patient: %v\n", err)
+	}
+
 	return r.buildPatientModel(ctx, record)
 }
 
@@ -350,6 +356,22 @@ func (r *mutationResolver) RequestDispense(ctx context.Context, input model.Disp
 	return req, nil
 }
 
+// SetActivePatient is the resolver for the setActivePatient field.
+func (r *mutationResolver) SetActivePatient(ctx context.Context, patientID string) (*model.Patient, error) {
+	// Verify the patient exists
+	record, err := r.Queries.GetPatient(ctx, patientID)
+	if err != nil {
+		return nil, fmt.Errorf("patient not found: %w", err)
+	}
+
+	// Set as active patient
+	if err := r.Queries.SetActivePatient(ctx, patientID); err != nil {
+		return nil, fmt.Errorf("set active patient: %w", err)
+	}
+
+	return r.buildPatientModel(ctx, record)
+}
+
 // Ping is the resolver for the ping field.
 func (r *queryResolver) Ping(ctx context.Context) (string, error) {
 	return "pong", nil
@@ -558,6 +580,25 @@ func (r *queryResolver) DueNow(ctx context.Context, patientID string, windowMinu
 func (r *queryResolver) PendingDispense(ctx context.Context, patientID string) (*model.DispenseRequest, error) {
 	req := pendingDispenseStore.Pop(patientID)
 	return req, nil
+}
+
+// ActivePatient is the resolver for the activePatient field.
+// Returns the currently active patient for firmware to use.
+func (r *queryResolver) ActivePatient(ctx context.Context) (*model.Patient, error) {
+	active, err := r.Queries.GetActivePatient(ctx)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil // No active patient set yet
+		}
+		return nil, fmt.Errorf("get active patient: %w", err)
+	}
+
+	record, err := r.Queries.GetPatient(ctx, active.PatientID)
+	if err != nil {
+		return nil, fmt.Errorf("get patient: %w", err)
+	}
+
+	return r.buildPatientModel(ctx, record)
 }
 
 // Mutation returns MutationResolver implementation.
