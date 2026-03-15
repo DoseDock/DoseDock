@@ -13,8 +13,10 @@
 int sensorState = 0, lastState = 0;
 volatile bool newCommand = false;
 volatile byte command = 0;
-volatile byte dispenseStatus = 0;   // 0 = idle, 1 = busy, 2 = success, 3 = error: jam, 4 = error: no cup
+volatile byte dispenseStatus = 0;   // 0 = idle, 1 = busy, 2 = success, 3 = error: jam, 
+                                    // 4 = error: no cup, 5 = cup on platform, 6 = cup not on platform
 int fsrValue = 0; // force exhibited on platform
+int dispenseMaxTimeMillis = 20000;
 
 
 void setup() {
@@ -54,6 +56,9 @@ void loop() {
         Serial.println("vibration motor 3 activate");
         dispense(VIBRATIONPIN3);
         break;
+      case 4:
+        checkCup();
+        break;
     }
     
   }
@@ -64,7 +69,10 @@ void receiveEvent(int bytes) {
   while (Wire.available()) {
     command = Wire.read();
     newCommand = true;
-    dispenseStatus = 1;   // busy
+    // Only set busy if it's a dispense command, not a cup-check
+    if (command >= 1 && command <= 3) {
+      dispenseStatus = 1;
+    }
     Serial.println(command);
   }
 }
@@ -73,7 +81,7 @@ void requestEvent() {
   Wire.write(dispenseStatus);
 
   // If result was success or error, reset after sending
-  if (dispenseStatus == 2 || dispenseStatus == 3 || dispenseStatus == 4) {
+  if (dispenseStatus != 0 && dispenseStatus != 1) {
     dispenseStatus = 0;
   }
 }
@@ -93,7 +101,7 @@ void dispense(int vibrationPin) {
   unsigned long startTime = millis();
 
   lastState = digitalRead(SENSORPIN);
-  while (millis() - startTime < 20000) {
+  while (millis() - startTime < dispenseMaxTimeMillis) {
 
     sensorState = digitalRead(SENSORPIN);
 
@@ -119,5 +127,18 @@ void dispense(int vibrationPin) {
   Serial.println("Motor OFF");
 
   dispenseStatus = 3;   // error
-  
+}
+
+void checkCup() {
+  fsrValue = analogRead(FSR_PIN);
+  if (fsrValue == 0) {
+    Serial.println("Cup not on platform");
+    dispenseStatus = 6;
+  }
+  else {
+    Serial.println("Cup on platform");
+    dispenseStatus = 5;
+  }
+
+  return;
 }
