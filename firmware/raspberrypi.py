@@ -20,7 +20,7 @@ PASSWORD = '12345678'
 
 URL = "http://172.20.10.3:8081/query"
 
-HEADERS= {
+HEADERS = {
     "Content-Type": "application/json"
 }
 
@@ -28,6 +28,11 @@ SILO_TO_ARDUINO_BYTE = {0: 1, 1: 2, 2: 3}
 
 # Cached active patient ID (fetched dynamically from backend)
 PATIENT_ID = None
+
+# Cup monitoring state
+monitoring_cup = False
+cup_monitor_start = None
+
 
 def get_active_patient():
     """Fetch the active patient ID from the backend."""
@@ -127,20 +132,6 @@ def wifi_connect():
         time.sleep(1)
     print(f"Connected on {wlan.ifconfig()[0]}")
 
-def test_http():
-    print("Testing HTTP...")
-    try:
-        r = urequests.post(
-            URL,
-            headers=HEADERS,
-            data=ujson.dumps(QUERY)
-        )
-        print("Status code:", r.status_code)
-        print("response:", r.text)
-        r.close()
-        print("HTTP test OK")
-    except Exception as e:
-        print("HTTP test FAILED:", e)
 
 def mutation_call(schedule_id, due_at_iso, status):
     """Call the recordDispenseAction mutation."""
@@ -164,29 +155,22 @@ def mutation_call(schedule_id, due_at_iso, status):
 
 def dispense_pill(silo_slot):
     i2c.writeto(slave_address, bytes([silo_slot]))
-    # poll Arduino until result received
     while True:
-
         time.sleep(0.2)
-
         resp = i2c.readfrom(slave_address, 1)
         status = resp[0]
-        
+
         if status == 1:
             print("Arduino busy...")
-
         elif status == 2:
             print("SUCCESS")
             return True
-        
         elif status == 3:
             print("FAILURE - TIMEOUT")
             return False
-        
         elif status == 4:
             print("FAILURE - CUP NOT IN PLACE")
             return False
-
         else:
             print("Idle")
 
@@ -203,27 +187,21 @@ def api_call():
             data=ujson.dumps(build_due_now_query())
         )
         print("Query status code:", r.status_code)
-        text = r.text        # read BEFORE closing
+        text = r.text
         r.close()
         print("Query response OK")
-        return ujson.loads(text)   # parse JSON here so caller gets a dict
+        return ujson.loads(text)
     except Exception as e:
         print("Query FAILED:", e)
         return None
 
 
-wifi_connect()
-print("Fetching active patient...")
-get_active_patient()
-#test_http()
-led.value(1)
-while True:
+def run_dispense_procedure():
     data = api_call()
     if data:
         due = data.get("data", {}).get("dueNow", [])
         if len(due) != 0:
             for slot in due:
-                # Extract schedule info
                 schedule = slot.get("schedule", {})
                 schedule_id = schedule.get("id")
                 due_at_iso = slot.get("dueAtISO")
@@ -232,16 +210,14 @@ while True:
                     print("No schedule_id found, skipping slot")
                     continue
 
-                # Track overall success for this schedule
                 all_dispenses_successful = True
                 total_dispenses = 0
                 successful_dispenses = 0
 
                 print("Processing schedule:", schedule.get("title", "Unknown"))
 
-                # Dispense all medications for this schedule
                 for medication in slot.get("medications", []):
-                    med_name = medication.get("medication", {}).get("name", "Unknown")
+                    med_name = medication.get("medication", {}).get("label", "Unknown")
                     qty = medication.get("qty", 0)
                     silo = medication.get("siloSlot", 0)
 
@@ -258,22 +234,71 @@ while True:
                             all_dispenses_successful = False
                             print(f"  Dispense {count + 1}/{qty} FAILED")
 
-                        # Wait between dispenses
                         time.sleep(10)
 
-                # Determine status and record the dispense event
                 if total_dispenses == 0:
                     print("No medications to dispense for this schedule")
                     continue
 
-                status = "TAKEN" if all_dispenses_successful else "FAILED"
-                print(f"Recording dispense event: {successful_dispenses}/{total_dispenses} successful, status={status}")
+                # Only record FAILED here if dispensing itself failed.
+                # If dispensing succeeded, the cup monitor will record TAKEN or MISSED.
+                if not all_dispenses_successful:
+                    status = "FAILED"
+                    print(f"Recording dispense event: {successful_dispenses}/{total_dispenses} successful, status={status}")
+                    result = mutation_call(schedule_id, due_at_iso, status)
+                    if result:
+                        dispense_data = result.get("data", {}).get("recordDispenseAction", {})
+                        print(f"Dispense event recorded: id={dispense_data.get('id')}, status={dispense_data.get('status')}")
+                    else:
+                        print("Failed to record dispense event")
+                
+                return all_dispenses_successful
+    return False
 
-                result = mutation_call(schedule_id, due_at_iso, status)
-                if result:
-                    dispense_data = result.get("data", {}).get("recordDispenseAction", {})
-                    print(f"Dispense event recorded: id={dispense_data.get('id')}, status={dispense_data.get('status')}")
-                else:
-                    print("Failed to record dispense event")
-    # run every minute
-    utime.sleep_ms(60000)
+
+def check_cup_monitor():
+    """Check cup status each second after a successful dispense."""
+    global monitoring_cup, cup_monitor_start
+
+    if monitoring_cup:
+        elapsed = utime.time() - cup_monitor_start
+
+        if elapsed > 60:
+            print("MEDICATION NOT TAKEN")
+            # TODO: insert mutation_call here with status "MISSED" if your schema supports it
+            monitoring_cup = False
+        else:
+            i2c.writeto(slave_address, bytes([4]))
+            time.sleep(0.1)
+            resp = i2c.readfrom(slave_address, 1)
+            status = resp[0]
+            print(f"  Cup check at {elapsed}s: status={status}")
+
+            if status == 6:
+                print("Medication taken — cup removed!")
+                monitoring_cup = False
+
+
+# --- Startup ---
+wifi_connect()
+print("Fetching active patient...")
+get_active_patient()
+led.value(1)
+
+last_minute = utime.localtime()[4]
+
+while True:
+    current_minute = utime.localtime()[4]
+
+    if current_minute != last_minute:
+        last_minute = current_minute
+        dispense_successful = run_dispense_procedure()
+        if dispense_successful:
+            monitoring_cup = True
+            cup_monitor_start = utime.time()
+        else:
+            print("Dispense had failures — skipping cup monitor")
+
+    check_cup_monitor()
+
+    utime.sleep_ms(1000)
