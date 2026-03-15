@@ -240,17 +240,15 @@ def run_dispense_procedure():
                     print("No medications to dispense for this schedule")
                     continue
 
-                # Only record FAILED here if dispensing itself failed.
-                # If dispensing succeeded, the cup monitor will record TAKEN or MISSED.
-                if not all_dispenses_successful:
-                    status = "FAILED"
-                    print(f"Recording dispense event: {successful_dispenses}/{total_dispenses} successful, status={status}")
-                    result = mutation_call(schedule_id, due_at_iso, status)
-                    if result:
-                        dispense_data = result.get("data", {}).get("recordDispenseAction", {})
-                        print(f"Dispense event recorded: id={dispense_data.get('id')}, status={dispense_data.get('status')}")
-                    else:
-                        print("Failed to record dispense event")
+                status = "TAKEN" if all_dispenses_successful else "FAILED"
+                print(f"Recording dispense event: {successful_dispenses}/{total_dispenses} successful, status={status}")
+
+                result = mutation_call(schedule_id, due_at_iso, status)
+                if result:
+                    dispense_data = result.get("data", {}).get("recordDispenseAction", {})
+                    print(f"Dispense event recorded: id={dispense_data.get('id')}, status={dispense_data.get('status')}")
+                else:
+                    print("Failed to record dispense event")
                 
                 return all_dispenses_successful
     return False
