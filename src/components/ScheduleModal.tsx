@@ -1,6 +1,7 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { View, Text, Modal, TextInput, TouchableOpacity, StyleSheet, ScrollView, useWindowDimensions } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, Modal, TouchableOpacity, StyleSheet, ScrollView, useWindowDimensions } from 'react-native';
 import { colors } from '@theme/colors';
+import { TimePicker } from './TimePicker';
 
 type PillOption = {
   id: string;
@@ -16,7 +17,7 @@ interface ScheduleModalProps {
   onClose: () => void;
   onSave: (schedule: {
     pillId: string;
-    time: string;
+    times: string[];
     frequency: ScheduleFrequency;
   }) => void;
 }
@@ -31,83 +32,62 @@ export const ScheduleModal: React.FC<ScheduleModalProps> = ({
   const { width, height } = useWindowDimensions();
   const isMobile = width < 500;
   const isSmallMobile = width < 380;
-  const [search, setSearch] = useState('');
   const [pillId, setPillId] = useState('');
-  const [time, setTime] = useState('');
+  const [times, setTimes] = useState<string[]>(['09:00']);
   const [frequency, setFrequency] = useState<ScheduleFrequency>('daily');
 
   useEffect(() => {
     if (visible) {
-      setSearch('');
       setPillId('');
-      setTime('');
+      setTimes(['09:00']);
       setFrequency('once');
     }
   }, [visible]);
 
-  // Update search field when pillId changes (to show selected medication name)
-  useEffect(() => {
-    if (pillId) {
-      const selectedPill = pillOptions.find((p) => p.id === pillId);
-      if (selectedPill) {
-        setSearch(selectedPill.label);
-      }
-    }
-  }, [pillId, pillOptions]);
-
-  const filteredOptions = useMemo(() => {
-    const query = search.toLowerCase().trim();
-    return pillOptions.filter((pill) => pill.label.toLowerCase().includes(query));
-  }, [pillOptions, search]);
-
-  // Auto-select medication when search exactly matches a medication name (case-insensitive)
-  useEffect(() => {
-    const trimmedSearch = search.trim();
-    if (trimmedSearch && !pillId) {
-      const exactMatch = pillOptions.find(
-        (pill) => pill.label.toLowerCase().trim() === trimmedSearch.toLowerCase()
-      );
-      if (exactMatch) {
-        setPillId(exactMatch.id);
-      }
-    } else if (!trimmedSearch && pillId) {
-      // Clear selection if search is cleared
-      setPillId('');
-    }
-  }, [search, pillOptions, pillId]);
 
   const handleSave = () => {
     if (!pillId) {
-      if (search.trim()) {
-        alert(
-          `"${search}" is not available for scheduling. Only medications assigned to a silo can be scheduled. Please select a medication from the list below.`
-        );
-      } else {
-        alert('Please select a medication from the list. Only medications assigned to a silo can be scheduled.');
-      }
+      alert('Please select a medication from the list.');
       return;
     }
-    if (!time) {
-      alert('Please specify a time in 24-hour format (HH:MM)');
+    if (times.length === 0) {
+      alert('Please add at least one time');
       return;
     }
 
-    // Validate time format (HH:MM)
+    // Validate all times format (HH:MM)
     const timeRegex = /^([0-1][0-9]|2[0-3]):[0-5][0-9]$/;
-    if (!timeRegex.test(time)) {
-      alert('Please enter time in 24-hour format (HH:MM), e.g., 09:00 or 14:30');
-      return;
+    for (const t of times) {
+      if (!timeRegex.test(t)) {
+        alert(`Invalid time format: ${t}. Please use HH:MM format.`);
+        return;
+      }
     }
 
-    onSave({ pillId, time, frequency });
+    onSave({ pillId, times, frequency });
     onClose();
   };
 
   const handleCancel = () => {
-    setTime('');
-    setSearch('');
+    setTimes(['09:00']);
     setPillId('');
     onClose();
+  };
+
+  const addTime = () => {
+    setTimes([...times, '09:00']);
+  };
+
+  const removeTime = (index: number) => {
+    if (times.length > 1) {
+      setTimes(times.filter((_, i) => i !== index));
+    }
+  };
+
+  const updateTime = (index: number, newTime: string) => {
+    const updated = [...times];
+    updated[index] = newTime;
+    setTimes(updated);
   };
 
   return (
@@ -130,7 +110,7 @@ export const ScheduleModal: React.FC<ScheduleModalProps> = ({
             <View style={styles.field}>
               <Text style={[styles.label, isSmallMobile && styles.labelSmall]}>Scheduled Date</Text>
               <Text style={[styles.dateValue, isSmallMobile && styles.dateValueSmall]}>
-                {new Date(selectedDate).toLocaleDateString('en-US', {
+                {new Date(selectedDate + 'T12:00:00').toLocaleDateString('en-US', {
                   weekday: isSmallMobile ? 'short' : 'long',
                   month: isSmallMobile ? 'short' : 'long',
                   day: 'numeric',
@@ -140,55 +120,36 @@ export const ScheduleModal: React.FC<ScheduleModalProps> = ({
 
             <View style={styles.field}>
               <Text style={[styles.label, isSmallMobile && styles.labelSmall]}>Medication *</Text>
-              <TextInput
-                style={[styles.input, isSmallMobile && styles.inputSmall]}
-                value={search}
-                onChangeText={(text) => {
-                  setSearch(text);
-                  // Clear selection if user is typing and the selected pill is no longer in filtered results
-                  if (pillId) {
-                    const selectedPill = pillOptions.find((p) => p.id === pillId);
-                    if (!selectedPill || !selectedPill.label.toLowerCase().includes(text.toLowerCase())) {
-                      setPillId('');
-                    }
-                  }
-                }}
-                placeholder="Search medications..."
-                placeholderTextColor="#9ca3af"
-              />
-              <View style={styles.optionList}>
-                {filteredOptions.map((pill) => (
-                  <TouchableOpacity
-                    key={pill.id}
-                    style={[
-                      styles.optionButton,
-                      pillId === pill.id && styles.optionButtonActive,
-                    ]}
-                    onPress={() => {
-                      setPillId(pill.id);
-                      setSearch(pill.label);
-                    }}
-                  >
-                    <Text
+              {pillOptions.length === 0 ? (
+                <Text style={styles.emptyText}>
+                  No medications assigned to silos. Please assign medications to silos first in the Device screen.
+                </Text>
+              ) : (
+                <View style={styles.dropdownList}>
+                  {pillOptions.map((pill) => (
+                    <TouchableOpacity
+                      key={pill.id}
                       style={[
-                        styles.optionText,
-                        pillId === pill.id && styles.optionTextActive,
+                        styles.dropdownItem,
+                        pillId === pill.id && styles.dropdownItemActive,
                       ]}
+                      onPress={() => setPillId(pill.id)}
                     >
-                      {pill.label}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-                {filteredOptions.length === 0 && (
-                  <Text style={styles.emptyText}>
-                    {search.trim()
-                      ? `"${search}" not found. Only medications assigned to silos can be scheduled.${pillOptions.length > 0 ? ` Available: ${pillOptions.map(p => p.label).join(', ')}` : ''}`
-                      : pillOptions.length === 0
-                      ? 'No medications assigned to silos. Please assign medications to silos first in the Device screen.'
-                      : 'No medications match your search.'}
-                  </Text>
-                )}
-              </View>
+                      <View style={[styles.radioCircle, pillId === pill.id && styles.radioCircleActive]}>
+                        {pillId === pill.id && <View style={styles.radioInner} />}
+                      </View>
+                      <Text
+                        style={[
+                          styles.dropdownItemText,
+                          pillId === pill.id && styles.dropdownItemTextActive,
+                        ]}
+                      >
+                        {pill.label}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              )}
             </View>
 
             <View style={styles.field}>
@@ -217,15 +178,34 @@ export const ScheduleModal: React.FC<ScheduleModalProps> = ({
             </View>
 
             <View style={styles.field}>
-              <Text style={[styles.label, isSmallMobile && styles.labelSmall]}>Time *</Text>
-              <TextInput
-                style={[styles.input, isSmallMobile && styles.inputSmall]}
-                value={time}
-                onChangeText={setTime}
-                placeholder="HH:MM (e.g., 09:00, 14:30)"
-                placeholderTextColor="#9ca3af"
-              />
-              <Text style={[styles.hint, isSmallMobile && styles.hintSmall]}>24-hour format: HH:MM</Text>
+              <View style={styles.timeLabelRow}>
+                <Text style={[styles.label, isSmallMobile && styles.labelSmall]}>
+                  Time{times.length > 1 ? 's' : ''} *
+                </Text>
+                <TouchableOpacity style={styles.addTimeButton} onPress={addTime}>
+                  <Text style={styles.addTimeButtonText}>+ Add Time</Text>
+                </TouchableOpacity>
+              </View>
+              <Text style={[styles.hint, isSmallMobile && styles.hintSmall, { marginBottom: 12 }]}>
+                {times.length > 1
+                  ? 'Each time creates a separate schedule for this medication'
+                  : 'Tap "+ Add Time" to schedule at multiple times per day'}
+              </Text>
+              {times.map((t, index) => (
+                <View key={index} style={styles.timeRow}>
+                  <View style={styles.timePickerWrapper}>
+                    <TimePicker value={t} onChange={(newTime) => updateTime(index, newTime)} />
+                  </View>
+                  {times.length > 1 && (
+                    <TouchableOpacity
+                      style={styles.removeTimeButton}
+                      onPress={() => removeTime(index)}
+                    >
+                      <Text style={styles.removeTimeButtonText}>Remove</Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+              ))}
             </View>
           </ScrollView>
 
@@ -341,19 +321,49 @@ const styles = StyleSheet.create({
   dateValueSmall: {
     fontSize: 14,
   },
-  input: {
+  dropdownList: {
+    gap: 8,
+  },
+  dropdownItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    borderRadius: 10,
     borderWidth: 1,
     borderColor: colors.border,
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 16,
-    color: colors.textPrimary,
     backgroundColor: colors.surfaceAlt,
+    gap: 12,
   },
-  inputSmall: {
-    padding: 10,
-    fontSize: 14,
-    borderRadius: 6,
+  dropdownItemActive: {
+    borderColor: colors.accent,
+    backgroundColor: colors.surface,
+  },
+  radioCircle: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    borderWidth: 2,
+    borderColor: colors.border,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  radioCircleActive: {
+    borderColor: colors.accent,
+  },
+  radioInner: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: colors.accent,
+  },
+  dropdownItemText: {
+    color: colors.textSecondary,
+    fontSize: 16,
+  },
+  dropdownItemTextActive: {
+    color: colors.textPrimary,
+    fontWeight: '600',
   },
   frequencyRow: {
     flexDirection: 'row',
@@ -381,30 +391,6 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
     fontWeight: '600',
   },
-  optionList: {
-    marginTop: 12,
-    gap: 8,
-  },
-  optionButton: {
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surfaceAlt,
-  },
-  optionButtonActive: {
-    borderColor: colors.accent,
-    backgroundColor: colors.surface,
-  },
-  optionText: {
-    color: colors.textSecondary,
-    fontSize: 15,
-  },
-  optionTextActive: {
-    color: colors.textPrimary,
-    fontWeight: '600',
-  },
   emptyText: {
     color: colors.textSecondary,
     fontSize: 14,
@@ -419,6 +405,45 @@ const styles = StyleSheet.create({
   hintSmall: {
     fontSize: 11,
     marginTop: 3,
+  },
+  timeLabelRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  addTimeButton: {
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    backgroundColor: colors.accent,
+  },
+  addTimeButtonText: {
+    color: 'white',
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  timeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+    gap: 12,
+  },
+  timePickerWrapper: {
+    flex: 1,
+  },
+  removeTimeButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    backgroundColor: colors.surfaceAlt,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  removeTimeButtonText: {
+    color: colors.textSecondary,
+    fontSize: 13,
+    fontWeight: '500',
   },
   footer: {
     flexDirection: 'row',
