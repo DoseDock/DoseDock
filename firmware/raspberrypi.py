@@ -24,7 +24,7 @@ HEADERS = {
     "Content-Type": "application/json"
 }
 
-SILO_TO_ARDUINO_BYTE = {0: 1, 1: 2, 2: 3}
+SILO_TO_ARDUINO_BYTE = {0: 3, 1: 2, 2: 3}
 
 # Cached active patient ID (fetched dynamically from backend)
 PATIENT_ID = None
@@ -32,6 +32,8 @@ PATIENT_ID = None
 # Cup monitoring state
 monitoring_cup = False
 cup_monitor_start = None
+last_schedule_id = None
+last_dispense_time = None
 
 
 def get_active_patient():
@@ -91,27 +93,27 @@ query GetMedicationsDueNow($patientId: ID!, $windowMinutes: Int) {
         }
     }
 
-def build_mutation(schedule_id, due_at_iso, acted_at_iso, status):
-    """Build the recordDispenseAction mutation with dynamic parameters."""
-    return {
-        "query": '''
-mutation recordDispense($patientId: ID!, $scheduleId: ID!, $dueAtISO: String!, $actedAtISO: String!, $status: DispenseStatus!, $actionSource: String!) {
-  recordDispenseAction(patientId: $patientId, scheduleId: $scheduleId, dueAtISO: $dueAtISO, actedAtISO: $actedAtISO, status: $status, actionSource: $actionSource) {
+def build_mutation(patient_id, schedule_id, due_at_iso, acted_at_iso, status="TAKEN", action_source="device"):
+    query = """
+mutation recordDispense($input: DispenseActionInput!) {
+  recordDispenseAction(input: $input) {
     id
     status
     actedAtISO
   }
 }
-''',
-        "variables": {
-            "patientId": PATIENT_ID,
+"""
+    variables = {
+        "input": {
+            "patientId": patient_id,
             "scheduleId": schedule_id,
             "dueAtISO": due_at_iso,
             "actedAtISO": acted_at_iso,
             "status": status,
-            "actionSource": "device"
+            "actionSource": action_source
         }
     }
+    return {"query": query, "variables": variables}
 
 
 def get_iso_timestamp():
@@ -136,7 +138,8 @@ def wifi_connect():
 def mutation_call(schedule_id, due_at_iso, status):
     """Call the recordDispenseAction mutation."""
     acted_at_iso = get_iso_timestamp()
-    mutation = build_mutation(schedule_id, due_at_iso, acted_at_iso, status)
+    mutation = build_mutation(PATIENT_ID, schedule_id, due_at_iso, acted_at_iso, status)
+    print(mutation)
     try:
         r = urequests.post(
             URL,
@@ -197,6 +200,7 @@ def api_call():
 
 
 def run_dispense_procedure():
+    global last_schedule_id, last_dispense_time
     data = api_call()
     if data:
         due = data.get("data", {}).get("dueNow", [])
@@ -220,12 +224,13 @@ def run_dispense_procedure():
                     med_name = medication.get("medication", {}).get("label", "Unknown")
                     qty = medication.get("qty", 0)
                     silo = medication.get("siloSlot", 0)
+                    arduino_silo = SILO_TO_ARDUINO_BYTE[silo]
 
                     print(f"Dispensing {qty}x {med_name} from silo {silo}")
 
                     for count in range(qty):
                         total_dispenses += 1
-                        success = dispense_pill(silo)
+                        success = dispense_pill(arduino_silo)
 
                         if success:
                             successful_dispenses += 1
@@ -249,21 +254,25 @@ def run_dispense_procedure():
                     print(f"Dispense event recorded: id={dispense_data.get('id')}, status={dispense_data.get('status')}")
                 else:
                     print("Failed to record dispense event")
-                
+
+                last_schedule_id = schedule_id
+                last_dispense_time = due_at_iso
+
                 return all_dispenses_successful
     return False
 
 
 def check_cup_monitor():
     """Check cup status each second after a successful dispense."""
-    global monitoring_cup, cup_monitor_start
+    global monitoring_cup, cup_monitor_start, last_schedule_id, last_dispense_time
 
     if monitoring_cup:
         elapsed = utime.time() - cup_monitor_start
 
-        if elapsed > 60:
+        if elapsed > 10:
             print("MEDICATION NOT TAKEN")
-            # TODO: insert mutation_call here with status "MISSED" if your schema supports it
+            # mutation for failure
+            mutation_call(last_schedule_id, last_dispense_time, "MISSED")
             monitoring_cup = False
         else:
             i2c.writeto(slave_address, bytes([4]))
@@ -300,3 +309,4 @@ while True:
     check_cup_monitor()
 
     utime.sleep_ms(1000)
+
