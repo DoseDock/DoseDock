@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"database/sql"
+	"embed"
 	"fmt"
 	"log"
 	"net/http"
@@ -15,12 +16,16 @@ import (
 	"github.com/99designs/gqlgen/graphql/playground"
 	_ "github.com/glebarez/sqlite"
 	"github.com/joho/godotenv"
+	"github.com/pressly/goose/v3"
 	"github.com/rs/cors"
 
 	"pillbox/graph"
 	"pillbox/internal/db"
 	"pillbox/internal/notifications"
 )
+
+//go:embed db/migrations/*.sql
+var embedMigrations embed.FS
 
 func main() {
 	_ = godotenv.Load(".env")
@@ -36,6 +41,16 @@ func main() {
 		log.Fatalf("open database: %v", err)
 	}
 	defer conn.Close()
+
+	// Run embedded migrations on startup
+	goose.SetBaseFS(embedMigrations)
+	if err := goose.SetDialect("sqlite3"); err != nil {
+		log.Fatalf("set goose dialect: %v", err)
+	}
+	if err := goose.Up(conn, "db/migrations"); err != nil {
+		log.Fatalf("run migrations: %v", err)
+	}
+	log.Printf("database migrations applied")
 
 	conn.SetMaxOpenConns(1)
 	conn.SetMaxIdleConns(1)
