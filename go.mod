@@ -1,6 +1,6 @@
 module pillbox
 
-go 1.25.4
+go 1.23
 
 require (
 	github.com/99designs/gqlgen v0.17.84
