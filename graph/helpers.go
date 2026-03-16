@@ -108,3 +108,22 @@ func verifyPassword(hashedPassword, password string) error {
 	}
 	return bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(password))
 }
+
+func buildRefillMessage(firstName string, silo int64, stock int64) string {
+	siloNumber := silo + 1
+
+	if stock <= 0 {
+		return fmt.Sprintf(
+			"Hi %s, Silo #%d has run out of pills. Please refill at your earliest convenience.",
+			firstName,
+			siloNumber,
+		)
+	}
+
+	return fmt.Sprintf(
+		"Hi %s, Silo #%d is running low on pills with %d remaining. Please refill soon.",
+		firstName,
+		siloNumber,
+		stock,
+	)
+}
