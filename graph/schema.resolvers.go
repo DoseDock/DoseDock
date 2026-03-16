@@ -370,29 +370,23 @@ func (r *mutationResolver) RecordDispenseAction(ctx context.Context, input model
 			return nil, fmt.Errorf("load schedule items for stock update: %w", err)
 		}
 
-		// Load patient once
 		patient, err := r.Queries.GetPatient(ctx, input.PatientID)
 		if err != nil {
 			return nil, fmt.Errorf("load patient %s for refill notification: %w", input.PatientID, err)
 		}
 
-		// Load user once (if exists)
-		var user db.User
-		hasUser := false
+		hasPhone := false
+		phoneNumber := ""
+
 		if patient.UserID.Valid {
-			user, err = r.Queries.GetUser(ctx, patient.UserID.String)
+			user, err := r.Queries.GetUser(ctx, patient.UserID.String)
 			if err != nil {
 				return nil, fmt.Errorf("load user %s for refill notification: %w", patient.UserID.String, err)
 			}
-			hasUser = true
-		}
 
-		// Initialize Twilio sender once
-		var sender notifications.Sender
-		if hasUser && user.Phone.Valid && user.Phone.String != "" {
-			sender, err = notifications.NewTwilioSenderFromEnv()
-			if err != nil {
-				return nil, fmt.Errorf("init twilio sender for refill notification: %w", err)
+			if user.Phone.Valid && user.Phone.String != "" {
+				hasPhone = true
+				phoneNumber = user.Phone.String
 			}
 		}
 
@@ -426,8 +420,7 @@ func (r *mutationResolver) RecordDispenseAction(ctx context.Context, input model
 			justEmptied := oldStock > 0 && newStock == 0
 
 			if crossedLowThreshold || justEmptied {
-				if hasUser && user.Phone.Valid && user.Phone.String != "" {
-
+				if hasPhone {
 					silo := int64(0)
 					if medication.CartridgeIndex.Valid {
 						silo = medication.CartridgeIndex.Int64
@@ -435,7 +428,12 @@ func (r *mutationResolver) RecordDispenseAction(ctx context.Context, input model
 
 					message := buildRefillMessage(patient.FirstName, silo, newStock)
 
-					_, err = sender.SendSMS(ctx, user.Phone.String, message)
+					sender, err := notifications.NewTwilioSenderFromEnv()
+					if err != nil {
+						return nil, fmt.Errorf("init twilio sender for refill notification: %w", err)
+					}
+
+					_, err = sender.SendSMS(ctx, phoneNumber, message)
 					if err != nil {
 						return nil, fmt.Errorf("send refill notification: %w", err)
 					}
