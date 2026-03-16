@@ -364,6 +364,58 @@ func (r *mutationResolver) RecordDispenseAction(ctx context.Context, input model
 		shouldDecrementStock = input.Status == model.DispenseStatusTaken
 	}
 
+	if input.Status == model.DispenseStatusMissed ||
+	input.Status == model.DispenseStatusCupAbsent ||
+	input.Status == model.DispenseStatusEmptySilo {
+
+		patient, err := r.Queries.GetPatient(ctx, input.PatientID)
+		if err != nil {
+			return nil, fmt.Errorf("load patient %s for status notification: %w", input.PatientID, err)
+		}
+
+		if patient.UserID.Valid {
+			user, err := r.Queries.GetUser(ctx, patient.UserID.String)
+			if err != nil {
+				return nil, fmt.Errorf("load user %s for status notification: %w", patient.UserID.String, err)
+			}
+
+			if user.Phone.Valid && user.Phone.String != "" {
+				var message string
+
+				switch input.Status {
+				case model.DispenseStatusMissed:
+					message = buildMissedMedicationMessage(patient.FirstName)
+
+				case model.DispenseStatusCupAbsent:
+					message = buildCupAbsentMessage(patient.FirstName)
+
+				case model.DispenseStatusEmptySilo:
+					silo := int64(0)
+
+					items, err := r.Queries.ListScheduleItemsBySchedule(ctx, input.ScheduleID)
+					if err == nil && len(items) > 0 {
+						medication, err := r.Queries.GetMedication(ctx, items[0].MedicationID)
+						if err == nil && medication.CartridgeIndex.Valid {
+							silo = medication.CartridgeIndex.Int64
+						}
+					}
+
+					message = buildEmptySiloMessage(patient.FirstName, silo)
+				}
+
+				sender, err := notifications.NewTwilioSenderFromEnv()
+				if err != nil {
+					return nil, fmt.Errorf("init twilio sender for status notification: %w", err)
+				}
+
+				_, err = sender.SendSMS(ctx, user.Phone.String, message)
+				if err != nil {
+					return nil, fmt.Errorf("send status notification: %w", err)
+				}
+			}
+		}
+	}
+
 	if shouldDecrementStock {
 		items, err := r.Queries.ListScheduleItemsBySchedule(ctx, input.ScheduleID)
 		if err != nil {
