@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"pillbox/graph/model"
 	"pillbox/internal/db"
+	"pillbox/internal/notifications"
 	"time"
 
 	"github.com/google/uuid"
@@ -312,10 +313,20 @@ func (r *mutationResolver) ArchiveSchedule(ctx context.Context, id string) (*mod
 
 // RecordDispenseAction is the resolver for the recordDispenseAction field.
 func (r *mutationResolver) RecordDispenseAction(ctx context.Context, input model.DispenseActionInput) (*model.DispenseEvent, error) {
-	var record db.DispenseEvent
-	var err error
+	var (
+		record                  db.DispenseEvent
+		err                     error
+		shouldDecrementStock    bool
+		previousStatusWasTaken  bool
+	)
 
 	if input.EventID != nil && *input.EventID != "" {
+		existing, err := r.Queries.GetDispenseEvent(ctx, *input.EventID)
+		if err != nil {
+			return nil, fmt.Errorf("load dispense event %s: %w", *input.EventID, err)
+		}
+		previousStatusWasTaken = existing.Status == string(model.DispenseStatusTaken)
+
 		record, err = r.Queries.UpdateDispenseEvent(ctx, db.UpdateDispenseEventParams{
 			PatientID:    input.PatientID,
 			ScheduleID:   input.ScheduleID,
@@ -325,6 +336,11 @@ func (r *mutationResolver) RecordDispenseAction(ctx context.Context, input model
 			ActionSource: nullStringFromPtr(input.ActionSource),
 			ID:           *input.EventID,
 		})
+		if err != nil {
+			return nil, fmt.Errorf("record dispense event: %w", err)
+		}
+
+		shouldDecrementStock = input.Status == model.DispenseStatusTaken && !previousStatusWasTaken
 	} else {
 		record, err = r.Queries.CreateDispenseEvent(ctx, db.CreateDispenseEventParams{
 			ID:           uuid.NewString(),
@@ -335,9 +351,91 @@ func (r *mutationResolver) RecordDispenseAction(ctx context.Context, input model
 			Status:       string(input.Status),
 			ActionSource: nullStringFromPtr(input.ActionSource),
 		})
+		if err != nil {
+			return nil, fmt.Errorf("record dispense event: %w", err)
+		}
+
+		shouldDecrementStock = input.Status == model.DispenseStatusTaken
 	}
-	if err != nil {
-		return nil, fmt.Errorf("record dispense event: %w", err)
+
+	if shouldDecrementStock {
+		items, err := r.Queries.ListScheduleItemsBySchedule(ctx, input.ScheduleID)
+		if err != nil {
+			return nil, fmt.Errorf("load schedule items for stock update: %w", err)
+		}
+
+		// Load patient once
+		patient, err := r.Queries.GetPatient(ctx, input.PatientID)
+		if err != nil {
+			return nil, fmt.Errorf("load patient %s for refill notification: %w", input.PatientID, err)
+		}
+
+		// Load user once (if exists)
+		var user db.User
+		hasUser := false
+		if patient.UserID.Valid {
+			user, err = r.Queries.GetUser(ctx, patient.UserID.String)
+			if err != nil {
+				return nil, fmt.Errorf("load user %s for refill notification: %w", patient.UserID.String, err)
+			}
+			hasUser = true
+		}
+
+		// Initialize Twilio sender once
+		var sender notifications.Sender
+		if hasUser && user.Phone.Valid && user.Phone.String != "" {
+			sender, err = notifications.NewTwilioSenderFromEnv()
+			if err != nil {
+				return nil, fmt.Errorf("init twilio sender for refill notification: %w", err)
+			}
+		}
+
+		for _, item := range items {
+			medication, err := r.Queries.GetMedication(ctx, item.MedicationID)
+			if err != nil {
+				return nil, fmt.Errorf("load medication %s: %w", item.MedicationID, err)
+			}
+
+			oldStock := medication.StockCount
+			newStock := oldStock - item.Qty
+			if newStock < 0 {
+				newStock = 0
+			}
+
+			_, err = r.Queries.UpdateMedication(ctx, db.UpdateMedicationParams{
+				Label:             medication.Label,
+				Color:             medication.Color,
+				StockCount:        newStock,
+				LowStockThreshold: medication.LowStockThreshold,
+				CartridgeIndex:    medication.CartridgeIndex,
+				MaxDailyDose:      medication.MaxDailyDose,
+				ID:                medication.ID,
+			})
+			if err != nil {
+				return nil, fmt.Errorf("update medication stock %s: %w", medication.ID, err)
+			}
+
+			threshold := medication.LowStockThreshold
+			crossedLowThreshold := oldStock > threshold && newStock <= threshold
+			justEmptied := oldStock > 0 && newStock == 0
+
+			if crossedLowThreshold || justEmptied {
+				if hasUser && user.Phone.Valid && user.Phone.String != "" {
+
+					silo := int64(0)
+					if medication.CartridgeIndex.Valid {
+						silo = medication.CartridgeIndex.Int64
+					}
+
+					message := buildRefillMessage(patient.FirstName, silo, newStock)
+
+					_, err = sender.SendSMS(ctx, user.Phone.String, message)
+					if err != nil {
+						return nil, fmt.Errorf("send refill notification: %w", err)
+					}
+				}
+			}
+		}
 	}
 
 	return buildDispenseEvent(record)
@@ -551,6 +649,8 @@ func (r *queryResolver) DueNow(ctx context.Context, patientID string, windowMinu
 
 	return result, nil
 }
+
+
 
 // PendingDispense is the resolver for the pendingDispense field.
 // Returns and clears any pending dispense request for the patient.
