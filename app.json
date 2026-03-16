@@ -6,6 +6,10 @@
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
     "main": "index.js",
+    "web": {
+      "bundler": "metro",
+      "output": "single"
+    },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.pillbox.dispenser",
