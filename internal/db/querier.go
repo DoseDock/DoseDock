@@ -20,6 +20,7 @@ type Querier interface {
 	CreateUser(ctx context.Context, arg CreateUserParams) (User, error)
 	DeleteMedication(ctx context.Context, id string) error
 	DeleteScheduleItemsBySchedule(ctx context.Context, scheduleID string) error
+	GetActivePatient(ctx context.Context) (GetActivePatientRow, error)
 	GetDispenseEvent(ctx context.Context, id string) (DispenseEvent, error)
 	GetMedication(ctx context.Context, id string) (Medication, error)
 	GetNotificationEventByOccurrence(ctx context.Context, arg GetNotificationEventByOccurrenceParams) (NotificationEvent, error)
@@ -35,6 +36,7 @@ type Querier interface {
 	ListScheduleItemsBySchedule(ctx context.Context, scheduleID string) ([]ListScheduleItemsByScheduleRow, error)
 	ListSchedulesByPatient(ctx context.Context, patientID string) ([]Schedule, error)
 	ListUsers(ctx context.Context) ([]ListUsersRow, error)
+	SetActivePatient(ctx context.Context, patientID string) error
 	UpdateDispenseEvent(ctx context.Context, arg UpdateDispenseEventParams) (DispenseEvent, error)
 	UpdateMedication(ctx context.Context, arg UpdateMedicationParams) (Medication, error)
 	UpdatePatient(ctx context.Context, arg UpdatePatientParams) (Patient, error)

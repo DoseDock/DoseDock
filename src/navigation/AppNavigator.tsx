@@ -78,11 +78,11 @@ function TabNavigator() {
         },
       })}
     >
-      <Tab.Screen name="Today" component={TodayScreen} options={{ tabBarLabel: 'Today' }} />
       <Tab.Screen name="Schedule" component={ScheduleScreen} options={{ tabBarLabel: 'Schedule' }} />
-      <Tab.Screen name="History" component={HistoryScreen} options={{ tabBarLabel: 'History' }} />
       <Tab.Screen name="Hardware" component={HardwareMappingScreen} options={{ tabBarLabel: 'Device' }} />
-      <Tab.Screen name="Demo" component={DemoScreen} options={{ tabBarLabel: 'Demo' }} />
+    <Tab.Screen name="Today" component={TodayScreen} options={{ tabBarLabel: 'Today' }} />
+    <Tab.Screen name="History" component={HistoryScreen} options={{ tabBarLabel: 'History' }} />
+        {/*<Tab.Screen name="Demo" component={DemoScreen} options={{ tabBarLabel: 'Demo' }} />*/}
       <Tab.Screen name="Settings" component={SettingsScreen} options={{ tabBarLabel: 'Settings' }} />
     </Tab.Navigator>
   );

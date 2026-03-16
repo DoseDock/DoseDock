@@ -117,11 +117,10 @@ export const ScheduleScreen: React.FC = () => {
     setSelectedDate(next.toISODate()!);
   };
 
-  const handleSave = async (payload: { pillId: string; time: string; frequency: 'once' | 'daily' | 'weekly' }) => {
+  const handleSave = async (payload: { pillId: string; times: string[]; frequency: 'once' | 'daily' | 'weekly' }) => {
     try {
       const pill = pills.get(payload.pillId);
       const pillName = pill?.label || 'Medication';
-      const startISO = `${selectedDate}T${payload.time}:00`;
       const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
 
       const rruleMap: Record<string, string> = {
@@ -131,17 +130,29 @@ export const ScheduleScreen: React.FC = () => {
       };
       const freqLabel = payload.frequency === 'once' ? '' : ` (${payload.frequency})`;
 
-      await addSchedule({
-        title: `${pillName} at ${payload.time}${freqLabel}`,
-        timezone: tz,
-        rrule: rruleMap[payload.frequency],
-        startDateISO: DateTime.fromISO(startISO, { zone: tz }).toUTC().toISO()!,
-        lockoutMinutes: 60,
-        items: [{ medicationId: payload.pillId, qty: 1 }],
-      });
+      // Create a separate schedule for each time
+      for (const time of payload.times) {
+        const startISO = `${selectedDate}T${time}:00`;
+        await addSchedule({
+          title: `${pillName} at ${time}${freqLabel}`,
+          timezone: tz,
+          rrule: rruleMap[payload.frequency],
+          startDateISO: DateTime.fromISO(startISO, { zone: tz }).toUTC().toISO()!,
+          lockoutMinutes: 60,
+          items: [{ medicationId: payload.pillId, qty: 1 }],
+        });
+      }
 
       setModalVisible(false);
-      Alert.alert('Scheduled', `${pillName} scheduled at ${payload.time}${freqLabel}.`);
+      const timesText = payload.times.length === 1
+        ? payload.times[0]
+        : payload.times.join(', ');
+      Alert.alert(
+        'Scheduled',
+        payload.times.length === 1
+          ? `${pillName} scheduled at ${timesText}${freqLabel}.`
+          : `${pillName} scheduled at ${payload.times.length} times: ${timesText}${freqLabel}.`
+      );
     } catch (error: any) {
       Alert.alert('Failed', error?.message || 'Could not create schedule.');
     }

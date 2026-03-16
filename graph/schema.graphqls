@@ -193,6 +193,8 @@ type Query {
   dispenseEvents(patientId: ID!, range: DateRangeInput): [DispenseEvent!]!
   dueNow(patientId: ID!, windowMinutes: Int): [DueSchedule!]!
   pendingDispense(patientId: ID!): DispenseRequest
+  # Returns the currently active patient (most recent signup) for firmware use
+  activePatient: Patient
 }
 
 type Mutation {
@@ -207,4 +209,6 @@ type Mutation {
   archiveSchedule(id: ID!): Schedule!
   recordDispenseAction(input: DispenseActionInput!): DispenseEvent!
   requestDispense(input: DispenseRequestInput!): DispenseRequest!
+  # Sets the active patient for firmware to use
+  setActivePatient(patientId: ID!): Patient!
 }
