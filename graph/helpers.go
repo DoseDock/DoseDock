@@ -127,3 +127,26 @@ func buildRefillMessage(firstName string, silo int64, stock int64) string {
 		stock,
 	)
 }
+
+func buildCupAbsentMessage(firstName string) string {
+	return fmt.Sprintf(
+		"Hi %s, DoseDock could not dispense medication because the cup was not in place. Please check the device.",
+		firstName,
+	)
+}
+
+func buildMissedMedicationMessage(firstName string) string {
+	return fmt.Sprintf(
+		"Hi %s, a scheduled medication dose was missed. Please check on the patient.",
+		firstName,
+	)
+}
+
+func buildEmptySiloMessage(firstName string, silo int64) string {
+	siloNumber := silo + 1
+	return fmt.Sprintf(
+		"Hi %s, Silo #%d could not dispense medication. Please check the device, the silo could be empty.",
+		firstName,
+		siloNumber,
+	)
+}

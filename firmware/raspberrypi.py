@@ -167,13 +167,13 @@ def dispense_pill(silo_slot):
             print("Arduino busy...")
         elif status == 2:
             print("SUCCESS")
-            return True
+            return "TAKEN"
         elif status == 3:
-            print("FAILURE - TIMEOUT")
-            return False
+            print("FAILURE - EMPTY SILO")
+            return "EMPTY_SILO"
         elif status == 4:
             print("FAILURE - CUP NOT IN PLACE")
-            return False
+            return "CUP_ABSENT"
         else:
             print("Idle")
 
@@ -217,6 +217,7 @@ def run_dispense_procedure():
                 all_dispenses_successful = True
                 total_dispenses = 0
                 successful_dispenses = 0
+                failure_status = "FAILED"
 
                 print("Processing schedule:", schedule.get("title", "Unknown"))
 
@@ -230,14 +231,15 @@ def run_dispense_procedure():
 
                     for count in range(qty):
                         total_dispenses += 1
-                        success = dispense_pill(arduino_silo)
+                        result = dispense_pill(arduino_silo)
 
-                        if success:
+                        if result == "TAKEN":
                             successful_dispenses += 1
                             print(f"  Dispense {count + 1}/{qty} successful")
                         else:
                             all_dispenses_successful = False
-                            print(f"  Dispense {count + 1}/{qty} FAILED")
+                            print(f"  Dispense {count + 1}/{qty} failed with status={result}")
+                            failure_status = result
 
                         time.sleep(10)
 
@@ -245,7 +247,7 @@ def run_dispense_procedure():
                     print("No medications to dispense for this schedule")
                     continue
 
-                status = "TAKEN" if all_dispenses_successful else "FAILED"
+                status = "TAKEN" if all_dispenses_successful else failure_status
                 print(f"Recording dispense event: {successful_dispenses}/{total_dispenses} successful, status={status}")
 
                 result = mutation_call(schedule_id, due_at_iso, status)
