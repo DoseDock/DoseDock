@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useCallback } from 'react';
-import { View, Text, ScrollView, StyleSheet, useWindowDimensions } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, useWindowDimensions, Platform } from 'react-native';
 import { colors } from '@theme/colors';
 
 const ITEM_HEIGHT = 40;
@@ -25,6 +25,8 @@ const WheelColumn: React.FC<{
 }> = ({ data, selectedIndex, onSelect, width = 60 }) => {
   const scrollRef = useRef<ScrollView>(null);
   const isScrollingRef = useRef(false);
+  const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const lastOffsetRef = useRef(selectedIndex * ITEM_HEIGHT);
 
   useEffect(() => {
     if (!isScrollingRef.current && scrollRef.current) {
@@ -35,10 +37,17 @@ const WheelColumn: React.FC<{
     }
   }, [selectedIndex]);
 
-  const handleScrollEnd = useCallback(
-    (event: any) => {
-      isScrollingRef.current = false;
-      const offsetY = event.nativeEvent.contentOffset.y;
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (scrollTimeoutRef.current) {
+        clearTimeout(scrollTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  const snapToIndex = useCallback(
+    (offsetY: number) => {
       const index = Math.round(offsetY / ITEM_HEIGHT);
       const clampedIndex = Math.max(0, Math.min(index, data.length - 1));
       if (clampedIndex !== selectedIndex) {
@@ -49,13 +58,42 @@ const WheelColumn: React.FC<{
         y: clampedIndex * ITEM_HEIGHT,
         animated: true,
       });
+      isScrollingRef.current = false;
     },
     [data.length, selectedIndex, onSelect]
+  );
+
+  const handleScrollEnd = useCallback(
+    (event: any) => {
+      isScrollingRef.current = false;
+      const offsetY = event.nativeEvent.contentOffset.y;
+      snapToIndex(offsetY);
+    },
+    [snapToIndex]
   );
 
   const handleScrollBegin = useCallback(() => {
     isScrollingRef.current = true;
   }, []);
+
+  // Web-compatible scroll handler with timeout-based end detection
+  const handleScroll = useCallback(
+    (event: any) => {
+      const offsetY = event.nativeEvent.contentOffset.y;
+      lastOffsetRef.current = offsetY;
+
+      // On web, use timeout to detect scroll end
+      if (Platform.OS === 'web') {
+        if (scrollTimeoutRef.current) {
+          clearTimeout(scrollTimeoutRef.current);
+        }
+        scrollTimeoutRef.current = setTimeout(() => {
+          snapToIndex(lastOffsetRef.current);
+        }, 150);
+      }
+    },
+    [snapToIndex]
+  );
 
   return (
     <View style={[styles.wheelContainer, { width }]}>
@@ -65,10 +103,12 @@ const WheelColumn: React.FC<{
         snapToInterval={ITEM_HEIGHT}
         decelerationRate="fast"
         onScrollBeginDrag={handleScrollBegin}
+        onScroll={handleScroll}
+        scrollEventThrottle={16}
         onMomentumScrollEnd={handleScrollEnd}
         onScrollEndDrag={(e) => {
-          // If no momentum, handle end here
-          if (e.nativeEvent.velocity?.y === 0) {
+          // If no momentum, handle end here (native only)
+          if (Platform.OS !== 'web' && e.nativeEvent.velocity?.y === 0) {
             handleScrollEnd(e);
           }
         }}
