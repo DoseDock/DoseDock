@@ -337,7 +337,7 @@ export const SignupScreen: React.FC = () => {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <ScrollView contentContainerStyle={styles.content}>
-        <Text style={styles.title}>Welcome to PillBox</Text>
+        <Text style={styles.title}>Welcome to DoseDock</Text>
         <Text style={styles.subtitle}>
           {mode === 'login' ? 'Log in to access your patient profiles.' : 'Sign up to start managing medications.'}
         </Text>
