@@ -1,11 +1,11 @@
 # Build stage
-FROM golang:1.23-alpine AS builder
+FROM golang:1.22-alpine AS builder
 
 WORKDIR /app
 
-# Copy go mod files
+# Copy go mod files and fix version
 COPY go.mod go.sum ./
-RUN go mod download
+RUN sed -i 's/go 1.25.*/go 1.22/' go.mod && go mod download
 
 # Copy source code
 COPY . .
