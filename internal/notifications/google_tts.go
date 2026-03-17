@@ -56,7 +56,7 @@ func (c *GoogleTTSClient) SynthesizeDefaultReminder(ctx context.Context, text st
 			"name":         "en-US-Chirp3-HD-Charon",
 		},
 		"audioConfig": map[string]any{
-			"audioEncoding": "MP3",
+			"audioEncoding": "LINEAR16",
 			"speakingRate":  1.0,
 		},
 	}
@@ -97,6 +97,6 @@ func (c *GoogleTTSClient) SynthesizeDefaultReminder(ctx context.Context, text st
 
 	return &TTSResult{
 		AudioBytes: audioBytes,
-		MimeType:   "audio/mpeg",
+		MimeType:   "audio/wav",
 	}, nil
 }

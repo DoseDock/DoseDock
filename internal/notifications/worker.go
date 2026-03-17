@@ -165,7 +165,7 @@ func (w *Worker) runOnce(ctx context.Context) {
 				if err != nil {
 					log.Printf("notification worker: tts failed for patient=%s schedule=%s: %v", patient.ID, schedule.ID, err)
 				} else {
-					audioPath, err := SaveReminderMP3(patient.ID, schedule.ID, formatDBTime(*dueTime), audioResult.AudioBytes)
+					audioPath, err := SaveReminderWAV(patient.ID, schedule.ID, formatDBTime(*dueTime), audioResult.AudioBytes)
 					if err != nil {
 						log.Printf("notification worker: save audio failed for patient=%s schedule=%s: %v", patient.ID, schedule.ID, err)
 					} else {

@@ -7,13 +7,13 @@ import (
 	"strings"
 )
 
-func SaveReminderMP3(patientID, scheduleID, dueAt string, audio []byte) (string, error) {
+func SaveReminderWAV(patientID, scheduleID, dueAt string, audio []byte) (string, error) {
 	dir := filepath.Join("generated_audio", patientID)
 	if err := os.MkdirAll(dir, 0o755); err != nil {
 		return "", err
 	}
 
-	filename := fmt.Sprintf("%s_%s.mp3", scheduleID, sanitizeFilePart(dueAt))
+	filename := fmt.Sprintf("%s_%s.wav", scheduleID, sanitizeFilePart(dueAt))
 	fullPath := filepath.Join(dir, filename)
 
 	if err := os.WriteFile(fullPath, audio, 0o644); err != nil {
