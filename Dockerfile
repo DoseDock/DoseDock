@@ -3,9 +3,12 @@ FROM golang:1.24-alpine AS builder
 
 WORKDIR /app
 
-# Copy go mod files and fix version
+# Allow Go to auto-download required toolchain
+ENV GOTOOLCHAIN=auto
+
+# Copy go mod files
 COPY go.mod go.sum ./
-RUN sed -i 's/go 1.25.*/go 1.24/' go.mod && go mod download
+RUN go mod download
 
 # Copy source code
 COPY . .
