@@ -2,5 +2,11 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Dark background for mobile safe areas and overscroll */
+html,
+body {
+  background-color: #0F0F12;
+}
+
 
 
