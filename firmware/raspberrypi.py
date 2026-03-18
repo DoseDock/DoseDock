@@ -18,7 +18,8 @@ PASSWORD = '12345678'
 #SSID = 'Foosball'
 #PASSWORD = 'Foos123!'
 
-URL = "http://172.20.10.3:8081/query"
+# URL = "http://172.20.10.3:8081/query"
+URL = "https://dosedock-backend.onrender.com/query"
 
 HEADERS = {
     "Content-Type": "application/json"
