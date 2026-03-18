@@ -12,6 +12,8 @@ import (
 	"time"
 
 	"golang.org/x/oauth2/google"
+	"google.golang.org/api/option"
+	gtransport "google.golang.org/api/transport/http"
 )
 
 type GoogleTTSClient struct {
@@ -30,9 +32,9 @@ func NewGoogleTTSClientFromEnv(ctx context.Context) (*GoogleTTSClient, error) {
 		return nil, fmt.Errorf("missing GOOGLE_CLOUD_PROJECT")
 	}
 
-	client, err := google.DefaultClient(ctx, "https://www.googleapis.com/auth/cloud-platform")
+	client, err := newGoogleHTTPClient(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("create google auth client: %w", err)
+		return nil, err
 	}
 	client.Timeout = 20 * time.Second
 
@@ -40,6 +42,29 @@ func NewGoogleTTSClientFromEnv(ctx context.Context) (*GoogleTTSClient, error) {
 		projectID:  projectID,
 		httpClient: client,
 	}, nil
+}
+
+func newGoogleHTTPClient(ctx context.Context) (*http.Client, error) {
+	const scope = "https://www.googleapis.com/auth/cloud-platform"
+
+	serviceAccountJSON := strings.TrimSpace(os.Getenv("GOOGLE_SERVICE_ACCOUNT_JSON"))
+	if serviceAccountJSON != "" {
+		client, _, err := gtransport.NewClient(
+			ctx,
+			option.WithScopes(scope),
+			option.WithCredentialsJSON([]byte(serviceAccountJSON)),
+		)
+		if err != nil {
+			return nil, fmt.Errorf("create google auth client from GOOGLE_SERVICE_ACCOUNT_JSON: %w", err)
+		}
+		return client, nil
+	}
+
+	client, err := google.DefaultClient(ctx, scope)
+	if err != nil {
+		return nil, fmt.Errorf("create google auth client: %w", err)
+	}
+	return client, nil
 }
 
 func (c *GoogleTTSClient) SynthesizeDefaultReminder(ctx context.Context, text string) (*TTSResult, error) {
@@ -66,7 +91,12 @@ func (c *GoogleTTSClient) SynthesizeDefaultReminder(ctx context.Context, text st
 		return nil, err
 	}
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, "https://texttospeech.googleapis.com/v1/text:synthesize", bytes.NewReader(raw))
+	req, err := http.NewRequestWithContext(
+		ctx,
+		http.MethodPost,
+		"https://texttospeech.googleapis.com/v1/text:synthesize",
+		bytes.NewReader(raw),
+	)
 	if err != nil {
 		return nil, err
 	}
