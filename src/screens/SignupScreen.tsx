@@ -38,7 +38,7 @@ export const SignupScreen: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
-  const [phone, setPhone] = useState ('');
+  const [phone, setPhone] = useState('');
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [timezone, setTimezone] = useState(DEFAULT_TIMEZONE);
@@ -100,38 +100,13 @@ export const SignupScreen: React.FC = () => {
     }
   };
 
-  const handleSignup = async () => {
+  const performSignup = async () => {
     const normalizedEmail = email.trim().toLowerCase();
     const trimmedPassword = password.trim();
     const trimmedFullName = fullName.trim();
     const trimmedPhone = phone.trim();
     const trimmedFirstName = firstName.trim();
     const trimmedLastName = lastName.trim();
-
-    if (!normalizedEmail) {
-      Alert.alert('Email required', 'Enter an email address.');
-      return;
-    }
-    if (!trimmedPassword) {
-      Alert.alert('Password required', 'Enter a password.');
-      return;
-    }
-    if (trimmedPassword.length < 6) {
-      Alert.alert('Password too short', 'Password must be at least 6 characters.');
-      return;
-    }
-    if (!trimmedFullName) {
-      Alert.alert('Name required', 'Enter your full name.');
-      return;
-    }
-    if (!trimmedPhone) {
-      Alert.alert('Phone number required', 'Enter your phone number.');
-      return;
-    }
-    if (!trimmedFirstName || !trimmedLastName) {
-      Alert.alert('Patient name required', 'Enter the patient\'s first and last name.');
-      return;
-    }
 
     setIsSubmitting(true);
     try {
@@ -184,6 +159,57 @@ export const SignupScreen: React.FC = () => {
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleSignup = async () => {
+    const normalizedEmail = email.trim().toLowerCase();
+    const trimmedPassword = password.trim();
+    const trimmedFullName = fullName.trim();
+    const trimmedPhone = phone.trim();
+    const trimmedFirstName = firstName.trim();
+    const trimmedLastName = lastName.trim();
+
+    if (!normalizedEmail) {
+      Alert.alert('Email required', 'Enter an email address.');
+      return;
+    }
+    if (!trimmedPassword) {
+      Alert.alert('Password required', 'Enter a password.');
+      return;
+    }
+    if (trimmedPassword.length < 6) {
+      Alert.alert('Password too short', 'Password must be at least 6 characters.');
+      return;
+    }
+    if (!trimmedFullName) {
+      Alert.alert('Name required', 'Enter your full name.');
+      return;
+    }
+    if (!trimmedPhone) {
+      Alert.alert('Phone number required', 'Enter your phone number.');
+      return;
+    }
+    if (!trimmedFirstName || !trimmedLastName) {
+      Alert.alert('Patient name required', 'Enter the patient\'s first and last name.');
+      return;
+    }
+
+    Alert.alert(
+      'SMS Permission',
+      `Can we send SMS messages to ${trimmedPhone} for medication reminders, refill alerts, and caregiver notifications?`,
+      [
+        {
+          text: 'No',
+          style: 'cancel',
+        },
+        {
+          text: 'Allow',
+          onPress: () => {
+            void performSignup();
+          },
+        },
+      ]
+    );
   };
 
   const handleSelectPatient = (patient: GraphQLPatient) => {
@@ -287,6 +313,7 @@ export const SignupScreen: React.FC = () => {
                 <TextInput
                   nativeID="new-patient-firstName"
                   placeholder="Ava"
+                  placeholderTextColor={colors.textSecondary}
                   style={styles.input}
                   value={firstName}
                   onChangeText={setFirstName}
@@ -298,6 +325,7 @@ export const SignupScreen: React.FC = () => {
                 <TextInput
                   nativeID="new-patient-lastName"
                   placeholder="Stone"
+                  placeholderTextColor={colors.textSecondary}
                   style={styles.input}
                   value={lastName}
                   onChangeText={setLastName}
@@ -310,6 +338,7 @@ export const SignupScreen: React.FC = () => {
               <TextInput
                 nativeID="new-patient-timezone"
                 placeholder="America/New_York"
+                placeholderTextColor={colors.textSecondary}
                 style={styles.input}
                 value={timezone}
                 onChangeText={setTimezone}
@@ -368,6 +397,7 @@ export const SignupScreen: React.FC = () => {
               autoCapitalize="none"
               keyboardType="email-address"
               placeholder="you@example.com"
+              placeholderTextColor={colors.textSecondary}
               style={styles.input}
               value={email}
               onChangeText={setEmail}
@@ -382,6 +412,7 @@ export const SignupScreen: React.FC = () => {
               autoComplete={mode === 'login' ? 'password' : 'password-new'}
               secureTextEntry
               placeholder={mode === 'login' ? 'Enter your password' : 'At least 6 characters'}
+              placeholderTextColor={colors.textSecondary}
               style={styles.input}
               value={password}
               onChangeText={setPassword}
@@ -397,6 +428,7 @@ export const SignupScreen: React.FC = () => {
                   nativeID="signup-fullName"
                   autoComplete="name"
                   placeholder="Your Name"
+                  placeholderTextColor={colors.textSecondary}
                   style={styles.input}
                   value={fullName}
                   onChangeText={setFullName}
@@ -409,6 +441,7 @@ export const SignupScreen: React.FC = () => {
                   nativeID="signup-phone"
                   keyboardType="phone-pad"
                   placeholder="+14165551234"
+                  placeholderTextColor={colors.textSecondary}
                   style={styles.input}
                   value={phone}
                   onChangeText={setPhone}
@@ -428,6 +461,7 @@ export const SignupScreen: React.FC = () => {
                     nativeID="patient-firstName"
                     autoComplete="given-name"
                     placeholder="Ava"
+                    placeholderTextColor={colors.textSecondary}
                     style={styles.input}
                     value={firstName}
                     onChangeText={setFirstName}
@@ -440,6 +474,7 @@ export const SignupScreen: React.FC = () => {
                     nativeID="patient-lastName"
                     autoComplete="family-name"
                     placeholder="Stone"
+                    placeholderTextColor={colors.textSecondary}
                     style={styles.input}
                     value={lastName}
                     onChangeText={setLastName}
@@ -453,6 +488,7 @@ export const SignupScreen: React.FC = () => {
                 <TextInput
                   nativeID="signup-timezone"
                   placeholder="America/New_York"
+                  placeholderTextColor={colors.textSecondary}
                   style={styles.input}
                   value={timezone}
                   onChangeText={setTimezone}
