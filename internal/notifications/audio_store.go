@@ -8,7 +8,7 @@ import (
 )
 
 func SaveReminderWAV(patientID, scheduleID, dueAt string, audio []byte) (string, error) {
-	dir := filepath.Join("generated_audio", patientID)
+	dir := filepath.Join(AudioBaseDir(), patientID)
 	if err := os.MkdirAll(dir, 0o755); err != nil {
 		return "", err
 	}
