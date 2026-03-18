@@ -4,7 +4,6 @@ import network
 import urequests
 import ujson
 import utime
-import os
 
 time.sleep(2)
 i2c = I2C(0, scl=Pin(5), sda=Pin(4), freq=100000)
@@ -21,7 +20,6 @@ PASSWORD = '12345678'
 
 # URL = "http://172.20.10.3:8081/query"
 URL = "https://dosedock-backend.onrender.com/query"
-AUDIO_BASE_URL = "https://dosedock-backend.onrender.com"
 
 HEADERS = {
     "Content-Type": "application/json"
@@ -202,113 +200,6 @@ def api_call():
         return None
 
 
-def get_next_audio():
-    """Fetch the next pending audio file for the active patient."""
-    if not PATIENT_ID:
-        print("No active patient ID - cannot fetch audio")
-        return None
-
-    try:
-        r = urequests.get(f"{AUDIO_BASE_URL}/patients/{PATIENT_ID}/next-audio")
-        status_code = r.status_code
-        text = r.text
-        r.close()
-
-        if status_code == 200:
-            return ujson.loads(text)
-        elif status_code == 404:
-            print("No pending audio")
-            return None
-        else:
-            print("Next audio failed:", status_code, text)
-            return None
-    except Exception as e:
-        print("Failed to get next audio:", e)
-        return None
-
-
-def download_audio_file(audio_url, local_filename):
-    """Download the WAV file locally to the Pico."""
-    try:
-        r = urequests.get(AUDIO_BASE_URL + audio_url)
-        if r.status_code != 200:
-            print("Audio download failed:", r.status_code)
-            r.close()
-            return False
-
-        with open(local_filename, "wb") as f:
-            f.write(r.content)
-
-        r.close()
-        print("Saved audio locally as:", local_filename)
-        return True
-    except Exception as e:
-        print("Failed to download audio:", e)
-        return False
-
-
-def play_audio(local_filename):
-    """Placeholder for playing audio on speaker."""
-    print("Pretending to play audio:", local_filename)
-    time.sleep(3)
-    return True
-
-
-def ack_audio(ack_url):
-    """Acknowledge audio playback so backend can delete the file."""
-    try:
-        r = urequests.post(AUDIO_BASE_URL + ack_url)
-        print("ACK status:", r.status_code)
-        print("ACK response:", r.text)
-        r.close()
-        return True
-    except Exception as e:
-        print("Failed to acknowledge audio:", e)
-        return False
-
-
-def play_due_audio_for_schedule(schedule_id, due_at_iso):
-    """Only play audio if the next pending file matches the schedule currently due now."""
-    audio_data = get_next_audio()
-    if not audio_data:
-        return False
-
-    returned_schedule_id = audio_data.get("schedule_id")
-    returned_due_at = audio_data.get("due_at_utc")
-
-    if returned_schedule_id != schedule_id or returned_due_at != due_at_iso:
-        print("Pending audio does not match current due schedule")
-        print("Expected:", schedule_id, due_at_iso)
-        print("Got:", returned_schedule_id, returned_due_at)
-        return False
-
-    filename = audio_data.get("filename")
-    audio_url = audio_data.get("audio_url")
-    ack_url = audio_data.get("ack_url")
-
-    if not filename or not audio_url or not ack_url:
-        print("Audio response missing fields")
-        return False
-
-    if not download_audio_file(audio_url, filename):
-        return False
-
-    playback_ok = False
-    try:
-        playback_ok = play_audio(filename)
-    finally:
-        try:
-            os.remove(filename)
-        except Exception as e:
-            print("Could not delete local audio file:", e)
-
-    if playback_ok:
-        ack_audio(ack_url)
-        return True
-
-    return False
-
-
 def run_dispense_procedure():
     global last_schedule_id, last_dispense_time
     data = api_call()
@@ -369,9 +260,6 @@ def run_dispense_procedure():
 
                 last_schedule_id = schedule_id
                 last_dispense_time = due_at_iso
-                utime.sleep_ms(10000)
-
-                play_due_audio_for_schedule(schedule_id, due_at_iso)
 
                 return all_dispenses_successful
     return False
