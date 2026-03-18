@@ -90,6 +90,22 @@ func main() {
 	mux.Handle("/", playground.Handler("GraphQL Playground", "/query"))
 	mux.Handle("/query", srv)
 
+	audioHandler := notifications.NewAudioHTTPHandler()
+
+	mux.HandleFunc("/patients/", func(w http.ResponseWriter, r *http.Request) {
+		if strings.HasSuffix(r.URL.Path, "/next-audio") {
+			audioHandler.HandleNextAudio(w, r)
+			return
+		}
+		if strings.Contains(r.URL.Path, "/ack/") {
+			audioHandler.HandleAckAudio(w, r)
+			return
+		}
+		http.NotFound(w, r)
+	})
+
+	mux.HandleFunc("/audio/", audioHandler.HandleServeAudio)
+
 	handlerWithCors := cors.AllowAll().Handler(mux)
 
 	log.Printf("⇨ GraphQL server running on http://localhost:%s/", port)
