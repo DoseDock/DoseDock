@@ -331,8 +331,6 @@ def run_dispense_procedure():
 
                 print("Processing schedule:", schedule.get("title", "Unknown"))
 
-                play_due_audio_for_schedule(schedule_id, due_at_iso)
-
                 for medication in slot.get("medications", []):
                     med_name = medication.get("medication", {}).get("label", "Unknown")
                     qty = medication.get("qty", 0)
@@ -371,6 +369,9 @@ def run_dispense_procedure():
 
                 last_schedule_id = schedule_id
                 last_dispense_time = due_at_iso
+                utime.sleep_ms(10000)
+
+                play_due_audio_for_schedule(schedule_id, due_at_iso)
 
                 return all_dispenses_successful
     return False
