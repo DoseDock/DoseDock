@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   StyleSheet,
   ScrollView,
-  Alert,
   ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -46,22 +45,89 @@ export const SignupScreen: React.FC = () => {
   const [isLoadingPatients, setIsLoadingPatients] = useState(false);
   const [patients, setPatients] = useState<GraphQLPatient[]>([]);
   const [currentUser, setCurrentUser] = useState<SessionUser | null>(null);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [smsConsent, setSmsConsent] = useState(false);
 
   const setUser = useSessionStore((state) => state.setUser);
   const setPatient = useSessionStore((state) => state.setPatient);
 
-  const handleLogin = async () => {
+  const validateLogin = () => {
+    const nextErrors: Record<string, string> = {};
+
     const normalizedEmail = email.trim().toLowerCase();
     const trimmedPassword = password.trim();
 
     if (!normalizedEmail) {
-      Alert.alert('Email required', 'Enter your email address.');
-      return;
+      nextErrors.email = 'Enter your email address.';
     }
     if (!trimmedPassword) {
-      Alert.alert('Password required', 'Enter your password.');
-      return;
+      nextErrors.password = 'Enter your password.';
     }
+
+    setErrors(nextErrors);
+    return Object.keys(nextErrors).length === 0;
+  };
+
+  const validateSignup = () => {
+    const nextErrors: Record<string, string> = {};
+
+    const normalizedEmail = email.trim().toLowerCase();
+    const trimmedPassword = password.trim();
+    const trimmedFullName = fullName.trim();
+    const trimmedPhone = phone.trim();
+    const trimmedFirstName = firstName.trim();
+    const trimmedLastName = lastName.trim();
+
+    if (!normalizedEmail) {
+      nextErrors.email = 'Enter an email address.';
+    }
+    if (!trimmedPassword) {
+      nextErrors.password = 'Enter a password.';
+    } else if (trimmedPassword.length < 6) {
+      nextErrors.password = 'Password must be at least 6 characters.';
+    }
+    if (!trimmedFullName) {
+      nextErrors.fullName = 'Enter your full name.';
+    }
+    if (!trimmedPhone) {
+      nextErrors.phone = 'Enter your phone number.';
+    }
+    if (!trimmedFirstName) {
+      nextErrors.firstName = 'Enter the patient first name.';
+    }
+    if (!trimmedLastName) {
+      nextErrors.lastName = 'Enter the patient last name.';
+    }
+    if (!smsConsent) {
+      nextErrors.smsConsent = 'Please allow SMS notifications to continue.';
+    }
+
+    setErrors(nextErrors);
+    return Object.keys(nextErrors).length === 0;
+  };
+
+  const validateNewPatient = () => {
+    const nextErrors: Record<string, string> = {};
+
+    const trimmedFirstName = firstName.trim();
+    const trimmedLastName = lastName.trim();
+
+    if (!trimmedFirstName) {
+      nextErrors.newPatientFirstName = 'Enter the patient first name.';
+    }
+    if (!trimmedLastName) {
+      nextErrors.newPatientLastName = 'Enter the patient last name.';
+    }
+
+    setErrors(nextErrors);
+    return Object.keys(nextErrors).length === 0;
+  };
+
+  const handleLogin = async () => {
+    if (!validateLogin()) return;
+
+    const normalizedEmail = email.trim().toLowerCase();
+    const trimmedPassword = password.trim();
 
     setIsSubmitting(true);
     try {
@@ -79,9 +145,11 @@ export const SignupScreen: React.FC = () => {
         timezone: user.timezone,
       };
       setUser(sessionUser);
+
       setIsLoadingPatients(true);
       const userPatients = await fetchPatientsForUser(user.id);
       setPatients(userPatients);
+      setErrors({});
 
       if (userPatients.length === 1) {
         const sessionPatient: SessionPatient = {
@@ -93,7 +161,9 @@ export const SignupScreen: React.FC = () => {
         setPatient(sessionPatient);
       }
     } catch (error: any) {
-      Alert.alert('Login failed', error?.message || 'Invalid email or password. Please try again.');
+      setErrors({
+        form: error?.message || 'Invalid email or password. Please try again.',
+      });
     } finally {
       setIsSubmitting(false);
       setIsLoadingPatients(false);
@@ -112,11 +182,10 @@ export const SignupScreen: React.FC = () => {
     try {
       let user = await fetchUserByEmail(normalizedEmail);
       if (user) {
-        Alert.alert(
-          'Account exists',
-          'An account with this email already exists. Please log in instead.',
-          [{ text: 'OK', onPress: () => setMode('login') }]
-        );
+        setErrors({
+          email: 'An account with this email already exists. Please log in instead.',
+        });
+        setMode('login');
         return;
       }
 
@@ -152,64 +221,22 @@ export const SignupScreen: React.FC = () => {
         lastName: patient.lastName,
         timezone: patient.timezone,
       };
+
+      setErrors({});
       setPatient(sessionPatient);
     } catch (error: any) {
       console.error('Signup error:', error);
-      Alert.alert('Signup failed', error?.message || 'Unable to create account. Please try again.');
+      setErrors({
+        form: error?.message || 'Unable to create account. Please try again.',
+      });
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleSignup = async () => {
-    const normalizedEmail = email.trim().toLowerCase();
-    const trimmedPassword = password.trim();
-    const trimmedFullName = fullName.trim();
-    const trimmedPhone = phone.trim();
-    const trimmedFirstName = firstName.trim();
-    const trimmedLastName = lastName.trim();
-
-    if (!normalizedEmail) {
-      Alert.alert('Email required', 'Enter an email address.');
-      return;
-    }
-    if (!trimmedPassword) {
-      Alert.alert('Password required', 'Enter a password.');
-      return;
-    }
-    if (trimmedPassword.length < 6) {
-      Alert.alert('Password too short', 'Password must be at least 6 characters.');
-      return;
-    }
-    if (!trimmedFullName) {
-      Alert.alert('Name required', 'Enter your full name.');
-      return;
-    }
-    if (!trimmedPhone) {
-      Alert.alert('Phone number required', 'Enter your phone number.');
-      return;
-    }
-    if (!trimmedFirstName || !trimmedLastName) {
-      Alert.alert('Patient name required', 'Enter the patient\'s first and last name.');
-      return;
-    }
-
-    Alert.alert(
-      'SMS Permission',
-      `Can we send SMS messages to ${trimmedPhone} for medication reminders, refill alerts, and caregiver notifications?`,
-      [
-        {
-          text: 'No',
-          style: 'cancel',
-        },
-        {
-          text: 'Allow',
-          onPress: () => {
-            void performSignup();
-          },
-        },
-      ]
-    );
+    if (!validateSignup()) return;
+    await performSignup();
   };
 
   const handleSelectPatient = (patient: GraphQLPatient) => {
@@ -224,14 +251,10 @@ export const SignupScreen: React.FC = () => {
 
   const handleCreateNewPatient = async () => {
     if (!currentUser) return;
+    if (!validateNewPatient()) return;
 
     const trimmedFirstName = firstName.trim();
     const trimmedLastName = lastName.trim();
-
-    if (!trimmedFirstName || !trimmedLastName) {
-      Alert.alert('Patient name required', 'Enter the patient\'s first and last name.');
-      return;
-    }
 
     setIsSubmitting(true);
     try {
@@ -245,6 +268,8 @@ export const SignupScreen: React.FC = () => {
       setPatients((prev) => [...prev, patient]);
       setFirstName('');
       setLastName('');
+      setErrors({});
+
       const sessionPatient: SessionPatient = {
         id: patient.id,
         firstName: patient.firstName,
@@ -253,7 +278,9 @@ export const SignupScreen: React.FC = () => {
       };
       setPatient(sessionPatient);
     } catch (error: any) {
-      Alert.alert('Create patient failed', error?.message || 'Unable to create patient.');
+      setErrors({
+        form: error?.message || 'Unable to create patient.',
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -269,6 +296,8 @@ export const SignupScreen: React.FC = () => {
     setTimezone(DEFAULT_TIMEZONE);
     setPatients([]);
     setCurrentUser(null);
+    setErrors({});
+    setSmsConsent(false);
   };
 
   const switchMode = (newMode: Mode) => {
@@ -276,13 +305,13 @@ export const SignupScreen: React.FC = () => {
     resetForm();
   };
 
-  // If user is logged in and has patients, show patient selection
   if (currentUser && patients.length > 0) {
     return (
       <SafeAreaView style={styles.container} edges={['top']}>
         <ScrollView contentContainerStyle={styles.content}>
           <Text style={styles.title}>Select Patient</Text>
           <Text style={styles.subtitle}>Choose a patient to manage medications for.</Text>
+
           <View style={styles.card}>
             <View style={styles.headerRow}>
               <Text style={styles.sectionTitle}>Your Patients</Text>
@@ -307,6 +336,7 @@ export const SignupScreen: React.FC = () => {
             <View style={styles.divider} />
 
             <Text style={styles.sectionTitle}>Add New Patient</Text>
+
             <View style={styles.fieldRow}>
               <View style={styles.fieldHalf}>
                 <Text style={styles.label}>First Name *</Text>
@@ -314,25 +344,47 @@ export const SignupScreen: React.FC = () => {
                   nativeID="new-patient-firstName"
                   placeholder="Ava"
                   placeholderTextColor={colors.textSecondary}
-                  style={styles.input}
+                  style={[styles.input, errors.newPatientFirstName ? styles.inputError : null]}
                   value={firstName}
-                  onChangeText={setFirstName}
+                  onChangeText={(text) => {
+                    setFirstName(text);
+                    setErrors((prev) => ({
+                      ...prev,
+                      newPatientFirstName: '',
+                      form: '',
+                    }));
+                  }}
                   editable={!isSubmitting}
                 />
+                {errors.newPatientFirstName ? (
+                  <Text style={styles.errorText}>{errors.newPatientFirstName}</Text>
+                ) : null}
               </View>
+
               <View style={styles.fieldHalf}>
                 <Text style={styles.label}>Last Name *</Text>
                 <TextInput
                   nativeID="new-patient-lastName"
                   placeholder="Stone"
                   placeholderTextColor={colors.textSecondary}
-                  style={styles.input}
+                  style={[styles.input, errors.newPatientLastName ? styles.inputError : null]}
                   value={lastName}
-                  onChangeText={setLastName}
+                  onChangeText={(text) => {
+                    setLastName(text);
+                    setErrors((prev) => ({
+                      ...prev,
+                      newPatientLastName: '',
+                      form: '',
+                    }));
+                  }}
                   editable={!isSubmitting}
                 />
+                {errors.newPatientLastName ? (
+                  <Text style={styles.errorText}>{errors.newPatientLastName}</Text>
+                ) : null}
               </View>
             </View>
+
             <View style={styles.field}>
               <Text style={styles.label}>Timezone</Text>
               <TextInput
@@ -341,10 +393,16 @@ export const SignupScreen: React.FC = () => {
                 placeholderTextColor={colors.textSecondary}
                 style={styles.input}
                 value={timezone}
-                onChangeText={setTimezone}
+                onChangeText={(text) => {
+                  setTimezone(text);
+                  setErrors((prev) => ({ ...prev, form: '' }));
+                }}
                 editable={!isSubmitting}
               />
             </View>
+
+            {errors.form ? <Text style={styles.formError}>{errors.form}</Text> : null}
+
             <TouchableOpacity
               style={[styles.primaryButton, isSubmitting && styles.disabledButton]}
               onPress={handleCreateNewPatient}
@@ -362,13 +420,14 @@ export const SignupScreen: React.FC = () => {
     );
   }
 
-  // Main login/signup form
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <ScrollView contentContainerStyle={styles.content}>
         <Text style={styles.title}>Welcome to DoseDock</Text>
         <Text style={styles.subtitle}>
-          {mode === 'login' ? 'Log in to access your patient profiles.' : 'Sign up to start managing medications.'}
+          {mode === 'login'
+            ? 'Log in to access your patient profiles.'
+            : 'Sign up to start managing medications.'}
         </Text>
 
         <View style={styles.modeToggle}>
@@ -376,13 +435,18 @@ export const SignupScreen: React.FC = () => {
             style={[styles.modeButton, mode === 'login' && styles.modeButtonActive]}
             onPress={() => switchMode('login')}
           >
-            <Text style={[styles.modeButtonText, mode === 'login' && styles.modeButtonTextActive]}>Log In</Text>
+            <Text style={[styles.modeButtonText, mode === 'login' && styles.modeButtonTextActive]}>
+              Log In
+            </Text>
           </TouchableOpacity>
+
           <TouchableOpacity
             style={[styles.modeButton, mode === 'signup' && styles.modeButtonActive]}
             onPress={() => switchMode('signup')}
           >
-            <Text style={[styles.modeButtonText, mode === 'signup' && styles.modeButtonTextActive]}>Sign Up</Text>
+            <Text style={[styles.modeButtonText, mode === 'signup' && styles.modeButtonTextActive]}>
+              Sign Up
+            </Text>
           </TouchableOpacity>
         </View>
 
@@ -398,11 +462,15 @@ export const SignupScreen: React.FC = () => {
               keyboardType="email-address"
               placeholder="you@example.com"
               placeholderTextColor={colors.textSecondary}
-              style={styles.input}
+              style={[styles.input, errors.email ? styles.inputError : null]}
               value={email}
-              onChangeText={setEmail}
+              onChangeText={(text) => {
+                setEmail(text);
+                setErrors((prev) => ({ ...prev, email: '', form: '' }));
+              }}
               editable={!isSubmitting}
             />
+            {errors.email ? <Text style={styles.errorText}>{errors.email}</Text> : null}
           </View>
 
           <View style={styles.field}>
@@ -413,11 +481,15 @@ export const SignupScreen: React.FC = () => {
               secureTextEntry
               placeholder={mode === 'login' ? 'Enter your password' : 'At least 6 characters'}
               placeholderTextColor={colors.textSecondary}
-              style={styles.input}
+              style={[styles.input, errors.password ? styles.inputError : null]}
               value={password}
-              onChangeText={setPassword}
+              onChangeText={(text) => {
+                setPassword(text);
+                setErrors((prev) => ({ ...prev, password: '', form: '' }));
+              }}
               editable={!isSubmitting}
             />
+            {errors.password ? <Text style={styles.errorText}>{errors.password}</Text> : null}
           </View>
 
           {mode === 'signup' && (
@@ -429,12 +501,17 @@ export const SignupScreen: React.FC = () => {
                   autoComplete="name"
                   placeholder="Your Name"
                   placeholderTextColor={colors.textSecondary}
-                  style={styles.input}
+                  style={[styles.input, errors.fullName ? styles.inputError : null]}
                   value={fullName}
-                  onChangeText={setFullName}
+                  onChangeText={(text) => {
+                    setFullName(text);
+                    setErrors((prev) => ({ ...prev, fullName: '', form: '' }));
+                  }}
                   editable={!isSubmitting}
                 />
+                {errors.fullName ? <Text style={styles.errorText}>{errors.fullName}</Text> : null}
               </View>
+
               <View style={styles.field}>
                 <Text style={styles.label}>Caregiver Phone *</Text>
                 <TextInput
@@ -442,12 +519,36 @@ export const SignupScreen: React.FC = () => {
                   keyboardType="phone-pad"
                   placeholder="+14165551234"
                   placeholderTextColor={colors.textSecondary}
-                  style={styles.input}
+                  style={[styles.input, errors.phone ? styles.inputError : null]}
                   value={phone}
-                  onChangeText={setPhone}
+                  onChangeText={(text) => {
+                    setPhone(text);
+                    setErrors((prev) => ({ ...prev, phone: '', form: '' }));
+                  }}
                   editable={!isSubmitting}
                 />
                 <Text style={styles.hint}>Use full international format for SMS delivery.</Text>
+                {errors.phone ? <Text style={styles.errorText}>{errors.phone}</Text> : null}
+              </View>
+
+              <View style={styles.field}>
+                <TouchableOpacity
+                  style={styles.checkboxRow}
+                  onPress={() => {
+                    setSmsConsent((prev) => !prev);
+                    setErrors((prev) => ({ ...prev, smsConsent: '', form: '' }));
+                  }}
+                  activeOpacity={0.8}
+                >
+                  <View style={[styles.checkbox, smsConsent && styles.checkboxChecked]}>
+                    {smsConsent ? <Text style={styles.checkboxCheck}>✓</Text> : null}
+                  </View>
+                  <Text style={styles.checkboxLabel}>
+                    I agree to receive SMS messages at this phone number for medication reminders,
+                    refill alerts, and caregiver notifications.
+                  </Text>
+                </TouchableOpacity>
+                {errors.smsConsent ? <Text style={styles.errorText}>{errors.smsConsent}</Text> : null}
               </View>
 
               <View style={styles.divider} />
@@ -462,12 +563,17 @@ export const SignupScreen: React.FC = () => {
                     autoComplete="given-name"
                     placeholder="Ava"
                     placeholderTextColor={colors.textSecondary}
-                    style={styles.input}
+                    style={[styles.input, errors.firstName ? styles.inputError : null]}
                     value={firstName}
-                    onChangeText={setFirstName}
+                    onChangeText={(text) => {
+                      setFirstName(text);
+                      setErrors((prev) => ({ ...prev, firstName: '', form: '' }));
+                    }}
                     editable={!isSubmitting}
                   />
+                  {errors.firstName ? <Text style={styles.errorText}>{errors.firstName}</Text> : null}
                 </View>
+
                 <View style={styles.fieldHalf}>
                   <Text style={styles.label}>Patient Last Name *</Text>
                   <TextInput
@@ -475,11 +581,15 @@ export const SignupScreen: React.FC = () => {
                     autoComplete="family-name"
                     placeholder="Stone"
                     placeholderTextColor={colors.textSecondary}
-                    style={styles.input}
+                    style={[styles.input, errors.lastName ? styles.inputError : null]}
                     value={lastName}
-                    onChangeText={setLastName}
+                    onChangeText={(text) => {
+                      setLastName(text);
+                      setErrors((prev) => ({ ...prev, lastName: '', form: '' }));
+                    }}
                     editable={!isSubmitting}
                   />
+                  {errors.lastName ? <Text style={styles.errorText}>{errors.lastName}</Text> : null}
                 </View>
               </View>
 
@@ -491,7 +601,10 @@ export const SignupScreen: React.FC = () => {
                   placeholderTextColor={colors.textSecondary}
                   style={styles.input}
                   value={timezone}
-                  onChangeText={setTimezone}
+                  onChangeText={(text) => {
+                    setTimezone(text);
+                    setErrors((prev) => ({ ...prev, form: '' }));
+                  }}
                   editable={!isSubmitting}
                 />
                 <Text style={styles.hint}>Defaults to your browser timezone if left empty.</Text>
@@ -499,15 +612,19 @@ export const SignupScreen: React.FC = () => {
             </>
           )}
 
+          {errors.form ? <Text style={styles.formError}>{errors.form}</Text> : null}
+
           <TouchableOpacity
             style={[styles.primaryButton, isSubmitting && styles.disabledButton]}
             onPress={mode === 'login' ? handleLogin : handleSignup}
-            disabled={isSubmitting}
+            disabled={isSubmitting || isLoadingPatients}
           >
-            {isSubmitting ? (
+            {isSubmitting || isLoadingPatients ? (
               <ActivityIndicator color="#fff" />
             ) : (
-              <Text style={styles.primaryButtonText}>{mode === 'login' ? 'Log In' : 'Sign Up & Continue'}</Text>
+              <Text style={styles.primaryButtonText}>
+                {mode === 'login' ? 'Log In' : 'Sign Up & Continue'}
+              </Text>
             )}
           </TouchableOpacity>
         </View>
@@ -588,6 +705,18 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
     backgroundColor: colors.surfaceAlt,
   },
+  inputError: {
+    borderColor: '#DC2626',
+  },
+  errorText: {
+    fontSize: 12,
+    color: '#DC2626',
+    marginTop: 4,
+  },
+  formError: {
+    fontSize: 13,
+    color: '#DC2626',
+  },
   primaryButton: {
     backgroundColor: colors.accent,
     borderRadius: 12,
@@ -647,5 +776,36 @@ const styles = StyleSheet.create({
   link: {
     color: colors.accent,
     fontSize: 14,
+  },
+  checkboxRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 10,
+  },
+  checkbox: {
+    width: 20,
+    height: 20,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    borderRadius: 6,
+    marginTop: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.surfaceAlt,
+  },
+  checkboxChecked: {
+    backgroundColor: colors.accent,
+    borderColor: colors.accent,
+  },
+  checkboxCheck: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  checkboxLabel: {
+    flex: 1,
+    fontSize: 14,
+    color: colors.textSecondary,
+    lineHeight: 20,
   },
 });
