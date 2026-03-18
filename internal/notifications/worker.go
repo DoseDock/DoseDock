@@ -14,16 +14,18 @@ import (
 	"pillbox/internal/db"
 )
 
+const fallbackTimezone = "America/Toronto"
+
 type Worker struct {
-	queries *db.Queries
-	sender  *TwilioSender
+	queries   *db.Queries
+	sender    *TwilioSender
 	ttsClient *GoogleTTSClient
 }
 
 func NewWorker(queries *db.Queries, sender *TwilioSender, ttsClient *GoogleTTSClient) *Worker {
 	return &Worker{
-		queries: queries,
-		sender:  sender,
+		queries:   queries,
+		sender:    sender,
 		ttsClient: ttsClient,
 	}
 }
@@ -66,6 +68,8 @@ func (w *Worker) runOnce(ctx context.Context) {
 			continue
 		}
 
+		loc := patientLocation(patient.Timezone)
+
 		schedules, err := w.queries.ListSchedulesByPatient(ctx, patient.ID)
 		if err != nil {
 			log.Printf("notification worker: list schedules for patient %s: %v", patient.ID, err)
@@ -77,21 +81,23 @@ func (w *Worker) runOnce(ctx context.Context) {
 				continue
 			}
 
-			startDate, err := parseDBTime(schedule.StartDateIso)
+			startDate, err := parseDBTime(schedule.StartDateIso, loc)
 			if err != nil {
 				log.Printf("notification worker: parse start date for schedule %s: %v", schedule.ID, err)
 				continue
 			}
 
 			var endDate *time.Time
-			if schedule.EndDateIso.Valid {
-				parsed, err := parseDBTime(schedule.EndDateIso.String)
-				if err == nil {
-					endDate = &parsed
+			if schedule.EndDateIso.Valid && strings.TrimSpace(schedule.EndDateIso.String) != "" {
+				parsed, err := parseDBTime(schedule.EndDateIso.String, loc)
+				if err != nil {
+					log.Printf("notification worker: parse end date for schedule %s: %v", schedule.ID, err)
+					continue
 				}
+				endDate = &parsed
 			}
 
-			dueTime, err := isScheduleDueNow(schedule.Rrule, startDate, endDate, 1)
+			dueTime, err := isScheduleDueNow(schedule.Rrule, startDate, endDate, 1, loc)
 			if err != nil {
 				log.Printf("notification worker: evaluate due schedule %s: %v", schedule.ID, err)
 				continue
@@ -125,7 +131,7 @@ func (w *Worker) runOnce(ctx context.Context) {
 			}
 
 			meds := strings.Join(medParts, ", ")
-			localDue := dueTime.In(time.Local).Format("3:04 PM")
+			localDue := dueTime.In(loc).Format("3:04 PM")
 			message := fmt.Sprintf(
 				"Hi %s, this is your DoseDock reminder to take your %s at %s.",
 				patient.FirstName,
@@ -133,7 +139,16 @@ func (w *Worker) runOnce(ctx context.Context) {
 				localDue,
 			)
 
-			log.Printf("notification worker: sending sms to %s for patient=%s schedule=%s", user.Phone.String, patient.ID, schedule.ID)
+			log.Printf(
+				"notification worker: sending sms to %s for patient=%s schedule=%s due_local=%s due_utc=%s tz=%s",
+				user.Phone.String,
+				patient.ID,
+				schedule.ID,
+				dueTime.In(loc).Format(time.RFC3339),
+				dueTime.UTC().Format(time.RFC3339),
+				loc.String(),
+			)
+
 			providerID, sendErr := w.sender.SendSMS(ctx, user.Phone.String, message)
 
 			status := "SENT"
@@ -160,6 +175,7 @@ func (w *Worker) runOnce(ctx context.Context) {
 			if createErr != nil {
 				log.Printf("notification worker: create notification event failed: %v", createErr)
 			}
+
 			if w.ttsClient != nil {
 				audioResult, err := w.ttsClient.SynthesizeDefaultReminder(ctx, message)
 				if err != nil {
@@ -200,19 +216,44 @@ func nullableString(s string) sql.NullString {
 	return sql.NullString{String: s, Valid: true}
 }
 
-func parseDBTime(value string) (time.Time, error) {
-	layouts := []string{
-		time.RFC3339Nano,
-		time.RFC3339,
-		"2006-01-02 15:04:05",
-		"2006-01-02",
+func patientLocation(tz string) *time.Location {
+	name := fallbackTimezone
+	if strings.TrimSpace(tz) != "" {
+		name = strings.TrimSpace(tz)
 	}
+
+	loc, err := time.LoadLocation(name)
+	if err == nil {
+		return loc
+	}
+
+	log.Printf("notification worker: invalid patient timezone %q, falling back to %s: %v", name, fallbackTimezone, err)
+
+	fallbackLoc, fallbackErr := time.LoadLocation(fallbackTimezone)
+	if fallbackErr == nil {
+		return fallbackLoc
+	}
+
+	log.Printf("notification worker: failed to load fallback timezone %s: %v", fallbackTimezone, fallbackErr)
+	return time.UTC
+}
+
+func parseDBTime(value string, loc *time.Location) (time.Time, error) {
 	value = strings.TrimSpace(value)
-	for _, layout := range layouts {
-		if t, err := time.Parse(layout, value); err == nil {
-			return t, nil
-		}
+
+	if t, err := time.Parse(time.RFC3339Nano, value); err == nil {
+		return t, nil
 	}
+	if t, err := time.Parse(time.RFC3339, value); err == nil {
+		return t, nil
+	}
+	if t, err := time.ParseInLocation("2006-01-02 15:04:05", value, loc); err == nil {
+		return t, nil
+	}
+	if t, err := time.ParseInLocation("2006-01-02", value, loc); err == nil {
+		return t, nil
+	}
+
 	return time.Time{}, fmt.Errorf("unable to parse time %q", value)
 }
 
@@ -220,8 +261,20 @@ func formatDBTime(t time.Time) string {
 	return t.UTC().Format(time.RFC3339Nano)
 }
 
-func isScheduleDueNow(rruleStr string, startDate time.Time, endDate *time.Time, windowMinutes int) (*time.Time, error) {
-	now := time.Now()
+func isScheduleDueNow(
+	rruleStr string,
+	startDate time.Time,
+	endDate *time.Time,
+	windowMinutes int,
+	loc *time.Location,
+) (*time.Time, error) {
+	now := time.Now().In(loc)
+	startDate = startDate.In(loc)
+
+	if endDate != nil {
+		converted := endDate.In(loc)
+		endDate = &converted
+	}
 
 	if now.Before(startDate) {
 		return nil, nil
@@ -230,7 +283,7 @@ func isScheduleDueNow(rruleStr string, startDate time.Time, endDate *time.Time, 
 		return nil, nil
 	}
 
-	cleanRule := rruleStr
+	cleanRule := strings.TrimSpace(rruleStr)
 	if strings.HasPrefix(strings.ToUpper(cleanRule), "RRULE:") {
 		cleanRule = cleanRule[6:]
 	}
@@ -252,5 +305,6 @@ func isScheduleDueNow(rruleStr string, startDate time.Time, endDate *time.Time, 
 		return nil, nil
 	}
 
-	return &occurrences[0], nil
+	occurrence := occurrences[0].In(loc)
+	return &occurrence, nil
 }
