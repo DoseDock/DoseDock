@@ -7,6 +7,7 @@ import (
 	"log"
 	"strings"
 	"time"
+	_ "time/tzdata"
 
 	"github.com/google/uuid"
 	"github.com/teambition/rrule-go"
