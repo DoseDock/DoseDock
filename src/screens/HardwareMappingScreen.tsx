@@ -137,70 +137,6 @@ export const HardwareMappingScreen: React.FC = () => {
             </TouchableOpacity>
           </View>
         </View>
-        {/* ---- Silo slots ---- */}
-        {Array.from({ length: SILO_COUNT }, (_, i) => {
-          const pill = pillForSilo(i);
-          const isSelected = selectedSilo === i;
-          return (
-            <View
-              key={i}
-              style={[styles.siloCard, isSelected && styles.siloCardActive]}
-            >
-              <View style={styles.siloHeader}>
-                <Text style={styles.siloLabel}>Silo {i}</Text>
-                {pill ? (
-                  <View style={styles.assignedRow}>
-                    <View
-                      style={[styles.colorDot, { backgroundColor: pill.color }]}
-                    />
-                    <Text style={styles.pillName}>{pill.label}</Text>
-                    <Text style={styles.stockText}>
-                      {pill.stockCount} pills
-                    </Text>
-                  </View>
-                ) : (
-                  <Text style={styles.emptyText}>Empty</Text>
-                )}
-              </View>
-
-              <View style={styles.siloActions}>
-                {pill ? (
-                  <>
-                    <TouchableOpacity
-                      style={styles.deleteButton}
-                      onPress={() => handleDelete(pill)}
-                    >
-                      <Text style={styles.deleteButtonText}>Delete</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      style={styles.removeButton}
-                      onPress={() => handleUnassign(pill)}
-                    >
-                      <Text style={styles.removeButtonText}>Remove</Text>
-                    </TouchableOpacity>
-                  </>
-                ) : null}
-
-                <TouchableOpacity
-                  style={[
-                    styles.assignButton,
-                    isSelected && styles.assignButtonActive,
-                  ]}
-                  onPress={() => setSelectedSilo(isSelected ? null : i)}
-                >
-                  <Text
-                    style={[
-                      styles.assignButtonText,
-                      isSelected && styles.assignButtonTextActive,
-                    ]}
-                  >
-                    {isSelected ? 'Cancel' : pill ? 'Change' : 'Assign'}
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          );
-        })}
 
         {/* ---- Medication picker (shown when a silo is selected) ---- */}
         {selectedSilo !== null && (
@@ -278,6 +214,71 @@ export const HardwareMappingScreen: React.FC = () => {
             )}
           </View>
         )}
+
+        {/* ---- Silo slots ---- */}
+        {Array.from({ length: SILO_COUNT }, (_, i) => {
+          const pill = pillForSilo(i);
+          const isSelected = selectedSilo === i;
+          return (
+            <View
+              key={i}
+              style={[styles.siloCard, isSelected && styles.siloCardActive]}
+            >
+              <View style={styles.siloHeader}>
+                <Text style={styles.siloLabel}>Silo {i}</Text>
+                {pill ? (
+                  <View style={styles.assignedRow}>
+                    <View
+                      style={[styles.colorDot, { backgroundColor: pill.color }]}
+                    />
+                    <Text style={styles.pillName}>{pill.label}</Text>
+                    <Text style={styles.stockText}>
+                      {pill.stockCount} pills
+                    </Text>
+                  </View>
+                ) : (
+                  <Text style={styles.emptyText}>Empty</Text>
+                )}
+              </View>
+
+              <View style={styles.siloActions}>
+                {pill ? (
+                  <>
+                    <TouchableOpacity
+                      style={styles.deleteButton}
+                      onPress={() => handleDelete(pill)}
+                    >
+                      <Text style={styles.deleteButtonText}>Delete</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={styles.removeButton}
+                      onPress={() => handleUnassign(pill)}
+                    >
+                      <Text style={styles.removeButtonText}>Remove</Text>
+                    </TouchableOpacity>
+                  </>
+                ) : null}
+
+                <TouchableOpacity
+                  style={[
+                    styles.assignButton,
+                    isSelected && styles.assignButtonActive,
+                  ]}
+                  onPress={() => setSelectedSilo(isSelected ? null : i)}
+                >
+                  <Text
+                    style={[
+                      styles.assignButtonText,
+                      isSelected && styles.assignButtonTextActive,
+                    ]}
+                  >
+                    {isSelected ? 'Cancel' : pill ? 'Change' : 'Assign'}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          );
+        })}
 
         {/* ---- All medications list ---- */}
         {allPillsList.length > 0 && (
