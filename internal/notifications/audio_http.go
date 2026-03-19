@@ -184,7 +184,7 @@ func listPendingAudio(patientID string) ([]pendingAudioFile, error) {
 	}
 
 	sort.Slice(files, func(i, j int) bool {
-		return files[i].DueAtTime.Before(files[j].DueAtTime)
+		return files[i].DueAtTime.After(files[j].DueAtTime)
 	})
 
 	return files, nil
