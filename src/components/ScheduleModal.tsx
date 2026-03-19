@@ -19,6 +19,7 @@ interface ScheduleModalProps {
     pillId: string;
     times: string[];
     frequency: ScheduleFrequency;
+    qty: number;
   }) => void;
 }
 
@@ -35,12 +36,14 @@ export const ScheduleModal: React.FC<ScheduleModalProps> = ({
   const [pillId, setPillId] = useState('');
   const [times, setTimes] = useState<string[]>(['09:00']);
   const [frequency, setFrequency] = useState<ScheduleFrequency>('daily');
+  const [qty, setQty] = useState(1);
 
   useEffect(() => {
     if (visible) {
       setPillId('');
       setTimes(['09:00']);
       setFrequency('once');
+      setQty(1);
     }
   }, [visible]);
 
@@ -64,13 +67,14 @@ export const ScheduleModal: React.FC<ScheduleModalProps> = ({
       }
     }
 
-    onSave({ pillId, times, frequency });
+    onSave({ pillId, times, frequency, qty });
     onClose();
   };
 
   const handleCancel = () => {
     setTimes(['09:00']);
     setPillId('');
+    setQty(1);
     onClose();
   };
 
@@ -150,6 +154,29 @@ export const ScheduleModal: React.FC<ScheduleModalProps> = ({
                   ))}
                 </View>
               )}
+            </View>
+
+            <View style={styles.field}>
+              <Text style={[styles.label, isSmallMobile && styles.labelSmall]}>Quantity (pills per dispense)</Text>
+              <View style={styles.qtyRow}>
+                <TouchableOpacity
+                  style={[styles.qtyButton, qty <= 1 && styles.qtyButtonDisabled]}
+                  onPress={() => setQty(Math.max(1, qty - 1))}
+                  disabled={qty <= 1}
+                >
+                  <Text style={[styles.qtyButtonText, qty <= 1 && styles.qtyButtonTextDisabled]}>-</Text>
+                </TouchableOpacity>
+                <View style={styles.qtyValueContainer}>
+                  <Text style={styles.qtyValue}>{qty}</Text>
+                </View>
+                <TouchableOpacity
+                  style={[styles.qtyButton, qty >= 10 && styles.qtyButtonDisabled]}
+                  onPress={() => setQty(Math.min(10, qty + 1))}
+                  disabled={qty >= 10}
+                >
+                  <Text style={[styles.qtyButtonText, qty >= 10 && styles.qtyButtonTextDisabled]}>+</Text>
+                </TouchableOpacity>
+              </View>
             </View>
 
             <View style={styles.field}>
@@ -444,6 +471,39 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     fontSize: 13,
     fontWeight: '500',
+  },
+  qtyRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+  },
+  qtyButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: colors.accent,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  qtyButtonDisabled: {
+    backgroundColor: colors.surfaceAlt,
+  },
+  qtyButtonText: {
+    color: 'white',
+    fontSize: 24,
+    fontWeight: '600',
+  },
+  qtyButtonTextDisabled: {
+    color: colors.textSecondary,
+  },
+  qtyValueContainer: {
+    minWidth: 50,
+    alignItems: 'center',
+  },
+  qtyValue: {
+    color: colors.textPrimary,
+    fontSize: 24,
+    fontWeight: '700',
   },
   footer: {
     flexDirection: 'row',
