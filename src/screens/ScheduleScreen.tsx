@@ -20,6 +20,8 @@ type ScheduledDose = {
   status: DoseStatus;
 };
 
+const SILO_COUNT = 3;
+
 export const ScheduleScreen: React.FC = () => {
   const { width } = useWindowDimensions();
   const isCompact = width < 768;
@@ -42,7 +44,7 @@ export const ScheduleScreen: React.FC = () => {
   /** Build pill options: all pills with a valid cartridge index (0-2) */
   const pillOptions = useMemo(() => {
     return Array.from(pills.values())
-      .filter((pill) => pill.cartridgeIndex != null && pill.cartridgeIndex >= 0 && pill.cartridgeIndex < 3)
+      .filter((pill) => pill.cartridgeIndex != null && pill.cartridgeIndex >= 0 && pill.cartridgeIndex < SILO_COUNT)
       .map((pill) => ({ id: pill.id, label: pill.label }))
       .sort((a, b) => a.label.localeCompare(b.label));
   }, [pills]);
@@ -68,6 +70,7 @@ export const ScheduleScreen: React.FC = () => {
         const dtstart = new Date(schedule.startDateISO);
         const rule = rrulestr(schedule.rrule, { dtstart });
         const occurrences = rule.between(dayStart.toJSDate(), dayEnd.toJSDate(), true);
+
         for (const occ of occurrences) {
           const doseTime = DateTime.fromJSDate(occ);
           const eventKey = `${schedule.id}|${doseTime.toFormat('yyyy-MM-dd HH:mm')}`;
@@ -179,8 +182,28 @@ export const ScheduleScreen: React.FC = () => {
   const doseLabel = (items: ScheduleItem[]) => {
     return items
       .map((item) => {
-        const pill = pills.get(item.pillId);
-        return pill ? `${item.qty}x ${pill.label}` : `${item.qty}x medication`;
+        const scheduleItem = item as ScheduleItem & {
+          medicationId?: string;
+          pillId?: string;
+          qty: number;
+        };
+
+        const medicationId = scheduleItem.medicationId ?? scheduleItem.pillId;
+        const pill = medicationId ? pills.get(medicationId) : undefined;
+        const silo =
+          pill?.cartridgeIndex != null &&
+          pill.cartridgeIndex >= 0 &&
+          pill.cartridgeIndex < SILO_COUNT
+            ? pill.cartridgeIndex + 1
+            : null;
+
+        if (!pill) {
+          return `${scheduleItem.qty}x medication`;
+        }
+
+        return silo != null
+          ? `${scheduleItem.qty}x ${pill.label} (Silo ${silo})`
+          : `${scheduleItem.qty}x ${pill.label}`;
       })
       .join(', ');
   };

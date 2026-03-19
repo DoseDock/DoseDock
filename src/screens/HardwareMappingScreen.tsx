@@ -39,6 +39,11 @@ export const HardwareMappingScreen: React.FC = () => {
     return Array.from(pills.values()).find((p) => p.cartridgeIndex === index);
   };
 
+  const displaySilo = (index: number | null | undefined): number | null => {
+    if (index == null || index < 0 || index >= SILO_COUNT) return null;
+    return index + 1;
+  };
+
   const unassignedPills = Array.from(pills.values()).filter(
     (p) => p.cartridgeIndex == null || p.cartridgeIndex < 0 || p.cartridgeIndex >= SILO_COUNT
   );
@@ -55,8 +60,9 @@ export const HardwareMappingScreen: React.FC = () => {
 
     await updatePill(pill.id, { cartridgeIndex: selectedSilo });
     await loadPills();
+    const siloLabel = displaySilo(selectedSilo);
     setSelectedSilo(null);
-    Alert.alert('Assigned', `${pill.label} is now in Silo ${selectedSilo}.`);
+    Alert.alert('Assigned', `${pill.label} is now in Silo ${siloLabel}.`);
   };
 
   const handleUnassign = async (pill: Pill) => {
@@ -142,7 +148,7 @@ export const HardwareMappingScreen: React.FC = () => {
         {selectedSilo !== null && (
           <View style={styles.pickerCard}>
             <Text style={styles.pickerTitle}>
-              Select a medication for Silo {selectedSilo}
+              Select a medication for Silo {displaySilo(selectedSilo)}
             </Text>
 
             {unassignedPills.length === 0 &&
@@ -205,7 +211,7 @@ export const HardwareMappingScreen: React.FC = () => {
                       <Text style={styles.pickerRowText}>
                         {pill.label}{' '}
                         <Text style={styles.pickerRowHint}>
-                          (currently Silo {pill.cartridgeIndex})
+                          (currently Silo {displaySilo(pill.cartridgeIndex)})
                         </Text>
                       </Text>
                     </TouchableOpacity>
@@ -225,7 +231,7 @@ export const HardwareMappingScreen: React.FC = () => {
               style={[styles.siloCard, isSelected && styles.siloCardActive]}
             >
               <View style={styles.siloHeader}>
-                <Text style={styles.siloLabel}>Silo {i}</Text>
+                <Text style={styles.siloLabel}>Silo {displaySilo(i)}</Text>
                 {pill ? (
                   <View style={styles.assignedRow}>
                     <View
@@ -290,8 +296,8 @@ export const HardwareMappingScreen: React.FC = () => {
                 <View style={{ flex: 1 }}>
                   <Text style={styles.medListName}>{pill.label}</Text>
                   <Text style={styles.medListMeta}>
-                    {pill.cartridgeIndex != null && pill.cartridgeIndex >= 0 && pill.cartridgeIndex < SILO_COUNT
-                      ? `Silo ${pill.cartridgeIndex}`
+                    {displaySilo(pill.cartridgeIndex) != null
+                      ? `Silo ${displaySilo(pill.cartridgeIndex)}`
                       : 'Unassigned'}
                     {' · '}{pill.stockCount} pills · Max {pill.maxDailyDose}/day
                   </Text>
@@ -383,7 +389,17 @@ export const HardwareMappingScreen: React.FC = () => {
             <View style={styles.previewCard}>
               <Text style={styles.previewLabel}>Preview</Text>
               <View style={styles.assignedRow}>
-                <View style={[styles.colorDot, { backgroundColor: newMedColor, width: 20, height: 20, borderRadius: 10 }]} />
+                <View
+                  style={[
+                    styles.colorDot,
+                    {
+                      backgroundColor: newMedColor,
+                      width: 20,
+                      height: 20,
+                      borderRadius: 10,
+                    },
+                  ]}
+                />
                 <Text style={styles.pillName}>{newMedLabel || 'Medication Name'}</Text>
               </View>
               <Text style={styles.medListMeta}>
@@ -467,7 +483,11 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     backgroundColor: colors.accent,
   },
-  assignButtonActive: { backgroundColor: colors.surfaceAlt, borderWidth: 1, borderColor: colors.border },
+  assignButtonActive: {
+    backgroundColor: colors.surfaceAlt,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
   assignButtonText: { color: '#fff', fontWeight: '600' },
   assignButtonTextActive: { color: colors.textPrimary },
 
@@ -568,5 +588,10 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     gap: 8,
   },
-  previewLabel: { fontSize: 12, fontWeight: '600', color: colors.textSecondary, textTransform: 'uppercase' },
+  previewLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: colors.textSecondary,
+    textTransform: 'uppercase',
+  },
 });
