@@ -1,10 +1,16 @@
 #include <Wire.h>
 
 #define LEDPIN 13
-#define SENSORPIN 5
 #define VIBRATIONPIN1 2
-#define VIBRATIONPIN2 3
-#define VIBRATIONPIN3 4
+#define VIBRATIONPIN2 4
+#define VIBRATIONPIN3 6
+#define SENSORPIN 9
+
+#define RED_LED 10
+#define YELLOW_LED 11
+#define GREEN_LED 12
+
+
 
 #define FSR_PIN A0
 
@@ -46,19 +52,37 @@ void loop() {
         break;
       case 1:
         Serial.println("vibration motor 1 activate");
+        digitalWrite(YELLOW_LED, HIGH);
         dispense(VIBRATIONPIN1);
         break;
       case 2:
         Serial.println("vibration motor 2 activate");
+        digitalWrite(YELLOW_LED, HIGH);
         dispense(VIBRATIONPIN2);
         break;
       case 3:
         Serial.println("vibration motor 3 activate");
+        digitalWrite(YELLOW_LED, HIGH);
         dispense(VIBRATIONPIN3);
         break;
       case 4:
         checkCup();
         break;
+      case 5:
+        // dispense worked
+        digitalWrite(RED_LED, LOW);
+        digitalWrite(YELLOW_LED, LOW);
+        digitalWrite(GREEN_LED, HIGH);
+        delay(15000);
+        digitalWrite(GREEN_LED, LOW);
+      case 6:
+        // dispense worked
+        digitalWrite(RED_LED, HIGH);
+        digitalWrite(YELLOW_LED, LOW);
+        digitalWrite(GREEN_LED, LOW);
+        delay(15000);
+        digitalWrite(RED_LED, LOW);
+
     }
     
   }
@@ -88,25 +112,39 @@ void requestEvent() {
 
 void dispense(int vibrationPin) {
 
+  // error checks 
   fsrValue = analogRead(FSR_PIN);
-  if (fsrValue == 0) {
+  Serial.println(fsrValue);
+  if (fsrValue <= 100) {
     Serial.println("Cup not on platform - dispense stopped");
     dispenseStatus = 4;
 
     return;
   }
 
+  sensorState = digitalRead(SENSORPIN);
+  if (sensorState == 0) {
+    Serial.println("Beam already broken");
+    dispenseStatus = 3; // error: if one pill is blocking the sensor
+    return;
+  }
+
   Serial.println("Motor ON");
+  Serial.println(vibrationPin);
   digitalWrite(vibrationPin, HIGH);
+
   unsigned long startTime = millis();
 
   lastState = digitalRead(SENSORPIN);
   while (millis() - startTime < dispenseMaxTimeMillis) {
 
     sensorState = digitalRead(SENSORPIN);
+    //Serial.println(sensorState);
+
 
     if (!sensorState && lastState) {
       Serial.println("Beam Broken");
+      sensorState = digitalRead(SENSORPIN);
       
       digitalWrite(vibrationPin, LOW);
       Serial.println("Motor OFF");
