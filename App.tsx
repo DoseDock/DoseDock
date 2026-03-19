@@ -2,6 +2,7 @@ import 'react-native-gesture-handler';
 import React, { useEffect } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { Platform } from 'react-native';
+import { Analytics } from '@vercel/analytics/react';
 import { AppNavigator } from './src/navigation/AppNavigator';
 
 export default function App() {
@@ -14,6 +15,7 @@ export default function App() {
     <>
       <StatusBar style="auto" />
       <AppNavigator />
+      <Analytics />
     </>
   );
 }
