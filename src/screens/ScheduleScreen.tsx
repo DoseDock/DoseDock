@@ -117,7 +117,7 @@ export const ScheduleScreen: React.FC = () => {
     setSelectedDate(next.toISODate()!);
   };
 
-  const handleSave = async (payload: { pillId: string; times: string[]; frequency: 'once' | 'daily' | 'weekly' }) => {
+  const handleSave = async (payload: { pillId: string; times: string[]; frequency: 'once' | 'daily' | 'weekly'; qty: number }) => {
     try {
       const pill = pills.get(payload.pillId);
       const pillName = pill?.label || 'Medication';
@@ -139,7 +139,7 @@ export const ScheduleScreen: React.FC = () => {
           rrule: rruleMap[payload.frequency],
           startDateISO: DateTime.fromISO(startISO, { zone: tz }).toUTC().toISO()!,
           lockoutMinutes: 60,
-          items: [{ medicationId: payload.pillId, qty: 1 }],
+          items: [{ medicationId: payload.pillId, qty: payload.qty }],
         });
       }
 
