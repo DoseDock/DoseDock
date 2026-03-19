@@ -83,6 +83,7 @@ func (c *GoogleTTSClient) SynthesizeDefaultReminder(ctx context.Context, text st
 		"audioConfig": map[string]any{
 			"audioEncoding": "LINEAR16",
 			"speakingRate":  1.0,
+			"sampleRateHertz": 8000,
 		},
 	}
 
