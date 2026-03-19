@@ -26,44 +26,49 @@ type pendingAudioFile struct {
 }
 
 func (h *AudioHTTPHandler) HandleNextAudio(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
-		methodNotAllowed(w, http.MethodGet)
-		return
-	}
+    if r.Method != http.MethodGet {
+        methodNotAllowed(w, http.MethodGet)
+        return
+    }
 
-	// /patients/{patientID}/next-audio
-	parts := splitPath(r.URL.Path)
-	if len(parts) != 3 || parts[0] != "patients" || parts[2] != "next-audio" {
-		http.NotFound(w, r)
-		return
-	}
+    parts := splitPath(r.URL.Path)
+    if len(parts) != 3 || parts[0] != "patients" || parts[2] != "next-audio" {
+        http.NotFound(w, r)
+        return
+    }
 
-	patientID := parts[1]
-	files, err := listPendingAudio(patientID)
-	if err != nil {
-		writeJSON(w, http.StatusInternalServerError, map[string]any{
-			"error": err.Error(),
-		})
-		return
-	}
-	if len(files) == 0 {
-		writeJSON(w, http.StatusNotFound, map[string]any{
-			"message":    "No pending audio",
-			"patient_id": patientID,
-		})
-		return
-	}
+    patientID := parts[1]
+    dir := filepath.Join(AudioBaseDir(), patientID)
+    println("HandleNextAudio patientID=", patientID, " dir=", dir)
 
-	next := files[0]
+    files, err := listPendingAudio(patientID)
+    if err != nil {
+        writeJSON(w, http.StatusInternalServerError, map[string]any{
+            "error": err.Error(),
+        })
+        return
+    }
 
-	writeJSON(w, http.StatusOK, map[string]any{
-		"patient_id":  patientID,
-		"schedule_id": next.ScheduleID,
-		"due_at_utc":  next.DueAtUTC,
-		"filename":    next.Filename,
-		"audio_url":   "/audio/" + patientID + "/" + next.Filename,
-		"ack_url":     "/patients/" + patientID + "/ack/" + next.Filename,
-	})
+    println("HandleNextAudio found files=", len(files))
+
+    if len(files) == 0 {
+        writeJSON(w, http.StatusNotFound, map[string]any{
+            "message":    "No pending audio",
+            "patient_id": patientID,
+        })
+        return
+    }
+
+    next := files[0]
+
+    writeJSON(w, http.StatusOK, map[string]any{
+        "patient_id":  patientID,
+        "schedule_id": next.ScheduleID,
+        "due_at_utc":  next.DueAtUTC,
+        "filename":    next.Filename,
+        "audio_url":   "/audio/" + patientID + "/" + next.Filename,
+        "ack_url":     "/patients/" + patientID + "/ack/" + next.Filename,
+    })
 }
 
 func (h *AudioHTTPHandler) HandleServeAudio(w http.ResponseWriter, r *http.Request) {
@@ -148,46 +153,52 @@ func (h *AudioHTTPHandler) HandleAckAudio(w http.ResponseWriter, r *http.Request
 }
 
 func listPendingAudio(patientID string) ([]pendingAudioFile, error) {
-	patientDir := filepath.Join(AudioBaseDir(), patientID)
+    patientDir := filepath.Join(AudioBaseDir(), patientID)
+    println("listPendingAudio reading dir=", patientDir)
 
-	entries, err := os.ReadDir(patientDir)
-	if err != nil {
-		if os.IsNotExist(err) {
-			return []pendingAudioFile{}, nil
-		}
-		return nil, err
-	}
+    entries, err := os.ReadDir(patientDir)
+    if err != nil {
+        println("listPendingAudio read error=", err.Error())
+        if os.IsNotExist(err) {
+            return []pendingAudioFile{}, nil
+        }
+        return nil, err
+    }
 
-	var files []pendingAudioFile
-	for _, entry := range entries {
-		if entry.IsDir() {
-			continue
-		}
+    var files []pendingAudioFile
+    for _, entry := range entries {
+        if entry.IsDir() {
+            continue
+        }
 
-		name := entry.Name()
-		if !strings.HasSuffix(strings.ToLower(name), ".wav") {
-			continue
-		}
+        name := entry.Name()
+        println("listPendingAudio saw file=", name)
 
-		scheduleID, dueAtUTC, dueAtTime, err := parseAudioFilename(name)
-		if err != nil {
-			continue
-		}
+        if !strings.HasSuffix(strings.ToLower(name), ".wav") {
+            println("skipping non-wav=", name)
+            continue
+        }
 
-		files = append(files, pendingAudioFile{
-			Filename:     name,
-			ScheduleID:   scheduleID,
-			DueAtUTC:     dueAtUTC,
-			DueAtTime:    dueAtTime,
-			AbsolutePath: filepath.Join(patientDir, name),
-		})
-	}
+        scheduleID, dueAtUTC, dueAtTime, err := parseAudioFilename(name)
+        if err != nil {
+            println("parseAudioFilename failed for", name, " err=", err.Error())
+            continue
+        }
 
-	sort.Slice(files, func(i, j int) bool {
-		return files[i].DueAtTime.After(files[j].DueAtTime)
-	})
+        files = append(files, pendingAudioFile{
+            Filename:     name,
+            ScheduleID:   scheduleID,
+            DueAtUTC:     dueAtUTC,
+            DueAtTime:    dueAtTime,
+            AbsolutePath: filepath.Join(patientDir, name),
+        })
+    }
 
-	return files, nil
+    sort.Slice(files, func(i, j int) bool {
+        return files[i].DueAtTime.Before(files[j].DueAtTime)
+    })
+
+    return files, nil
 }
 
 func parseAudioFilename(filename string) (scheduleID string, dueAtUTC string, dueAtTime time.Time, err error) {

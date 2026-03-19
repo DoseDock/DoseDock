@@ -5,6 +5,8 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"os"
+	"path/filepath"
 	"strings"
 	"time"
 	_ "time/tzdata"
@@ -107,15 +109,6 @@ func (w *Worker) runOnce(ctx context.Context) {
 				continue
 			}
 
-			alreadySent, err := w.hasNotificationEvent(ctx, patient.ID, schedule.ID, *dueTime, "SMS")
-			if err != nil {
-				log.Printf("notification worker: check existing notification event: %v", err)
-				continue
-			}
-			if alreadySent {
-				continue
-			}
-
 			items, err := w.queries.ListScheduleItemsBySchedule(ctx, schedule.ID)
 			if err != nil {
 				log.Printf("notification worker: list schedule items for %s: %v", schedule.ID, err)
@@ -140,49 +133,88 @@ func (w *Worker) runOnce(ctx context.Context) {
 				localDue,
 			)
 
-			log.Printf(
-				"notification worker: sending sms to %s for patient=%s schedule=%s due_local=%s due_utc=%s tz=%s",
-				user.Phone.String,
-				patient.ID,
-				schedule.ID,
-				dueTime.In(loc).Format(time.RFC3339),
-				dueTime.UTC().Format(time.RFC3339),
-				loc.String(),
-			)
+			dueAtISO := formatDBTime(*dueTime)
 
-			providerID, sendErr := w.sender.SendSMS(ctx, user.Phone.String, message)
-
-			status := "SENT"
-			errorMessage := sql.NullString{}
-			if sendErr != nil {
-				status = "FAILED"
-				errorMessage = sql.NullString{String: sendErr.Error(), Valid: true}
-				log.Printf("notification worker: send sms failed: %v", sendErr)
+			alreadySent, err := w.hasNotificationEvent(ctx, patient.ID, schedule.ID, *dueTime, "SMS")
+			if err != nil {
+				log.Printf("notification worker: check existing notification event: %v", err)
+				continue
 			}
 
-			_, createErr := w.queries.CreateNotificationEvent(ctx, db.CreateNotificationEventParams{
-				ID:                uuid.NewString(),
-				PatientID:         patient.ID,
-				ScheduleID:        schedule.ID,
-				UserID:            sql.NullString{String: user.ID, Valid: true},
-				DueAtIso:          formatDBTime(*dueTime),
-				Channel:           "SMS",
-				Destination:       user.Phone.String,
-				Message:           message,
-				Status:            status,
-				ProviderMessageID: nullableString(providerID),
-				ErrorMessage:      errorMessage,
-			})
-			if createErr != nil {
-				log.Printf("notification worker: create notification event failed: %v", createErr)
+			if !alreadySent {
+				log.Printf(
+					"notification worker: sending sms to %s for patient=%s schedule=%s due_local=%s due_utc=%s tz=%s",
+					user.Phone.String,
+					patient.ID,
+					schedule.ID,
+					dueTime.In(loc).Format(time.RFC3339),
+					dueTime.UTC().Format(time.RFC3339),
+					loc.String(),
+				)
+
+				providerID, sendErr := w.sender.SendSMS(ctx, user.Phone.String, message)
+
+				status := "SENT"
+				errorMessage := sql.NullString{}
+				if sendErr != nil {
+					status = "FAILED"
+					errorMessage = sql.NullString{String: sendErr.Error(), Valid: true}
+					log.Printf("notification worker: send sms failed: %v", sendErr)
+				}
+
+				_, createErr := w.queries.CreateNotificationEvent(ctx, db.CreateNotificationEventParams{
+					ID:                uuid.NewString(),
+					PatientID:         patient.ID,
+					ScheduleID:        schedule.ID,
+					UserID:            sql.NullString{String: user.ID, Valid: true},
+					DueAtIso:          dueAtISO,
+					Channel:           "SMS",
+					Destination:       user.Phone.String,
+					Message:           message,
+					Status:            status,
+					ProviderMessageID: nullableString(providerID),
+					ErrorMessage:      errorMessage,
+				})
+				if createErr != nil {
+					log.Printf("notification worker: create notification event failed: %v", createErr)
+				}
+			} else {
+				log.Printf(
+					"notification worker: sms already exists for patient=%s schedule=%s due_utc=%s, skipping sms send",
+					patient.ID,
+					schedule.ID,
+					dueTime.UTC().Format(time.RFC3339),
+				)
 			}
 
 			if w.ttsClient != nil {
+				audioExists, err := reminderAudioExists(patient.ID, schedule.ID, dueAtISO)
+				if err != nil {
+					log.Printf(
+						"notification worker: check existing audio failed for patient=%s schedule=%s due_utc=%s: %v",
+						patient.ID,
+						schedule.ID,
+						dueTime.UTC().Format(time.RFC3339),
+						err,
+					)
+					continue
+				}
+
+				if audioExists {
+					log.Printf(
+						"notification worker: audio already exists for patient=%s schedule=%s due_utc=%s, skipping audio generation",
+						patient.ID,
+						schedule.ID,
+						dueTime.UTC().Format(time.RFC3339),
+					)
+					continue
+				}
+
 				audioResult, err := w.ttsClient.SynthesizeDefaultReminder(ctx, message)
 				if err != nil {
 					log.Printf("notification worker: tts failed for patient=%s schedule=%s: %v", patient.ID, schedule.ID, err)
 				} else {
-					audioPath, err := SaveReminderWAV(patient.ID, schedule.ID, formatDBTime(*dueTime), audioResult.AudioBytes)
+					audioPath, err := SaveReminderWAV(patient.ID, schedule.ID, dueAtISO, audioResult.AudioBytes)
 					if err != nil {
 						log.Printf("notification worker: save audio failed for patient=%s schedule=%s: %v", patient.ID, schedule.ID, err)
 					} else {
@@ -208,6 +240,20 @@ func (w *Worker) hasNotificationEvent(ctx context.Context, patientID, scheduleID
 		return false, err
 	}
 	return true, nil
+}
+
+func reminderAudioExists(patientID, scheduleID, dueAt string) (bool, error) {
+	filename := fmt.Sprintf("%s_%s.wav", scheduleID, sanitizeFilePart(dueAt))
+	fullPath := filepath.Join(AudioBaseDir(), patientID, filename)
+
+	info, err := os.Stat(fullPath)
+	if err == nil {
+		return !info.IsDir(), nil
+	}
+	if os.IsNotExist(err) {
+		return false, nil
+	}
+	return false, err
 }
 
 func nullableString(s string) sql.NullString {
